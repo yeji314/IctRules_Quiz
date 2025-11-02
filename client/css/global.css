@@ -1,0 +1,304 @@
+/* 글로벌 스타일 */
+
+body {
+  font-family: var(--font-pixel);
+  background: var(--color-sky);
+  color: var(--color-white);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 픽셀 게임 배경 */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    linear-gradient(180deg, var(--color-sky) 0%, var(--color-sky) 70%, var(--color-ground) 70%, var(--color-ground) 100%);
+  z-index: var(--z-background);
+}
+
+/* 도트 패턴 오버레이 */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    );
+  pointer-events: none;
+  z-index: var(--z-background);
+}
+
+/* 컨테이너 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+  position: relative;
+  z-index: var(--z-content);
+}
+
+.container-small {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+  position: relative;
+  z-index: var(--z-content);
+}
+
+/* 픽셀 스타일 카드 */
+.pixel-card {
+  background: var(--color-white);
+  color: var(--color-black);
+  border: var(--border-normal) solid var(--color-black);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-lg);
+  position: relative;
+}
+
+/* 픽셀 스타일 버튼 */
+.pixel-button {
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: var(--border-normal) solid var(--color-black);
+  background: var(--color-white);
+  color: var(--color-black);
+  cursor: pointer;
+  position: relative;
+  transition: transform var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+  text-transform: uppercase;
+}
+
+.pixel-button:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+.pixel-button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.pixel-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 버튼 색상 변형 */
+.pixel-button--red {
+  background: var(--color-red);
+  color: var(--color-white);
+}
+
+.pixel-button--blue {
+  background: var(--color-blue);
+  color: var(--color-white);
+}
+
+.pixel-button--green {
+  background: var(--color-green);
+  color: var(--color-white);
+}
+
+.pixel-button--yellow {
+  background: var(--color-yellow);
+  color: var(--color-black);
+}
+
+.pixel-button--orange {
+  background: var(--color-orange);
+  color: var(--color-white);
+}
+
+/* 픽셀 스타일 입력 필드 */
+.pixel-input {
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  padding: var(--spacing-md);
+  border: var(--border-normal) solid var(--color-black);
+  background: var(--color-white);
+  color: var(--color-black);
+  width: 100%;
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.pixel-input:focus {
+  outline: none;
+  border-color: var(--color-blue);
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.1), 0 0 0 2px var(--color-blue);
+}
+
+/* 픽셀 스타일 제목 */
+.pixel-title {
+  font-size: 32px;
+  color: var(--color-white);
+  text-shadow:
+    4px 4px 0 var(--color-black),
+    -2px -2px 0 var(--color-black),
+    2px -2px 0 var(--color-black),
+    -2px 2px 0 var(--color-black);
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  letter-spacing: 2px;
+}
+
+.pixel-title--large {
+  font-size: 48px;
+}
+
+.pixel-title--small {
+  font-size: 24px;
+}
+
+/* 블록/벽돌 스타일 박스 */
+.brick-box {
+  background: var(--color-brick);
+  border: var(--border-normal) solid var(--color-brick-dark);
+  box-shadow:
+    inset -4px -4px 0 var(--color-brick-dark),
+    inset 4px 4px 0 var(--color-brick-light);
+  padding: var(--spacing-md);
+  position: relative;
+}
+
+/* 코인/스타 뱃지 */
+.coin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: var(--color-gold);
+  color: var(--color-black);
+  border: var(--border-thin) solid var(--color-gold-dark);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 진행바 (픽셀 스타일) */
+.pixel-progress {
+  width: 100%;
+  height: 24px;
+  background: var(--color-gray-dark);
+  border: var(--border-normal) solid var(--color-black);
+  position: relative;
+  overflow: hidden;
+}
+
+.pixel-progress__bar {
+  height: 100%;
+  background: var(--color-green);
+  transition: width var(--transition-normal);
+  position: relative;
+}
+
+.pixel-progress__bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 8px,
+    rgba(255, 255, 255, 0.2) 8px,
+    rgba(255, 255, 255, 0.2) 16px
+  );
+}
+
+/* 모달 오버레이 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: var(--spacing-lg);
+}
+
+.modal-content {
+  background: var(--color-white);
+  color: var(--color-black);
+  border: var(--border-thick) solid var(--color-black);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-xl);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* 유틸리티 클래스 */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+.mt-xl { margin-top: var(--spacing-xl); }
+
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+.mb-xl { margin-bottom: var(--spacing-xl); }
+
+.hidden {
+  display: none !important;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .pixel-title {
+    font-size: 24px;
+  }
+
+  .pixel-title--large {
+    font-size: 32px;
+  }
+
+  .container {
+    padding: var(--spacing-md);
+  }
+
+  .pixel-button {
+    font-size: 12px;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}

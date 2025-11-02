@@ -1,0 +1,81 @@
+/* 픽셀 게임 스타일 변수 */
+
+/* Press Start 2P (영문) - Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* 한글 픽셀 폰트 - DungGeunMo (둥근모) */
+@font-face {
+  font-family: 'DungGeunMo';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  /* 픽셀 폰트 */
+  --font-pixel: 'Press Start 2P', 'DungGeunMo', monospace;
+
+  /* 8비트 게임 색상 팔레트 (슈퍼마리오 스타일) */
+  --color-sky: #5c94fc;
+  --color-sky-dark: #4874d4;
+  --color-ground: #d89048;
+  --color-ground-dark: #b87030;
+
+  /* 주요 색상 */
+  --color-red: #fc2847;
+  --color-red-dark: #d41010;
+  --color-blue: #2878fc;
+  --color-blue-dark: #1850d0;
+  --color-green: #00d800;
+  --color-green-dark: #00a800;
+  --color-yellow: #fcd800;
+  --color-yellow-dark: #d4b000;
+  --color-orange: #fc7c00;
+  --color-orange-dark: #d45c00;
+
+  /* UI 색상 */
+  --color-white: #fcfcfc;
+  --color-black: #000000;
+  --color-gray-light: #d8d8d8;
+  --color-gray: #a8a8a8;
+  --color-gray-dark: #787878;
+
+  /* 블록/벽돌 색상 */
+  --color-brick: #d89048;
+  --color-brick-dark: #b87030;
+  --color-brick-light: #fcb878;
+
+  /* 코인/스타 색상 */
+  --color-gold: #fcd800;
+  --color-gold-dark: #d4b000;
+  --color-gold-light: #fcfc00;
+
+  /* 간격 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  /* 픽셀 보더 크기 */
+  --border-thin: 2px;
+  --border-normal: 4px;
+  --border-thick: 6px;
+
+  /* 그림자 (8비트 스타일) */
+  --shadow-sm: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 4px 4px 0 rgba(0, 0, 0, 0.3);
+  --shadow-lg: 6px 6px 0 rgba(0, 0, 0, 0.3);
+
+  /* Z-index */
+  --z-background: -1;
+  --z-content: 1;
+  --z-modal: 100;
+  --z-tooltip: 200;
+
+  /* 트랜지션 */
+  --transition-fast: 0.1s;
+  --transition-normal: 0.2s;
+  --transition-slow: 0.3s;
+}

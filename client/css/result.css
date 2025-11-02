@@ -1,0 +1,274 @@
+/* 결과 페이지 스타일 */
+
+/* 배경 오버라이드 */
+body {
+  background: #d8d8c8;
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  display: none;
+}
+
+/* 컨페티 배경 */
+.confetti {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 메인 */
+.result-main {
+  padding: var(--spacing-xl) 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: var(--z-content);
+}
+
+/* 결과 카드 */
+.result-card {
+  margin-top: var(--spacing-lg);
+  animation-delay: 0.3s;
+}
+
+/* 점수 */
+.result-score {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-xl) 0;
+  border-bottom: var(--border-normal) dashed var(--color-gray);
+}
+
+.score-label {
+  font-size: 14px;
+  color: var(--color-gray-dark);
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: 2px;
+}
+
+.score-value {
+  font-size: 64px;
+  color: var(--color-blue);
+  text-shadow: 4px 4px 0 var(--color-black);
+  animation: zoomIn 0.5s ease-out;
+}
+
+/* 진행 바 */
+.result-progress {
+  margin-bottom: var(--spacing-xl);
+}
+
+.result-progress .pixel-progress {
+  height: 32px;
+}
+
+.result-progress .pixel-progress__bar {
+  animation: progressFill 1s ease-out 0.5s both;
+}
+
+/* 통계 */
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.stat-item {
+  text-align: center;
+  padding: var(--spacing-md);
+  background: var(--color-white);
+  border: var(--border-thin) solid var(--color-gray);
+}
+
+.stat-icon {
+  font-size: 32px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--color-gray-dark);
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-value {
+  font-size: 24px;
+  color: var(--color-black);
+  font-weight: bold;
+}
+
+/* 메시지 */
+.result-message {
+  text-align: center;
+  font-size: 16px;
+  color: var(--color-black);
+  padding: var(--spacing-lg);
+  background: var(--color-gold);
+  border: var(--border-thin) solid var(--color-gold-dark);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.6;
+}
+
+/* 액션 버튼 */
+.result-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+}
+
+.result-actions button {
+  flex: 1;
+  max-width: 200px;
+  font-size: 14px;
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+/* 캐릭터 */
+.result-character {
+  text-align: center;
+  margin-top: var(--spacing-xl);
+}
+
+.character-sprite {
+  font-size: 100px;
+  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.3));
+  display: inline-block;
+}
+
+/* 등급별 스타일 */
+.score-value--perfect {
+  color: var(--color-gold);
+}
+
+.score-value--good {
+  color: var(--color-green);
+}
+
+.score-value--normal {
+  color: var(--color-blue);
+}
+
+.score-value--bad {
+  color: var(--color-red);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .score-value {
+    font-size: 48px;
+  }
+
+  .result-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .result-actions {
+    flex-direction: column;
+  }
+
+  .result-actions button {
+    max-width: 100%;
+  }
+
+  .character-sprite {
+    font-size: 80px;
+  }
+}
+
+/* 컨페티 애니메이션 */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--color-gold);
+  animation: confetti-fall 3s linear infinite;
+}
+
+/* 픽셀 지형 */
+.pixel-ground {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 180px;
+  z-index: 1;
+}
+
+.grass-layer {
+  position: absolute;
+  bottom: 100px;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  background: repeating-linear-gradient(
+    to right,
+    #50c850 0px,
+    #50c850 16px,
+    #40b040 16px,
+    #40b040 32px
+  );
+  border-top: 4px solid #000000;
+}
+
+/* 잔디 픽셀 효과 */
+.grass-layer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0, transparent 7px, rgba(0,0,0,0.1) 7px, rgba(0,0,0,0.1) 8px),
+    repeating-linear-gradient(0deg, transparent 0, transparent 7px, rgba(0,0,0,0.05) 7px, rgba(0,0,0,0.05) 8px);
+  pointer-events: none;
+}
+
+.dirt-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: repeating-linear-gradient(
+    to right,
+    #a05028 0px,
+    #a05028 16px,
+    #804018 16px,
+    #804018 32px
+  );
+  border-top: 4px solid #000000;
+}
+
+/* 흙 픽셀 효과 */
+.dirt-layer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0, transparent 7px, rgba(0,0,0,0.1) 7px, rgba(0,0,0,0.1) 8px),
+    repeating-linear-gradient(0deg, transparent 0, transparent 7px, rgba(0,0,0,0.05) 7px, rgba(0,0,0,0.05) 8px);
+  pointer-events: none;
+}

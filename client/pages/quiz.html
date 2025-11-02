@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICT 내규 퀴즈 - 게임</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="../css/reset.css">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/quiz.css">
+</head>
+<body>
+  <!-- 헤더 -->
+  <header class="quiz-header">
+    <div class="container">
+      <div class="quiz-header-content">
+        <button class="pixel-button pixel-button--red quit-button" id="quitButton">
+          ← QUIT
+        </button>
+        <div class="quiz-progress-indicator">
+          <span id="questionNumber">1</span> / <span id="totalQuestions">5</span>
+        </div>
+        <div class="quiz-timer" id="timer">0:00</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 퀴즈 영역 -->
+  <main class="quiz-main">
+    <div class="container">
+      <!-- 문제 카드 -->
+      <div class="quiz-question-card pixel-card">
+        <!-- 문제 텍스트 -->
+        <div class="question-header">
+          <div class="question-type-badge" id="questionTypeBadge">TYPE</div>
+          <div class="question-category-badge" id="questionCategoryBadge">CATEGORY</div>
+        </div>
+
+        <h2 class="question-text" id="questionText">문제를 불러오는 중...</h2>
+
+        <!-- 문제 영역 (동적으로 변경) -->
+        <div id="questionArea" class="question-area"></div>
+
+        <!-- 제출 버튼 -->
+        <div class="question-actions">
+          <button class="pixel-button pixel-button--green submit-button" id="submitButton">
+            확인 ✓
+          </button>
+        </div>
+      </div>
+
+      <!-- 피드백 모달 -->
+      <div id="feedbackModal" class="modal-overlay hidden">
+        <div class="modal-content feedback-modal">
+          <div class="feedback-icon" id="feedbackIcon">✓</div>
+          <h3 class="feedback-title" id="feedbackTitle">정답입니다!</h3>
+          <div class="feedback-message" id="feedbackMessage"></div>
+          <div class="feedback-explanation hidden" id="feedbackExplanation"></div>
+          <button class="pixel-button pixel-button--blue next-button" id="nextButton">
+            다음 문제 →
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 픽셀 지형 -->
+  <div class="pixel-ground">
+    <div class="grass-layer"></div>
+    <div class="dirt-layer"></div>
+  </div>
+
+  <!-- JavaScript -->
+  <script type="module" src="../js/pages/quiz.js"></script>
+</body>
+</html>

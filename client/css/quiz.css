@@ -1,0 +1,523 @@
+/* 퀴즈 게임 페이지 스타일 */
+
+/* 배경 오버라이드 */
+body {
+  background: #d8d8c8;
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  display: none;
+}
+
+/* 헤더 */
+.quiz-header {
+  background: var(--color-brick);
+  border-bottom: var(--border-thick) solid var(--color-brick-dark);
+  box-shadow:
+    inset 0 -4px 0 var(--color-brick-dark),
+    inset 0 4px 0 var(--color-brick-light);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-content);
+}
+
+.quiz-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) 0;
+  gap: var(--spacing-md);
+}
+
+.quit-button {
+  font-size: 12px;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.quiz-progress-indicator {
+  font-size: 16px;
+  color: var(--color-white);
+  text-shadow: 2px 2px 0 var(--color-black);
+  background: var(--color-black);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: var(--border-thin) solid var(--color-white);
+}
+
+.quiz-timer {
+  font-size: 14px;
+  color: var(--color-white);
+  background: var(--color-blue);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-thin) solid var(--color-blue-dark);
+  min-width: 80px;
+  text-align: center;
+}
+
+/* 메인 */
+.quiz-main {
+  padding: var(--spacing-xl) 0;
+  min-height: calc(100vh - 80px);
+}
+
+/* 문제 카드 */
+.quiz-question-card {
+  max-width: 800px;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.question-header {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.question-type-badge,
+.question-category-badge {
+  font-size: 10px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-thin) solid var(--color-black);
+}
+
+.question-type-badge {
+  background: var(--color-blue);
+  color: var(--color-white);
+  border-color: var(--color-blue-dark);
+}
+
+.question-category-badge {
+  background: var(--color-gold);
+  color: var(--color-black);
+  border-color: var(--color-gold-dark);
+}
+
+.question-category-badge--luckydraw {
+  background: var(--color-orange);
+  color: var(--color-white);
+  border-color: var(--color-orange-dark);
+  animation: pulse 1s infinite;
+}
+
+.question-text {
+  font-size: 18px;
+  line-height: 1.6;
+  margin-bottom: var(--spacing-xl);
+  color: var(--color-black);
+  word-break: keep-all;
+}
+
+/* 문제 영역 */
+.question-area {
+  min-height: 200px;
+  margin-bottom: var(--spacing-xl);
+}
+
+/* 제출 버튼 */
+.question-actions {
+  text-align: center;
+}
+
+.submit-button {
+  width: 100%;
+  max-width: 300px;
+  font-size: 16px;
+  padding: var(--spacing-lg);
+}
+
+/* 피드백 모달 */
+.feedback-modal {
+  text-align: center;
+  max-width: 500px;
+}
+
+.feedback-icon {
+  font-size: 80px;
+  margin-bottom: var(--spacing-lg);
+}
+
+.feedback-icon--correct {
+  animation: zoomIn 0.3s ease-out;
+}
+
+.feedback-icon--wrong {
+  animation: shake 0.5s;
+}
+
+.feedback-title {
+  font-size: 24px;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-black);
+}
+
+.feedback-message {
+  font-size: 14px;
+  color: var(--color-gray-dark);
+  margin-bottom: var(--spacing-lg);
+}
+
+.feedback-explanation {
+  background: var(--color-gray-light);
+  border: var(--border-thin) solid var(--color-gray);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.feedback-explanation strong {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-red);
+}
+
+.next-button {
+  width: 100%;
+  max-width: 200px;
+  font-size: 14px;
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+/* ============================================ */
+/* 문제 타입별 스타일 */
+/* ============================================ */
+
+/* 1. Drag & Drop */
+.dragdrop-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.dragdrop-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  justify-content: center;
+  min-height: 100px;
+  padding: var(--spacing-md);
+  background: var(--color-gray-light);
+  border: var(--border-thin) dashed var(--color-gray);
+}
+
+.dragdrop-item {
+  background: var(--color-white);
+  border: var(--border-normal) solid var(--color-black);
+  padding: var(--spacing-md) var(--spacing-lg);
+  cursor: move;
+  font-size: 14px;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast);
+}
+
+.dragdrop-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.dragdrop-item.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+}
+
+.dragdrop-target {
+  min-height: 100px;
+  padding: var(--spacing-md);
+  background: var(--color-white);
+  border: var(--border-thick) solid var(--color-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--color-gray-dark);
+}
+
+.dragdrop-target.drag-over {
+  background: var(--color-blue);
+  border-color: var(--color-blue-dark);
+  color: var(--color-white);
+}
+
+.dragdrop-target .dragdrop-item {
+  margin: 0;
+}
+
+/* 2. Typing */
+.typing-container {
+  text-align: center;
+}
+
+.typing-input {
+  font-size: 18px;
+  padding: var(--spacing-lg);
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.typing-hint {
+  font-size: 12px;
+  color: var(--color-gray-dark);
+}
+
+/* 3. Fill Blank (객관식) */
+.fillblank-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.fillblank-option {
+  background: var(--color-white);
+  border: var(--border-normal) solid var(--color-black);
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  font-size: 14px;
+  text-align: center;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.fillblank-option:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: var(--color-blue);
+  color: var(--color-white);
+  border-color: var(--color-blue-dark);
+}
+
+.fillblank-option.selected {
+  background: var(--color-green);
+  color: var(--color-white);
+  border-color: var(--color-green-dark);
+  transform: scale(1.05);
+}
+
+/* 4. OX Quiz */
+.ox-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xl);
+}
+
+.ox-character {
+  font-size: 120px;
+  margin: var(--spacing-xl) 0;
+  transition: transform var(--transition-normal);
+  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.3));
+}
+
+.ox-character.thinking {
+  animation: bounce 0.5s infinite;
+}
+
+.ox-hint {
+  min-height: 60px;
+  padding: var(--spacing-md);
+  background: var(--color-white);
+  border: var(--border-normal) solid var(--color-black);
+  font-size: 14px;
+  text-align: center;
+  border-radius: 20px;
+  position: relative;
+  margin-bottom: var(--spacing-lg);
+}
+
+.ox-hint::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid var(--color-black);
+}
+
+.ox-options {
+  display: flex;
+  gap: var(--spacing-xl);
+}
+
+.ox-option {
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  background: var(--color-white);
+  border: var(--border-thick) solid var(--color-black);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-md);
+}
+
+.ox-option:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: var(--shadow-lg);
+}
+
+.ox-option.selected {
+  background: var(--color-yellow);
+  border-color: var(--color-yellow-dark);
+  transform: scale(1.15);
+}
+
+/* 5. Find Error */
+.finderror-text {
+  font-size: 16px;
+  line-height: 2;
+  margin-bottom: var(--spacing-lg);
+}
+
+.finderror-word {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin: 0 var(--spacing-xs);
+  background: var(--color-white);
+  border-bottom: var(--border-normal) solid var(--color-black);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.finderror-word:hover {
+  background: var(--color-red);
+  color: var(--color-white);
+  transform: translateY(-2px);
+}
+
+.finderror-word.selected {
+  background: var(--color-yellow);
+  border-color: var(--color-yellow-dark);
+  transform: scale(1.1);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .quiz-header-content {
+    flex-wrap: wrap;
+  }
+
+  .quiz-progress-indicator {
+    flex: 1;
+    text-align: center;
+  }
+
+  .question-text {
+    font-size: 16px;
+  }
+
+  .fillblank-options {
+    grid-template-columns: 1fr;
+  }
+
+  .ox-options {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .ox-option {
+    width: 120px;
+    height: 120px;
+    font-size: 60px;
+  }
+
+  .ox-character {
+    font-size: 80px;
+  }
+
+  .dragdrop-items {
+    flex-direction: column;
+  }
+}
+/* Pixel ground CSS */
+
+/* 배경 오버라이드 */
+body { background: #d8d8c8; }
+body::before, body::after { display: none; }
+/* 픽셀 지형 */
+.pixel-ground {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 180px;
+  z-index: 1;
+}
+
+.grass-layer {
+  position: absolute;
+  bottom: 100px;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  background: repeating-linear-gradient(
+    to right,
+    #50c850 0px,
+    #50c850 16px,
+    #40b040 16px,
+    #40b040 32px
+  );
+  border-top: 4px solid #000000;
+}
+
+/* 잔디 픽셀 효과 */
+.grass-layer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0, transparent 7px, rgba(0,0,0,0.1) 7px, rgba(0,0,0,0.1) 8px),
+    repeating-linear-gradient(0deg, transparent 0, transparent 7px, rgba(0,0,0,0.05) 7px, rgba(0,0,0,0.05) 8px);
+  pointer-events: none;
+}
+
+.dirt-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: repeating-linear-gradient(
+    to right,
+    #a05028 0px,
+    #a05028 16px,
+    #804018 16px,
+    #804018 32px
+  );
+  border-top: 4px solid #000000;
+}
+
+/* 흙 픽셀 효과 */
+.dirt-layer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0, transparent 7px, rgba(0,0,0,0.1) 7px, rgba(0,0,0,0.1) 8px),
+    repeating-linear-gradient(0deg, transparent 0, transparent 7px, rgba(0,0,0,0.05) 7px, rgba(0,0,0,0.05) 8px);
+  pointer-events: none;
+}
+
+/* 반응형 - 태블릿 */
+@media (max-width: 1024px) {
+  .login-container {
+    padding: 40px 20px 180px;
+  }
+
+  .balloon {
+    font-size: 26px;
+  }
+
+  .character {
