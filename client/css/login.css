@@ -2,7 +2,7 @@
 
 /* 바디 배경 오버라이드 */
 body {
-  background: #d8d8c8;
+  background: #ecece5;
   overflow: hidden;
 }
 
@@ -48,7 +48,7 @@ body::after {
 .title-ict {
   font-family: var(--font-pixel);
   font-size: clamp(48px, 8vw, 96px);
-  color: #c8e0f8;
+  color: #becee2;
   letter-spacing: 4px;
   margin-bottom: 10px;
   position: relative;
@@ -73,7 +73,7 @@ body::after {
 .title-quiz {
   font-family: var(--font-pixel);
   font-size: clamp(48px, 8vw, 96px);
-  color: #f8d848;
+  color: #d1d871;
   letter-spacing: 4px;
   text-shadow:
     -6px -6px 0 #000,
@@ -138,7 +138,7 @@ body::after {
   font-family: var(--font-pixel);
   font-size: 20px;
   color: #000000;
-  background: #6098f8;
+  background: #6299d0;
   border: 6px solid #000000;
   border-radius: 40px;
   cursor: pointer;
@@ -151,7 +151,7 @@ body::after {
 }
 
 .start-button:hover:not(:disabled) {
-  background: #7caafa;
+  background: #b8cae7;
   transform: translateY(2px);
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
 }
@@ -168,7 +168,7 @@ body::after {
 
 /* 에러 메시지 */
 .error-message {
-  background: #fc2847;
+  background: #cf2020;
   color: #ffffff;
   border: 4px solid #000000;
   border-radius: 8px;
@@ -272,7 +272,7 @@ body::after {
 .pipe {
   width: 44px;
   height: 80px;
-  background: linear-gradient(to right, #40b040 0%, #50c850 50%, #40b040 100%);
+  background: linear-gradient(to right, #94481d 0%, #94481d 50%, #94481d 100%);
   border: 4px solid #000000;
   border-radius: 6px 6px 0 0;
 }
@@ -311,27 +311,25 @@ body::after {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 180px;
+  height: 120px;
   z-index: 1;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
 }
 
+/* 잔디 레이어 - 픽셀 아트 스타일 */
 .grass-layer {
   position: absolute;
-  bottom: 100px;
+  bottom: 80px;
   left: 0;
   width: 100%;
-  height: 80px;
-  background: repeating-linear-gradient(
-    to right,
-    #50c850 0px,
-    #50c850 16px,
-    #40b040 16px,
-    #40b040 32px
-  );
-  border-top: 4px solid #000000;
+  height: 40px;
+  background: #00c000;
+  border-bottom: none;
 }
 
-/* 잔디 픽셀 효과 */
+/* 잔디 상단 픽셀 디테일 */
 .grass-layer::before {
   content: '';
   position: absolute;
@@ -340,28 +338,74 @@ body::after {
   width: 100%;
   height: 100%;
   background-image:
-    repeating-linear-gradient(90deg, transparent 0, transparent 7px, rgba(0,0,0,0.1) 7px, rgba(0,0,0,0.1) 8px),
-    repeating-linear-gradient(0deg, transparent 0, transparent 7px, rgba(0,0,0,0.05) 7px, rgba(0,0,0,0.05) 8px);
+    /* 잔디 돌출 픽셀들 */
+    linear-gradient(90deg,
+      transparent 0px, transparent 4px,
+      #40a040 4px, #40a040 8px,
+
+
+
+
+      transparent 8px, transparent 12px,
+      #40a040 12px, #40a040 14px,
+      transparent 14px, transparent 16px,
+      #50b850 16px, #50b850 20px,
+      transparent 20px, transparent 24px,
+      #40a040 24px, #40a040 26px,
+      transparent 26px, transparent 32px
+    ),
+    /* 세로 픽셀 라인들 */
+    repeating-linear-gradient(90deg,
+
+
+      transparent 0px, transparent 7px,
+      rgba(0, 0, 0, 0.08) 7px, rgba(0, 0, 0, 0.08) 8px
+    ),
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 15px,
+      rgba(255, 255, 255, 0.1) 15px, rgba(255, 255, 255, 0.1) 16px
+    );
+  background-size: 32px 100%, 8px 100%, 16px 100%;
+  background-repeat: repeat-x, repeat, repeat;
   pointer-events: none;
 }
 
+/* 잔디 상단 돌출 효과 */
+.grass-layer::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: repeating-linear-gradient(90deg,
+    transparent 0px, transparent 4px,
+    #50c850 4px, #50c850 6px,
+    transparent 6px, transparent 8px,
+    #40a040 8px, #40a040 10px,
+    transparent 10px, transparent 14px,
+    #50b850 14px, #50b850 16px,
+    transparent 16px, transparent 20px,
+    #40a040 20px, #40a040 22px,
+    transparent 22px, transparent 28px,
+    #50c850 28px, #50c850 30px,
+    transparent 30px, transparent 32px
+  );
+  background-size: 32px 100%;
+  background-repeat: repeat-x;
+}
+
+/* 흙 레이어 - 픽셀 아트 스타일 */
 .dirt-layer {
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 100px;
-  background: repeating-linear-gradient(
-    to right,
-    #a05028 0px,
-    #a05028 16px,
-    #804018 16px,
-    #804018 32px
-  );
-  border-top: 4px solid #000000;
+  height: 80px;
+  background: #b85800;
 }
 
-/* 흙 픽셀 효과 */
+/* 흙 픽셀 디테일 효과 */
 .dirt-layer::before {
   content: '';
   position: absolute;
@@ -370,8 +414,47 @@ body::after {
   width: 100%;
   height: 100%;
   background-image:
-    repeating-linear-gradient(90deg, transparent 0, transparent 7px, rgba(0,0,0,0.1) 7px, rgba(0,0,0,0.1) 8px),
-    repeating-linear-gradient(0deg, transparent 0, transparent 7px, rgba(0,0,0,0.05) 7px, rgba(0,0,0,0.05) 8px);
+    /* 어두운 흙 블록들 */
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 8px,
+      rgba(128, 64, 0, 0.3) 8px, rgba(128, 64, 0, 0.3) 16px
+    ),
+    repeating-linear-gradient(0deg,
+      transparent 0px, transparent 8px,
+      rgba(128, 64, 0, 0.2) 8px, rgba(128, 64, 0, 0.2) 16px
+    ),
+    /* 밝은 픽셀 디테일 */
+    repeating-linear-gradient(45deg,
+      transparent 0px, transparent 3px,
+      rgba(255, 140, 60, 0.15) 3px, rgba(255, 140, 60, 0.15) 5px,
+      transparent 5px, transparent 12px
+    ),
+    /* 세로 픽셀 라인 */
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 7px,
+      rgba(0, 0, 0, 0.15) 7px, rgba(0, 0, 0, 0.15) 8px
+    );
+  background-size: 16px 100%, 100% 16px, 12px 12px, 8px 100%;
+  pointer-events: none;
+}
+
+/* 흙 레이어 추가 텍스처 */
+.dirt-layer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle at 12% 20%, rgba(160, 80, 40, 0.4) 2px, transparent 2px),
+    radial-gradient(circle at 28% 35%, rgba(100, 50, 20, 0.3) 2px, transparent 2px),
+    radial-gradient(circle at 45% 15%, rgba(160, 80, 40, 0.4) 2px, transparent 2px),
+    radial-gradient(circle at 63% 45%, rgba(100, 50, 20, 0.3) 2px, transparent 2px),
+    radial-gradient(circle at 78% 25%, rgba(160, 80, 40, 0.4) 2px, transparent 2px),
+    radial-gradient(circle at 88% 55%, rgba(100, 50, 20, 0.3) 2px, transparent 2px);
+  background-size: 50px 50px;
+  background-repeat: repeat;
   pointer-events: none;
 }
 
@@ -454,15 +537,12 @@ body::after {
   .game-input {
     height: 50px;
     font-size: 14px;
-    border-width: 4px;
-    border-radius: 28px;
+    padding: 0 16px;
   }
 
   .start-button {
     height: 60px;
     font-size: 16px;
-    border-width: 4px;
-    border-radius: 32px;
   }
 
   .hand-cursor {
@@ -470,16 +550,16 @@ body::after {
   }
 
   .pixel-ground {
-    height: 140px;
+    height: 100px;
   }
 
   .grass-layer {
-    bottom: 70px;
-    height: 70px;
+    bottom: 65px;
+    height: 35px;
   }
 
   .dirt-layer {
-    height: 70px;
+    height: 65px;
   }
 
   /* 모바일에서 장식 요소 축소 */

@@ -2,7 +2,7 @@
 
 /* 배경 오버라이드 */
 body {
-  background: #d8d8c8;
+  background: #ecece5;
   overflow-x: hidden;
 }
 
@@ -27,108 +27,45 @@ body::after {
   padding: var(--spacing-xl) 0;
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   position: relative;
-  z-index: var(--z-content);
+  z-index: 10;
+  gap: 60px;
 }
 
-/* 결과 카드 */
-.result-card {
-  margin-top: var(--spacing-lg);
-  animation-delay: 0.3s;
-}
-
-/* 점수 */
-.result-score {
+/* 별 획득 정보 */
+.star-earned {
+  font-family: var(--font-pixel);
+  font-size: 48px;
+  color: #000000;
   text-align: center;
-  margin-bottom: var(--spacing-xl);
-  padding: var(--spacing-xl) 0;
-  border-bottom: var(--border-normal) dashed var(--color-gray);
+  animation: zoomIn 0.5s ease-out, pulse 2s ease-in-out infinite;
+  text-shadow:
+    -3px -3px 0 #fff,
+    3px -3px 0 #fff,
+    -3px 3px 0 #fff,
+    3px 3px 0 #fff;
 }
 
-.score-label {
-  font-size: 14px;
-  color: var(--color-gray-dark);
-  margin-bottom: var(--spacing-sm);
-  letter-spacing: 2px;
-}
-
-.score-value {
-  font-size: 64px;
-  color: var(--color-blue);
-  text-shadow: 4px 4px 0 var(--color-black);
-  animation: zoomIn 0.5s ease-out;
-}
-
-/* 진행 바 */
-.result-progress {
-  margin-bottom: var(--spacing-xl);
-}
-
-.result-progress .pixel-progress {
-  height: 32px;
-}
-
-.result-progress .pixel-progress__bar {
-  animation: progressFill 1s ease-out 0.5s both;
-}
-
-/* 통계 */
-.result-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-xl);
-}
-
-.stat-item {
-  text-align: center;
-  padding: var(--spacing-md);
-  background: var(--color-white);
-  border: var(--border-thin) solid var(--color-gray);
-}
-
-.stat-icon {
-  font-size: 32px;
-  margin-bottom: var(--spacing-xs);
-}
-
-.stat-label {
-  font-size: 10px;
-  color: var(--color-gray-dark);
-  margin-bottom: var(--spacing-xs);
-}
-
-.stat-value {
-  font-size: 24px;
-  color: var(--color-black);
-  font-weight: bold;
-}
-
-/* 메시지 */
-.result-message {
-  text-align: center;
-  font-size: 16px;
-  color: var(--color-black);
-  padding: var(--spacing-lg);
-  background: var(--color-gold);
-  border: var(--border-thin) solid var(--color-gold-dark);
-  margin-bottom: var(--spacing-lg);
-  line-height: 1.6;
+.star-earned.hidden {
+  display: none;
 }
 
 /* 액션 버튼 */
 .result-actions {
   display: flex;
-  gap: var(--spacing-md);
+  gap: 30px;
   justify-content: center;
+  align-items: center;
 }
 
 .result-actions button {
-  flex: 1;
-  max-width: 200px;
-  font-size: 14px;
-  padding: var(--spacing-md) var(--spacing-lg);
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  padding: 16px 40px;
+  min-width: 160px;
 }
 
 /* 캐릭터 */
@@ -203,33 +140,31 @@ body::after {
   animation: confetti-fall 3s linear infinite;
 }
 
-/* 픽셀 지형 */
+/* 픽셀 지형 - bottom.png 완벽 재현 */
 .pixel-ground {
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 180px;
+  height: 120px;
   z-index: 1;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
 }
 
+/* 잔디 레이어 - 픽셀 아트 스타일 */
 .grass-layer {
   position: absolute;
-  bottom: 100px;
+  bottom: 80px;
   left: 0;
   width: 100%;
-  height: 80px;
-  background: repeating-linear-gradient(
-    to right,
-    #50c850 0px,
-    #50c850 16px,
-    #40b040 16px,
-    #40b040 32px
-  );
-  border-top: 4px solid #000000;
+  height: 40px;
+  background: #00c000;
+  border-bottom: none;
 }
 
-/* 잔디 픽셀 효과 */
+/* 잔디 상단 픽셀 디테일 */
 .grass-layer::before {
   content: '';
   position: absolute;
@@ -238,28 +173,66 @@ body::after {
   width: 100%;
   height: 100%;
   background-image:
-    repeating-linear-gradient(90deg, transparent 0, transparent 7px, rgba(0,0,0,0.1) 7px, rgba(0,0,0,0.1) 8px),
-    repeating-linear-gradient(0deg, transparent 0, transparent 7px, rgba(0,0,0,0.05) 7px, rgba(0,0,0,0.05) 8px);
+    linear-gradient(90deg,
+      transparent 0px, transparent 4px,
+      #40a040 4px, #40a040 8px,
+      transparent 8px, transparent 12px,
+      #40a040 12px, #40a040 14px,
+      transparent 14px, transparent 16px,
+      #50b850 16px, #50b850 20px,
+      transparent 20px, transparent 24px,
+      #40a040 24px, #40a040 26px,
+      transparent 26px, transparent 32px
+    ),
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 7px,
+      rgba(0, 0, 0, 0.08) 7px, rgba(0, 0, 0, 0.08) 8px
+    ),
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 15px,
+      rgba(255, 255, 255, 0.1) 15px, rgba(255, 255, 255, 0.1) 16px
+    );
+  background-size: 32px 100%, 8px 100%, 16px 100%;
+  background-repeat: repeat-x, repeat, repeat;
   pointer-events: none;
 }
 
+/* 잔디 상단 돌출 효과 */
+.grass-layer::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: repeating-linear-gradient(90deg,
+    transparent 0px, transparent 4px,
+    #50c850 4px, #50c850 6px,
+    transparent 6px, transparent 8px,
+    #40a040 8px, #40a040 10px,
+    transparent 10px, transparent 14px,
+    #50b850 14px, #50b850 16px,
+    transparent 16px, transparent 20px,
+    #40a040 20px, #40a040 22px,
+    transparent 22px, transparent 28px,
+    #50c850 28px, #50c850 30px,
+    transparent 30px, transparent 32px
+  );
+  background-size: 32px 100%;
+  background-repeat: repeat-x;
+}
+
+/* 흙 레이어 - 픽셀 아트 스타일 */
 .dirt-layer {
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 100px;
-  background: repeating-linear-gradient(
-    to right,
-    #a05028 0px,
-    #a05028 16px,
-    #804018 16px,
-    #804018 32px
-  );
-  border-top: 4px solid #000000;
+  height: 80px;
+  background: #b85800;
 }
 
-/* 흙 픽셀 효과 */
+/* 흙 픽셀 디테일 효과 */
 .dirt-layer::before {
   content: '';
   position: absolute;
@@ -268,7 +241,43 @@ body::after {
   width: 100%;
   height: 100%;
   background-image:
-    repeating-linear-gradient(90deg, transparent 0, transparent 7px, rgba(0,0,0,0.1) 7px, rgba(0,0,0,0.1) 8px),
-    repeating-linear-gradient(0deg, transparent 0, transparent 7px, rgba(0,0,0,0.05) 7px, rgba(0,0,0,0.05) 8px);
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 8px,
+      rgba(128, 64, 0, 0.3) 8px, rgba(128, 64, 0, 0.3) 16px
+    ),
+    repeating-linear-gradient(0deg,
+      transparent 0px, transparent 8px,
+      rgba(128, 64, 0, 0.2) 8px, rgba(128, 64, 0, 0.2) 16px
+    ),
+    repeating-linear-gradient(45deg,
+      transparent 0px, transparent 3px,
+      rgba(255, 140, 60, 0.15) 3px, rgba(255, 140, 60, 0.15) 5px,
+      transparent 5px, transparent 12px
+    ),
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 7px,
+      rgba(0, 0, 0, 0.15) 7px, rgba(0, 0, 0, 0.15) 8px
+    );
+  background-size: 16px 100%, 100% 16px, 12px 12px, 8px 100%;
+  pointer-events: none;
+}
+
+/* 흙 레이어 추가 텍스처 */
+.dirt-layer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle at 12% 20%, rgba(160, 80, 40, 0.4) 2px, transparent 2px),
+    radial-gradient(circle at 28% 35%, rgba(100, 50, 20, 0.3) 2px, transparent 2px),
+    radial-gradient(circle at 45% 15%, rgba(160, 80, 40, 0.4) 2px, transparent 2px),
+    radial-gradient(circle at 63% 45%, rgba(100, 50, 20, 0.3) 2px, transparent 2px),
+    radial-gradient(circle at 78% 25%, rgba(160, 80, 40, 0.4) 2px, transparent 2px),
+    radial-gradient(circle at 88% 55%, rgba(100, 50, 20, 0.3) 2px, transparent 2px);
+  background-size: 50px 50px;
+  background-repeat: repeat;
   pointer-events: none;
 }

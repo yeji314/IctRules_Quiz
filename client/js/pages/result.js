@@ -3,21 +3,16 @@
  */
 
 import { requireAuth } from '../modules/auth.js';
-import { $, playSound, animate } from '../modules/utils.js';
+import { $, playSound } from '../modules/utils.js';
 
 // 인증 확인
 requireAuth();
 
 // DOM 요소
 const confettiContainer = $('#confetti');
-const scoreValue = $('#scoreValue');
-const progressBar = $('#progressBar');
-const correctCount = $('#correctCount');
-const incorrectCount = $('#incorrectCount');
-const luckyDrawCount = $('#luckyDrawCount');
-const resultMessage = $('#resultMessage');
-const characterSprite = $('#characterSprite');
-const homeButton = $('#homeButton');
+const starEarned = $('#starEarned');
+const quitButton = $('#quitButton');
+const continueButton = $('#continueButton');
 
 /**
  * 초기화
@@ -33,134 +28,23 @@ function init() {
 
   const result = JSON.parse(resultData);
 
-  // 결과 표시
-  displayResult(result);
+  // 별 획득 여부 표시
+  if (result.luckydraw_count > 0) {
+    starEarned.textContent = `⭐ 획득 (Lucky Draw ${result.luckydraw_count}개 정답!)`;
+    createConfetti();
+    playSound('correct');
+  } else {
+    starEarned.classList.add('hidden');
+  }
 
   // 이벤트 리스너
-  homeButton.addEventListener('click', handleHome);
-  homeButton.addEventListener('mousedown', () => playSound('click'));
-
-  // 컨페티 생성
-  if (result.correct_count >= 4) {
-    createConfetti();
-  }
+  quitButton.addEventListener('click', handleQuit);
+  quitButton.addEventListener('mousedown', () => playSound('click'));
+  
+  continueButton.addEventListener('click', handleContinue);
+  continueButton.addEventListener('mousedown', () => playSound('click'));
 }
 
-/**
- * 결과 표시
- */
-function displayResult(result) {
-  const total = result.total_questions;
-  const correct = result.correct_count;
-  const incorrect = result.incorrect_count;
-  const luckydraw = result.luckydraw_count;
-
-  // 점수
-  scoreValue.textContent = `${correct}/${total}`;
-
-  // 점수 등급에 따른 스타일
-  const percentage = (correct / total) * 100;
-  if (percentage === 100) {
-    scoreValue.classList.add('score-value--perfect');
-  } else if (percentage >= 80) {
-    scoreValue.classList.add('score-value--good');
-  } else if (percentage >= 60) {
-    scoreValue.classList.add('score-value--normal');
-  } else {
-    scoreValue.classList.add('score-value--bad');
-  }
-
-  // 진행 바
-  setTimeout(() => {
-    progressBar.style.width = `${percentage}%`;
-
-    // 색상 변경
-    if (percentage === 100) {
-      progressBar.style.background = 'var(--color-gold)';
-    } else if (percentage >= 80) {
-      progressBar.style.background = 'var(--color-green)';
-    } else if (percentage >= 60) {
-      progressBar.style.background = 'var(--color-blue)';
-    } else {
-      progressBar.style.background = 'var(--color-red)';
-    }
-  }, 500);
-
-  // 통계
-  setTimeout(() => {
-    animateCount(correctCount, 0, correct, 1000);
-  }, 800);
-
-  setTimeout(() => {
-    animateCount(incorrectCount, 0, incorrect, 1000);
-  }, 1000);
-
-  setTimeout(() => {
-    animateCount(luckyDrawCount, 0, luckydraw, 1000);
-  }, 1200);
-
-  // 메시지 및 캐릭터
-  const { message, character } = getResultMessage(percentage, luckydraw);
-  resultMessage.textContent = message;
-  characterSprite.textContent = character;
-
-  // 효과음
-  setTimeout(() => {
-    if (percentage >= 80) {
-      playSound('correct');
-    } else {
-      playSound('coin');
-    }
-  }, 500);
-}
-
-/**
- * 숫자 카운트 애니메이션
- */
-function animateCount(element, start, end, duration) {
-  const range = end - start;
-  const increment = range / (duration / 16);
-  let current = start;
-
-  const timer = setInterval(() => {
-    current += increment;
-    if (current >= end) {
-      current = end;
-      clearInterval(timer);
-      playSound('coin');
-      animate(element.parentElement, 'bounce');
-    }
-    element.textContent = Math.floor(current);
-  }, 16);
-}
-
-/**
- * 결과 메시지 및 캐릭터
- */
-function getResultMessage(percentage, luckyDrawCount) {
-  let message, character;
-
-  if (percentage === 100) {
-    message = '완벽합니다! 🎉\n모든 문제를 맞혔어요!';
-    character = '🏆';
-  } else if (percentage >= 80) {
-    message = '훌륭해요! 👏\n거의 다 맞혔어요!';
-    character = '⭐';
-  } else if (percentage >= 60) {
-    message = '잘했어요! 👍\n다음에 더 잘할 수 있을 거예요!';
-    character = '😊';
-  } else {
-    message = '아쉬워요! 💪\n다시 도전해보세요!';
-    character = '😅';
-  }
-
-  // LuckyDraw 추가 메시지
-  if (luckyDrawCount > 0) {
-    message += `\n\nLuckyDraw 문제 ${luckyDrawCount}개 정답!`;
-  }
-
-  return { message, character };
-}
 
 /**
  * 컨페티 생성
@@ -186,12 +70,31 @@ function createConfetti() {
 }
 
 /**
- * 홈으로
+ * 그만하기
  */
-function handleHome() {
+function handleQuit() {
   sessionStorage.removeItem('quizResult');
+  sessionStorage.removeItem('currentSession');
   window.location.href = '/pages/quiz-list.html';
+}
+
+/**
+ * 계속하기
+ */
+function handleContinue() {
+  // 현재 세션 정보 확인
+  const sessionData = sessionStorage.getItem('currentSession');
+  if (!sessionData) {
+    alert('세션 정보가 없습니다');
+    window.location.href = '/pages/quiz-list.html';
+    return;
+  }
+
+  // 결과 데이터 제거하고 퀴즈 페이지로
+  sessionStorage.removeItem('quizResult');
+  window.location.href = '/pages/quiz.html';
 }
 
 // 초기화
 init();
+

@@ -24,3 +24,8 @@ Thumbs.db
 # Build
 dist/
 build/
+
+nul
+
+docs/claude-apikey.txt
+docs/promptedkey.txt

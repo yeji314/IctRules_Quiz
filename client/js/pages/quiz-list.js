@@ -10,8 +10,9 @@ import { $, show, hide, animate, playSound, formatDate } from '../modules/utils.
 requireAuth();
 
 // DOM 요소
-const userName = $('#userName');
-const logoutButton = $('#logoutButton');
+const userNameDisplay = $('#userNameDisplay');
+const goldFill = $('#goldFill');
+const userAvatar = $('#userAvatar');
 const loadingState = $('#loadingState');
 const quizList = $('#quizList');
 const errorState = $('#errorState');
@@ -21,15 +22,19 @@ const retryButton = $('#retryButton');
  * 초기화
  */
 async function init() {
-  // 사용자 정보 표시
+  // 사용자 정보 표시 (ㅇㅇㅇ님 형태)
   const user = getUser();
   if (user) {
-    userName.textContent = `${user.name} (${user.department})`;
+    userNameDisplay.textContent = `${user.name}님` || 'User';
+
+    // 골드바 계산 (임시로 랜덤 값 사용)
+    const goldPercent = Math.floor(Math.random() * 100);
+    goldFill.style.width = `${goldPercent}%`;
   }
 
   // 이벤트 리스너
-  logoutButton.addEventListener('click', handleLogout);
-  logoutButton.addEventListener('mousedown', () => playSound('click'));
+  userAvatar.addEventListener('click', handleLogout);
+  userAvatar.addEventListener('mousedown', () => playSound('click'));
   retryButton.addEventListener('click', loadQuizList);
 
   // 퀴즈 목록 로드
@@ -72,8 +77,8 @@ function renderQuizList(quizzes) {
 
   if (quizzes.length === 0) {
     quizList.innerHTML = `
-      <div class="pixel-card text-center">
-        <p>등록된 퀴즈가 없습니다.</p>
+      <div class="wood-board" style="justify-content: center; pointer-events: none;">
+        <p style="font-family: var(--font-pixel); font-size: 12px; color: #3e2723;">등록된 퀴즈가 없습니다.</p>
       </div>
     `;
     return;
@@ -86,90 +91,79 @@ function renderQuizList(quizzes) {
 }
 
 /**
- * 퀴즈 카드 생성
+ * 퀴즈 카드 생성 (나무판자 스타일)
  */
 function createQuizCard(quizItem, index) {
-  const card = document.createElement('div');
-  card.className = 'quiz-card';
-  if (quizItem.isExpired) {
-    card.classList.add('quiz-card--expired');
-  }
+  const board = document.createElement('div');
+  board.className = 'wood-board';
 
   // 애니메이션 딜레이
-  card.style.animation = `fadeIn 0.3s ease-out ${index * 0.1}s both`;
+  board.style.animation = `fadeIn 0.3s ease-out ${index * 0.15}s both`;
 
   // 진행률 계산
   const progressPercent = Math.round((quizItem.totalAnswered / quizItem.totalQuestions) * 100);
-
-  // LuckyDraw 스타 생성
-  const luckyDrawStars = [];
-  for (let i = 0; i < quizItem.luckyDrawTotal; i++) {
-    if (i < quizItem.luckyDrawCount) {
-      luckyDrawStars.push('<span class="star-filled">⭐</span>');
-    } else {
-      luckyDrawStars.push('<span class="star-empty">☆</span>');
-    }
-  }
 
   // 날짜 포맷
   const startDate = formatDate(quizItem.startDate);
   const endDate = formatDate(quizItem.endDate);
 
-  // 버튼 스타일 결정
-  let buttonClass = 'pixel-button--green';
+  // 상태 뱃지 및 버튼 텍스트
+  let statusBadge = '';
+  let buttonText = '';
+  let buttonDisabled = false;
+  
   if (quizItem.isExpired) {
-    buttonClass = 'pixel-button';
-  } else if (quizItem.currentRound > 0) {
-    buttonClass = 'pixel-button--yellow';
+    statusBadge = '<span class="status-badge status-badge--expired">만료</span>';
+    buttonText = '만료됨 🔒';
+    buttonDisabled = true;
+  } else if (progressPercent === 100) {
+    statusBadge = '<span class="status-badge status-badge--completed">완료</span>';
+    buttonText = '완료 ✓';
+    buttonDisabled = true;
+  } else if (progressPercent > 0) {
+    buttonText = '계속하기 →';
+  } else {
+    buttonText = '시작하기 →';
   }
 
-  card.innerHTML = `
-    <div class="quiz-card__header">
-      <h3 class="quiz-card__title">${quizItem.title}</h3>
-      <div class="quiz-card__date">
-        <span>${startDate} ~ ${endDate}</span>
-        ${quizItem.isExpired ? '<span class="date-badge date-badge--expired">만료됨</span>' : ''}
-      </div>
-    </div>
+  // LuckyDraw 별표 계산 (임시로 랜덤)
+  const luckyDrawCount = Math.floor(Math.random() * 4); // 0~3
+  const luckyDrawStars = '⭐'.repeat(luckyDrawCount) + '☆'.repeat(3 - luckyDrawCount);
 
-    <div class="quiz-card__progress">
-      <div class="progress-info">
-        <span class="progress-text">${quizItem.totalAnswered} / ${quizItem.totalQuestions} 문제 완료</span>
-        <span class="progress-percent">${progressPercent}%</span>
-      </div>
-      <div class="progress-bar-wrapper">
-        <div class="pixel-progress">
-          <div class="pixel-progress__bar" style="width: ${progressPercent}%"></div>
-        </div>
+  board.innerHTML = `
+    <div class="wood-nail wood-nail--left"></div>
+    <div class="quiz-info">
+      <div class="quiz-number">${String(index + 1).padStart(2, '0')}</div>
+      <div class="quiz-details">
+        <div class="quiz-title">${quizItem.title}</div>
       </div>
     </div>
-
-    <div class="quiz-card__luckydraw">
-      <span class="luckydraw-label">LuckyDraw:</span>
-      <div class="luckydraw-stars">
-        ${luckyDrawStars.join('')}
-      </div>
+    <button class="nes-btn ${buttonDisabled ? 'is-disabled' : 'is-primary'} quiz-action-btn" ${buttonDisabled ? 'disabled' : ''}>
+      ${buttonText}
+    </button>
+    <div class="quiz-meta-right">
+      <div class="quiz-progress-text">${quizItem.totalAnswered}/${quizItem.totalQuestions} 완료</div>
+      <div class="quiz-luckydraw">${luckyDrawStars}</div>
     </div>
-
-    <div class="quiz-card__footer">
-      <button
-        class="pixel-button start-button ${buttonClass}"
-        data-event-id="${quizItem.eventId}"
-        ${!quizItem.buttonEnabled ? 'disabled' : ''}
-      >
-        ${quizItem.buttonText}
-      </button>
-    </div>
+    <div class="wood-nail wood-nail--right"></div>
   `;
 
-  // 시작 버튼 이벤트
-  const startButton = card.querySelector('.start-button');
-  if (startButton && !startButton.disabled) {
-    startButton.addEventListener('mousedown', () => playSound('click'));
-    startButton.addEventListener('click', () => handleStartQuiz(quizItem.eventId));
+  // 버튼 클릭 이벤트
+  const actionBtn = board.querySelector('.quiz-action-btn');
+  if (actionBtn && !buttonDisabled) {
+    actionBtn.addEventListener('mousedown', () => playSound('click'));
+    actionBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleStartQuiz(quizItem.eventId);
+    });
+  }
+  
+  // 비활성화 상태 스타일
+  if (buttonDisabled) {
+    board.style.opacity = '0.7';
   }
 
-  return card;
+  return board;
 }
 
 /**

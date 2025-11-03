@@ -76,78 +76,184 @@ body::after {
   position: relative;
 }
 
-/* 픽셀 스타일 버튼 */
+/* NES.css 스타일 버튼 */
 .pixel-button {
   font-family: var(--font-pixel);
   font-size: 14px;
-  padding: var(--spacing-md) var(--spacing-lg);
-  border: var(--border-normal) solid var(--color-black);
-  background: var(--color-white);
-  color: var(--color-black);
-  cursor: pointer;
+  font-weight: normal;
+  padding: 10px 20px;
   position: relative;
-  transition: transform var(--transition-fast);
-  box-shadow: var(--shadow-sm);
-  text-transform: uppercase;
+  cursor: pointer;
+  text-transform: none;
+  border: 4px solid #000000;
+  border-radius: 0;
+  background: #ffffff;
+  color: #000000;
+
+  /* 픽셀화 렌더링 */
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+
+  /* NES.css 픽셀 테두리 효과 */
+  box-shadow:
+    inset -4px -4px 0px 0px #adafbc,
+    inset 4px 4px 0px 0px #ffffff;
+
+  transition: none;
 }
 
 .pixel-button:hover:not(:disabled) {
-  transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+  box-shadow:
+    inset -6px -6px 0px 0px #adafbc,
+    inset 6px 6px 0px 0px #ffffff;
 }
 
-.pixel-button:active:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: none;
+.pixel-button:active:not(:disabled),
+.pixel-button:focus:not(:disabled) {
+  box-shadow:
+    inset 4px 4px 0px 0px #adafbc,
+    inset -4px -4px 0px 0px #ffffff;
 }
 
 .pixel-button:disabled {
-  opacity: 0.5;
+  color: #adafbc;
   cursor: not-allowed;
+  box-shadow:
+    inset -4px -4px 0px 0px #d3d3d3,
+    inset 4px 4px 0px 0px #ffffff;
 }
 
-/* 버튼 색상 변형 */
-.pixel-button--red {
-  background: var(--color-red);
-  color: var(--color-white);
-}
-
+/* 버튼 색상 변형 - NES.css 스타일 */
+.pixel-button--primary,
 .pixel-button--blue {
-  background: var(--color-blue);
-  color: var(--color-white);
+  background: #209cee;
+  color: #ffffff;
+  box-shadow:
+    inset -4px -4px 0px 0px #006bb3,
+    inset 4px 4px 0px 0px #92d2f7;
 }
 
+.pixel-button--primary:hover:not(:disabled),
+.pixel-button--blue:hover:not(:disabled) {
+  box-shadow:
+    inset -6px -6px 0px 0px #006bb3,
+    inset 6px 6px 0px 0px #92d2f7;
+}
+
+.pixel-button--primary:active:not(:disabled),
+.pixel-button--primary:focus:not(:disabled),
+.pixel-button--blue:active:not(:disabled),
+.pixel-button--blue:focus:not(:disabled) {
+  box-shadow:
+    inset 4px 4px 0px 0px #006bb3,
+    inset -4px -4px 0px 0px #92d2f7;
+}
+
+.pixel-button--success,
 .pixel-button--green {
-  background: var(--color-green);
-  color: var(--color-white);
+  background: #92cc41;
+  color: #ffffff;
+  box-shadow:
+    inset -4px -4px 0px 0px #4aa52e,
+    inset 4px 4px 0px 0px #c8f785;
 }
 
+.pixel-button--success:hover:not(:disabled),
+.pixel-button--green:hover:not(:disabled) {
+  box-shadow:
+    inset -6px -6px 0px 0px #4aa52e,
+    inset 6px 6px 0px 0px #c8f785;
+}
+
+.pixel-button--success:active:not(:disabled),
+.pixel-button--success:focus:not(:disabled),
+.pixel-button--green:active:not(:disabled),
+.pixel-button--green:focus:not(:disabled) {
+  box-shadow:
+    inset 4px 4px 0px 0px #4aa52e,
+    inset -4px -4px 0px 0px #c8f785;
+}
+
+.pixel-button--warning,
 .pixel-button--yellow {
-  background: var(--color-yellow);
-  color: var(--color-black);
+  background: #f7d51d;
+  color: #000000;
+  box-shadow:
+    inset -4px -4px 0px 0px #e59400,
+    inset 4px 4px 0px 0px #f9ea7e;
 }
 
-.pixel-button--orange {
-  background: var(--color-orange);
-  color: var(--color-white);
+.pixel-button--warning:hover:not(:disabled),
+.pixel-button--yellow:hover:not(:disabled) {
+  box-shadow:
+    inset -6px -6px 0px 0px #e59400,
+    inset 6px 6px 0px 0px #f9ea7e;
 }
 
-/* 픽셀 스타일 입력 필드 */
+.pixel-button--warning:active:not(:disabled),
+.pixel-button--warning:focus:not(:disabled),
+.pixel-button--yellow:active:not(:disabled),
+.pixel-button--yellow:focus:not(:disabled) {
+  box-shadow:
+    inset 4px 4px 0px 0px #e59400,
+    inset -4px -4px 0px 0px #f9ea7e;
+}
+
+.pixel-button--error,
+.pixel-button--red {
+  background: #e76e55;
+  color: #ffffff;
+  box-shadow:
+    inset -4px -4px 0px 0px #8c2022,
+    inset 4px 4px 0px 0px #f5b3aa;
+}
+
+.pixel-button--error:hover:not(:disabled),
+.pixel-button--red:hover:not(:disabled) {
+  box-shadow:
+    inset -6px -6px 0px 0px #8c2022,
+    inset 6px 6px 0px 0px #f5b3aa;
+}
+
+.pixel-button--error:active:not(:disabled),
+.pixel-button--error:focus:not(:disabled),
+.pixel-button--red:active:not(:disabled),
+.pixel-button--red:focus:not(:disabled) {
+  box-shadow:
+    inset 4px 4px 0px 0px #8c2022,
+    inset -4px -4px 0px 0px #f5b3aa;
+}
+
+/* NES.css 스타일 입력 필드 */
 .pixel-input {
   font-family: var(--font-pixel);
   font-size: 14px;
   padding: var(--spacing-md);
-  border: var(--border-normal) solid var(--color-black);
+  border: 4px solid var(--color-black);
+  border-radius: 0;
   background: var(--color-white);
   color: var(--color-black);
   width: 100%;
-  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.1);
+
+  /* NES.css 픽셀 테두리 효과 */
+  box-shadow:
+    inset 4px 4px 0px 0px #adafbc,
+    inset -4px -4px 0px 0px #ffffff;
+
+  /* 픽셀화 렌더링 */
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+
+  transition: none;
 }
 
 .pixel-input:focus {
   outline: none;
-  border-color: var(--color-blue);
-  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.1), 0 0 0 2px var(--color-blue);
+  box-shadow:
+    inset 6px 6px 0px 0px #adafbc,
+    inset -6px -6px 0px 0px #ffffff;
 }
 
 /* 픽셀 스타일 제목 */

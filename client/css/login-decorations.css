@@ -1,0 +1,199 @@
+/* 픽셀 장식 요소 - 지형 위 배치 (풍선 제거, 구름 활성화, 크기 3배) */
+
+/* 풍선만 숨기기 */
+.balloon {
+  display: none !important;
+}
+
+/* 구름 활성화 - 3배 크기로 슬라이드 */
+.cloud-item {
+  display: block !important;
+  font-size: 84px !important;
+  position: absolute !important;
+  animation: slideCloud 40s linear infinite !important;
+  opacity: 0.9 !important;
+  z-index: 10 !important;
+}
+
+/* 장식 요소 공통 - 지형 바로 위에 배치 */
+.character,
+.pipe,
+.castle,
+.sunflower,
+.plant,
+.tnt,
+.tree,
+.flag {
+  position: absolute !important;
+  bottom: 120px !important;
+  filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.3)) !important;
+}
+
+/* 캐릭터 - 3배 크기 (48px x 3 = 144px) */
+.character {
+  font-size: 144px !important;
+  transform: scaleX(-1) !important;
+  left: 10% !important;
+}
+
+/* 나무 - 3배 크기 (46px x 3 = 138px) */
+.tree {
+  font-size: 138px !important;
+  left: 5% !important;
+}
+
+/* 깃발 - 3배 크기 (20px x 3 = 60px) */
+.flag {
+  font-size: 60px !important;
+  right: 5% !important;
+}
+
+/* 파이프 - 3배 크기 */
+.pipe {
+  width: 132px !important;
+  height: 240px !important;
+  background: linear-gradient(to right, #40b040 0%, #50c850 50%, #40b040 100%) !important;
+  border: 6px solid #000000 !important;
+  border-radius: 8px 8px 0 0 !important;
+  left: 25% !important;
+}
+
+.pipe::before {
+  content: '' !important;
+  position: absolute !important;
+  top: -15px !important;
+  left: -10px !important;
+  width: 152px !important;
+  height: 36px !important;
+  background: linear-gradient(to right, #40b040 0%, #50c850 50%, #40b040 100%) !important;
+  border: 6px solid #000000 !important;
+  border-radius: 6px !important;
+}
+
+/* 성 - 3배 크기 (56px x 3 = 168px) */
+.castle {
+  font-size: 168px !important;
+  right: 15% !important;
+}
+
+/* 해바라기 - 3배 크기 (38px x 3 = 114px) */
+.sunflower {
+  font-size: 114px !important;
+  left: 40% !important;
+}
+
+/* 식물 - 3배 크기 (36px x 3 = 108px) */
+.plant {
+  font-size: 108px !important;
+  right: 30% !important;
+}
+
+/* TNT - 3배 크기 (42px x 3 = 126px) */
+.tnt {
+  font-size: 126px !important;
+  right: 45% !important;
+}
+
+/* 반응형 - 태블릿 */
+@media (max-width: 1024px) {
+  .character,
+  .pipe,
+  .castle,
+  .sunflower,
+  .plant,
+  .tnt,
+  .tree,
+  .flag {
+    bottom: 120px !important;
+  }
+
+  .character {
+    font-size: 108px !important;
+  }
+
+  .tree {
+    font-size: 104px !important;
+  }
+
+  .castle {
+    font-size: 132px !important;
+  }
+
+  .sunflower {
+    font-size: 90px !important;
+  }
+
+  .plant {
+    font-size: 84px !important;
+  }
+
+  .tnt {
+    font-size: 102px !important;
+  }
+
+  .flag {
+    font-size: 48px !important;
+  }
+
+  .pipe {
+    width: 108px !important;
+    height: 192px !important;
+  }
+
+  .pipe::before {
+    width: 144px !important;
+    height: 60px !important;
+  }
+}
+
+/* 반응형 - 모바일 */
+@media (max-width: 768px) {
+  .character,
+  .pipe,
+  .castle,
+  .sunflower,
+  .plant,
+  .tnt,
+  .tree,
+  .flag {
+    bottom: 100px !important;
+  }
+
+  .character {
+    font-size: 90px !important;
+  }
+
+  .tree {
+    font-size: 84px !important;
+  }
+
+  .castle {
+    font-size: 102px !important;
+  }
+
+  .sunflower {
+    font-size: 72px !important;
+  }
+
+  .plant {
+    font-size: 66px !important;
+  }
+
+  .tnt {
+    font-size: 78px !important;
+  }
+
+  .flag {
+    font-size: 42px !important;
+  }
+
+  .pipe {
+    width: 78px !important;
+    height: 144px !important;
+  }
+
+  .pipe::before {
+    width: 108px !important;
+    height: 48px !important;
+  }
+}
