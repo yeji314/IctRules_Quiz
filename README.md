@@ -53,7 +53,7 @@ IctRulesQuiz/
 - Node.js 18+
 - Express.js (MVC 패턴)
 - Sequelize ORM
-- PostgreSQL
+- SQLite 3
 - JWT (인증)
 - bcrypt (비밀번호 해싱)
 
@@ -62,26 +62,11 @@ IctRulesQuiz/
 ### 사전 요구사항
 
 - Node.js 18 이상
-- PostgreSQL 12 이상
 - npm 또는 yarn
 
-### 1단계: 데이터베이스 설정
+### 1단계: 환경 변수 설정
 
-PostgreSQL 데이터베이스를 생성합니다.
-
-```bash
-# Windows (PowerShell)
-& 'C:\Program Files\PostgreSQL\16\bin\createdb.exe' -U postgres ict_rules_quiz
-
-# macOS/Linux
-createdb -U postgres ict_rules_quiz
-```
-
-상세 설명: [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)
-
-### 2단계: 환경 변수 설정
-
-서버 폴더에 `.env` 파일을 생성합니다.
+서버 폴더에 `.env` 파일을 생성합니다 (`.env.example` 참고).
 
 ```bash
 cd server
@@ -90,25 +75,24 @@ cd server
 `.env` 파일 내용:
 
 ```env
-# 데이터베이스
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=ict_rules_quiz
-DB_USER=postgres
-DB_PASSWORD=your_password_here
+# 서버
+PORT=3001
+NODE_ENV=development
 
 # JWT
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+JWT_EXPIRES_IN=7d
 
-# 서버
-PORT=5000
-NODE_ENV=development
+# Session Secret
+SESSION_SECRET=your_session_secret_key_change_this_in_production
 
 # CORS
 CORS_ORIGIN=http://localhost:3000
 ```
 
-### 3단계: 의존성 설치
+> **참고**: SQLite는 파일 기반 데이터베이스로 별도 설치가 필요 없으며, `database/quiz.db` 파일로 자동 생성됩니다.
+
+### 2단계: 의존성 설치
 
 ```bash
 # 서버 의존성 설치
@@ -120,19 +104,26 @@ cd ../client
 npm install
 ```
 
-### 4단계: 데이터베이스 마이그레이션 및 시딩
+### 3단계: 데이터베이스 마이그레이션 및 시딩
 
 ```bash
 cd server
 
-# 테이블 생성
-npx sequelize-cli db:migrate
-
-# 기본 데이터 삽입 (관리자 계정)
-npx sequelize-cli db:seed:all
+# 데이터베이스 초기화 (테이블 생성 + 기본 데이터 삽입)
+npm run db:reset
 ```
 
-### 5단계: 서버 실행
+또는 개별 실행:
+
+```bash
+# 테이블 생성
+npm run db:migrate
+
+# 기본 데이터 삽입 (관리자 계정, 샘플 퀴즈)
+npm run db:seed
+```
+
+### 4단계: 서버 실행
 
 **방법 1: 개발 모드 (추천)**
 
@@ -152,10 +143,10 @@ npx http-server -p 3000 -c-1
 2. 우클릭 → "Open with Live Server" 선택
 3. 서버는 별도 터미널에서 실행: `cd server && npm run dev`
 
-### 6단계: 접속
+### 5단계: 접속
 
 - 프론트엔드: http://localhost:3000/pages/index.html
-- 백엔드 API: http://localhost:5000/api/health
+- 백엔드 API: http://localhost:3001/api
 
 ## 기본 계정
 
