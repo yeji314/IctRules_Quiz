@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 
 const app = express();
 
@@ -13,6 +14,10 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 정적 파일 서빙 (client 폴더)
+const clientRoot = path.resolve(__dirname, '../client');
+app.use(express.static(clientRoot));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -33,6 +38,11 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/admin', adminRoutes);
+
+// 루트 접근 시 로그인 페이지로 이동
+app.get('/', (req, res) => {
+  res.redirect('/pages/index.html');
+});
 
 // 404 핸들러
 app.use((req, res) => {

@@ -29,3 +29,10 @@ nul
 
 docs/claude-apikey.txt
 docs/promptedkey.txt
+
+# YoYo AI version control directory
+.yoyo/
+ 
+# Local SQLite database (generated at repo root)
+database/
+*.db
