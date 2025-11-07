@@ -47,7 +47,7 @@ body::after {
 
 .title-ict {
   font-family: var(--font-pixel);
-  font-size: clamp(48px, 8vw, 96px);
+  font-size: clamp(36px, 6vw, 82px);
   color: #becee2;
   letter-spacing: 4px;
   margin-bottom: 10px;
@@ -72,7 +72,7 @@ body::after {
 
 .title-quiz {
   font-family: var(--font-pixel);
-  font-size: clamp(48px, 8vw, 96px);
+  font-size: clamp(36px, 6vw, 82px);
   color: #d1d871;
   letter-spacing: 4px;
   text-shadow:
@@ -92,10 +92,10 @@ body::after {
 /* 로그인 폼 */
 .login-form {
   width: 100%;
-  max-width: 500px;
+  max-width: 333px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 13px;
   margin-bottom: 30px;
 }
 
@@ -104,86 +104,34 @@ body::after {
   width: 100%;
 }
 
-/* 게임 스타일 입력 필드 */
-.game-input {
+/* nes-input 스타일 조정 */
+.login-form .nes-input {
   width: 100%;
-  height: 60px;
-  padding: 0 24px;
-  font-family: var(--font-pixel);
-  font-size: 16px;
-  color: #000000;
-  background: #ffffff;
-  border: 6px solid #000000;
-  border-radius: 35px;
-  outline: none;
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
-  transition: transform 0.1s, box-shadow 0.1s;
+  font-size: 14px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  border-image-repeat: stretch !important;
 }
 
-.game-input::placeholder {
-  color: #888888;
-}
-
-.game-input:focus {
-  transform: translateY(2px);
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-  border-color: #000000;
-}
-
-/* START 버튼 */
-.start-button {
+/* START 버튼 - nes.css 스타일 사용 */
+.login-form .start-button {
   width: 100%;
-  height: 70px;
-  padding: 0 24px;
-  font-family: var(--font-pixel);
-  font-size: 20px;
-  color: #000000;
-  background: #6299d0;
-  border: 6px solid #000000;
-  border-radius: 40px;
-  cursor: pointer;
-  outline: none;
-  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3);
-  transition: transform 0.1s, box-shadow 0.1s;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  color: #6299d0;
+  border-image-repeat: space !important;
   margin-top: 10px;
-}
-
-.start-button:hover:not(:disabled) {
-  background: #b8cae7;
-  transform: translateY(2px);
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
-}
-
-.start-button:active:not(:disabled) {
-  transform: translateY(6px);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
-}
-
-.start-button:disabled {
-  background: #cccccc;
-  cursor: not-allowed;
 }
 
 /* 에러 메시지 */
 .error-message {
   background: #cf2020;
   color: #ffffff;
-  border: 4px solid #000000;
-  border-radius: 8px;
-  padding: 16px;
+  border: 3px solid #000000;
+  border-radius: 5px;
+  padding: 11px;
   font-family: var(--font-pixel);
-  font-size: 12px;
+  font-size: 8px;
   text-align: center;
-  margin-top: 10px;
-}
-
-/* 손 커서 */
-.hand-cursor {
-  font-size: 40px;
-  animation: point 1s ease-in-out infinite;
-  margin-top: 20px;
+  margin-top: 7px;
 }
 
 @keyframes point {
@@ -221,47 +169,9 @@ body::after {
   right: 0;
 }
 
-.balloon,
-.character,
-.pipe,
-.castle,
-.sunflower,
-.plant,
-.tnt,
-.tree,
-.flag,
 .cloud-item {
   position: absolute;
   filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.balloon {
-  font-size: 32px;
-}
-
-.balloon-orange {
-  filter: hue-rotate(20deg) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.balloon-blue {
-  filter: hue-rotate(200deg) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.balloon-darkblue {
-  filter: hue-rotate(220deg) brightness(0.6) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.character {
-  font-size: 48px;
-  transform: scaleX(-1);
-}
-
-.tree {
-  font-size: 46px;
-}
-
-.flag {
-  font-size: 20px;
 }
 
 .cloud-item {
@@ -269,41 +179,6 @@ body::after {
   opacity: 0.8;
 }
 
-.pipe {
-  width: 44px;
-  height: 80px;
-  background: linear-gradient(to right, #94481d 0%, #94481d 50%, #94481d 100%);
-  border: 4px solid #000000;
-  border-radius: 6px 6px 0 0;
-}
-
-.pipe::before {
-  content: '';
-  position: absolute;
-  top: -10px;
-  left: -7px;
-  width: 58px;
-  height: 24px;
-  background: linear-gradient(to right, #40b040 0%, #50c850 50%, #40b040 100%);
-  border: 4px solid #000000;
-  border-radius: 4px;
-}
-
-.castle {
-  font-size: 56px;
-}
-
-.sunflower {
-  font-size: 38px;
-}
-
-.plant {
-  font-size: 36px;
-}
-
-.tnt {
-  font-size: 42px;
-}
 
 /* 픽셀 지형 */
 .pixel-ground {
@@ -342,10 +217,6 @@ body::after {
     linear-gradient(90deg,
       transparent 0px, transparent 4px,
       #40a040 4px, #40a040 8px,
-
-
-
-
       transparent 8px, transparent 12px,
       #40a040 12px, #40a040 14px,
       transparent 14px, transparent 16px,
@@ -458,10 +329,53 @@ body::after {
   pointer-events: none;
 }
 
+/* SOL 캐릭터 - 잔디 위에서 좌우로 움직임 */
+.sol-character {
+  position: fixed;
+  bottom: 120px;
+  left: 0;
+  width: 240px;
+  height: auto;
+  z-index: 20;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  animation: solWalk 150s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes solWalk {
+  /* 시작을 오른쪽에서 왼쪽으로 이동하도록 변경 */
+  0% {
+    left: calc(100% - 0px);
+    transform: scaleX(1);
+  }
+  48% {
+    left: -100px;
+    transform: scaleX(1);
+  }
+  50% {
+    left: -100px;
+    transform: scaleX(-1);
+  }
+  98% {
+    left: calc(100% - 0px);
+    transform: scaleX(-1);
+  }
+  100% {
+    left: calc(100% - 0px);
+    transform: scaleX(1);
+  }
+}
+
 /* 반응형 - 태블릿 */
 @media (max-width: 1024px) {
   .login-container {
     padding: 40px 20px 180px;
+  }
+
+  .sol-character {
+    width: 210px;
   }
 
   .balloon {
@@ -534,17 +448,6 @@ body::after {
     gap: 15px;
   }
 
-  .game-input {
-    height: 50px;
-    font-size: 14px;
-    padding: 0 16px;
-  }
-
-  .start-button {
-    height: 60px;
-    font-size: 16px;
-  }
-
   .hand-cursor {
     font-size: 36px;
   }
@@ -560,6 +463,11 @@ body::after {
 
   .dirt-layer {
     height: 65px;
+  }
+
+  .sol-character {
+    width: 180px;
+    bottom: 100px;
   }
 
   /* 모바일에서 장식 요소 축소 */
@@ -628,24 +536,18 @@ body::after {
     margin-bottom: 20px;
   }
 
-  .game-input {
-    height: 45px;
-    font-size: 12px;
-    padding: 0 18px;
-  }
-
-  .start-button {
-    height: 50px;
-    font-size: 14px;
-  }
-
   .error-message {
-    font-size: 10px;
-    padding: 12px;
+    font-size: 7px;
+    padding: 8px;
   }
 
   .hand-cursor {
     font-size: 28px;
+  }
+
+  .sol-character {
+    width: 150px;
+    bottom: 100px;
   }
 
   /* 작은 화면에서 일부 장식 숨기기 */

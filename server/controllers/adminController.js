@@ -1,5 +1,7 @@
 const db = require('../models');
 const { Op } = require('sequelize');
+const swingAuthService = require('../services/swingAuthService');
+const swingApiClient = require('../services/swingApiClient');
 
 /**
  * ==========================================
@@ -77,7 +79,7 @@ const listEvents = async (req, res) => {
  */
 const createEvent = async (req, res) => {
   try {
-    const { title, year_month, start_date, end_date, is_active } = req.body;
+    const { title, year_month, start_date, end_date, max_winners, is_active } = req.body;
 
     // 입력 검증
     if (!title || !year_month || !start_date || !end_date) {
@@ -109,6 +111,7 @@ const createEvent = async (req, res) => {
       year_month,
       start_date,
       end_date,
+      max_winners: max_winners || 10,
       is_active: is_active !== undefined ? is_active : true
     });
 
@@ -132,7 +135,7 @@ const createEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, year_month, start_date, end_date, is_active } = req.body;
+    const { title, year_month, start_date, end_date, max_winners, is_active } = req.body;
 
     const event = await db.QuizEvent.findByPk(id);
     if (!event) {
@@ -165,6 +168,7 @@ const updateEvent = async (req, res) => {
       year_month: year_month || event.year_month,
       start_date: start_date || event.start_date,
       end_date: end_date || event.end_date,
+      max_winners: max_winners !== undefined ? max_winners : event.max_winners,
       is_active: is_active !== undefined ? is_active : event.is_active
     });
 
@@ -464,6 +468,137 @@ const deleteQuestion = async (req, res) => {
     console.error('문제 삭제 에러:', error);
     res.status(500).json({
       error: '문제 삭제에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * 문제 대량 업로드 (Excel)
+ * POST /api/admin/questions/bulk-upload
+ */
+const bulkUploadQuestions = async (req, res) => {
+  try {
+    const { event_id, questions } = req.body;
+
+    // 입력 검증
+    if (!event_id || !questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({
+        error: '필수 정보가 누락되었거나 문제 데이터가 없습니다'
+      });
+    }
+
+    // 이벤트 확인
+    const event = await db.QuizEvent.findByPk(event_id);
+    if (!event) {
+      return res.status(404).json({
+        error: '이벤트를 찾을 수 없습니다'
+      });
+    }
+
+    const validTypes = ['dragdrop', 'typing', 'multiple', 'ox', 'find_wrong'];
+    const validCategories = ['normal', 'luckydraw'];
+
+    const results = {
+      success: [],
+      errors: []
+    };
+
+    // 각 문제 처리
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const rowNum = i + 2; // Excel row number (assuming header at row 1)
+
+      try {
+        // 필수 필드 검증
+        if (!q.question_type || !q.category || !q.question_text || !q.question_data) {
+          results.errors.push({
+            row: rowNum,
+            error: '필수 정보가 누락되었습니다',
+            data: q
+          });
+          continue;
+        }
+
+        // 문제 타입 검증
+        if (!validTypes.includes(q.question_type)) {
+          results.errors.push({
+            row: rowNum,
+            error: `유효하지 않은 문제 타입: ${q.question_type}`,
+            data: q
+          });
+          continue;
+        }
+
+        // 카테고리 검증
+        if (!validCategories.includes(q.category)) {
+          results.errors.push({
+            row: rowNum,
+            error: `유효하지 않은 카테고리: ${q.category}`,
+            data: q
+          });
+          continue;
+        }
+
+        // question_data 파싱 (문자열인 경우)
+        let questionData = q.question_data;
+        if (typeof questionData === 'string') {
+          try {
+            questionData = JSON.parse(questionData);
+          } catch (e) {
+            results.errors.push({
+              row: rowNum,
+              error: 'question_data JSON 형식이 올바르지 않습니다',
+              data: q
+            });
+            continue;
+          }
+        }
+
+        // correct_answer 검증
+        if (!questionData.correct_answer) {
+          results.errors.push({
+            row: rowNum,
+            error: 'question_data에 correct_answer가 필요합니다',
+            data: q
+          });
+          continue;
+        }
+
+        // 문제 생성
+        const question = await db.Question.create({
+          event_id,
+          question_type: q.question_type,
+          category: q.category,
+          question_text: q.question_text,
+          question_data: questionData,
+          explanation: q.explanation || null
+        });
+
+        results.success.push({
+          row: rowNum,
+          question_id: question.id,
+          question_text: q.question_text
+        });
+
+      } catch (error) {
+        results.errors.push({
+          row: rowNum,
+          error: error.message,
+          data: q
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `${results.success.length}개 문제 생성 완료, ${results.errors.length}개 실패`,
+      results
+    });
+
+  } catch (error) {
+    console.error('문제 대량 업로드 에러:', error);
+    res.status(500).json({
+      error: '문제 대량 업로드에 실패했습니다'
     });
   }
 };
@@ -995,6 +1130,181 @@ const claimPrize = async (req, res) => {
   }
 };
 
+/**
+ * ==========================================
+ * SSO 설정 관리
+ * ==========================================
+ */
+
+/**
+ * GET /api/admin/sso/settings
+ * SSO 설정 전체 조회
+ */
+const getSsoSettings = async (req, res) => {
+  try {
+    const { category } = req.query;
+
+    let settings;
+    if (category) {
+      settings = await db.SSOSettings.findAll({
+        where: { category },
+        order: [['setting_key', 'ASC']]
+      });
+    } else {
+      settings = await db.SSOSettings.findAll({
+        order: [['category', 'ASC'], ['setting_key', 'ASC']]
+      });
+    }
+
+    // 민감한 정보는 숨김 처리
+    const sanitizedSettings = settings.map(setting => setting.toJSON());
+
+    res.json({
+      success: true,
+      settings: sanitizedSettings
+    });
+
+  } catch (error) {
+    console.error('SSO 설정 조회 에러:', error);
+    res.status(500).json({
+      error: 'SSO 설정 조회에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * GET /api/admin/sso/settings/:key
+ * 특정 SSO 설정 조회
+ */
+const getSsoSetting = async (req, res) => {
+  try {
+    const { key } = req.params;
+
+    const setting = await db.SSOSettings.findOne({
+      where: { setting_key: key }
+    });
+
+    if (!setting) {
+      return res.status(404).json({
+        error: '설정을 찾을 수 없습니다'
+      });
+    }
+
+    res.json({
+      success: true,
+      setting: setting.toJSON()
+    });
+
+  } catch (error) {
+    console.error('SSO 설정 조회 에러:', error);
+    res.status(500).json({
+      error: 'SSO 설정 조회에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * PUT /api/admin/sso/settings/:key
+ * SSO 설정 업데이트
+ */
+const updateSsoSetting = async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { value } = req.body;
+
+    if (value === undefined) {
+      return res.status(400).json({
+        error: 'value 필드가 필요합니다'
+      });
+    }
+
+    const setting = await db.SSOSettings.findOne({
+      where: { setting_key: key }
+    });
+
+    if (!setting) {
+      return res.status(404).json({
+        error: '설정을 찾을 수 없습니다'
+      });
+    }
+
+    if (!setting.is_editable) {
+      return res.status(403).json({
+        error: '이 설정은 수정할 수 없습니다'
+      });
+    }
+
+    setting.setValue(value);
+    await setting.save();
+
+    res.json({
+      success: true,
+      message: '설정이 업데이트되었습니다',
+      setting: setting.toJSON()
+    });
+
+  } catch (error) {
+    console.error('SSO 설정 업데이트 에러:', error);
+    res.status(500).json({
+      error: 'SSO 설정 업데이트에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * GET /api/admin/sso/status
+ * SSO 시스템 상태 확인
+ */
+const getSsoStatus = async (req, res) => {
+  try {
+    // SSO 활성화 여부
+    const isEnabled = swingAuthService.isEnabled();
+
+    // 설정 정보
+    const config = swingAuthService.config;
+
+    // Health check (optional)
+    let apiHealthy = false;
+    try {
+      apiHealthy = await swingApiClient.healthCheck();
+    } catch (error) {
+      // Health check 실패는 무시
+    }
+
+    // 통계
+    const totalUsers = await db.User.count();
+    const ssoUsers = await db.User.count({
+      where: { login_method: 'swing_sso' }
+    });
+    const localUsers = await db.User.count({
+      where: { login_method: 'local' }
+    });
+
+    res.json({
+      success: true,
+      status: {
+        enabled: isEnabled,
+        environment: config.environment,
+        api_healthy: apiHealthy,
+        auto_create_user: config.userManagement.autoCreateUser,
+        sync_user_info: config.userManagement.syncUserInfo,
+        access_control_type: config.accessControl.type
+      },
+      statistics: {
+        total_users: totalUsers,
+        sso_users: ssoUsers,
+        local_users: localUsers
+      }
+    });
+
+  } catch (error) {
+    console.error('SSO 상태 조회 에러:', error);
+    res.status(500).json({
+      error: 'SSO 상태 조회에 실패했습니다'
+    });
+  }
+};
+
 module.exports = {
   // 이벤트 관리
   listEvents,
@@ -1007,6 +1317,7 @@ module.exports = {
   createQuestion,
   updateQuestion,
   deleteQuestion,
+  bulkUploadQuestions,
 
   // 통계
   getOverview,
@@ -1017,5 +1328,11 @@ module.exports = {
   // LuckyDraw
   drawWinners,
   getWinners,
-  claimPrize
+  claimPrize,
+
+  // SSO 설정 관리
+  getSsoSettings,
+  getSsoSetting,
+  updateSsoSetting,
+  getSsoStatus
 };

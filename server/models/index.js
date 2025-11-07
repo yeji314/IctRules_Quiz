@@ -4,19 +4,12 @@ const config = require('../config/database');
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
 
-// Sequelize 인스턴스 생성
-const sequelize = new Sequelize(
-  dbConfig.database,
-  dbConfig.username,
-  dbConfig.password,
-  {
-    host: dbConfig.host,
-    port: dbConfig.port,
-    dialect: dbConfig.dialect,
-    logging: dbConfig.logging,
-    pool: dbConfig.pool
-  }
-);
+// Sequelize 인스턴스 생성 (SQLite)
+const sequelize = new Sequelize({
+  dialect: dbConfig.dialect,
+  storage: dbConfig.storage,
+  logging: dbConfig.logging
+});
 
 // 모델 import
 const User = require('./User')(sequelize);
@@ -25,6 +18,7 @@ const Question = require('./Question')(sequelize);
 const QuizSession = require('./QuizSession')(sequelize);
 const QuizAnswer = require('./QuizAnswer')(sequelize);
 const LuckyDraw = require('./LuckyDraw')(sequelize);
+const SSOSettings = require('./SSOSettings')(sequelize);
 
 // 모델 관계 설정
 const db = {
@@ -35,7 +29,8 @@ const db = {
   Question,
   QuizSession,
   QuizAnswer,
-  LuckyDraw
+  LuckyDraw,
+  SSOSettings
 };
 
 // User 관계

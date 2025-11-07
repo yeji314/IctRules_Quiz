@@ -40,6 +40,29 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM('user', 'admin'),
       defaultValue: 'user',
       allowNull: false
+    },
+    swing_user_id: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      unique: true,
+      comment: 'Swing SSO User ID'
+    },
+    position: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      comment: 'Position/Title'
+    },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Active status'
+    },
+    login_method: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: 'local',
+      comment: 'Authentication method: local or swing_sso'
     }
   }, {
     tableName: 'users',

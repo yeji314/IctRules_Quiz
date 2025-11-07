@@ -3,7 +3,7 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     // 퀴즈 이벤트 생성
-    const [event] = await queryInterface.bulkInsert('quiz_events', [{
+    await queryInterface.bulkInsert('quiz_events', [{
       title: '2025년 1월 내규 퀴즈',
       year_month: '2025-01',
       start_date: new Date('2025-01-01'),
@@ -11,13 +11,13 @@ module.exports = {
       is_active: true,
       created_at: new Date(),
       updated_at: new Date()
-    }], { returning: true });
+    }], {});
 
     // 이벤트 ID 가져오기
     const events = await queryInterface.sequelize.query(
-      'SELECT id FROM quiz_events WHERE year_month = ?',
+      'SELECT id FROM quiz_events WHERE year_month = :yearMonth',
       {
-        replacements: ['2025-01'],
+        replacements: { yearMonth: '2025-01' },
         type: queryInterface.sequelize.QueryTypes.SELECT
       }
     );

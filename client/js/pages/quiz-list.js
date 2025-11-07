@@ -11,8 +11,7 @@ requireAuth();
 
 // DOM 요소
 const userNameDisplay = $('#userNameDisplay');
-const goldFill = $('#goldFill');
-const userAvatar = $('#userAvatar');
+const logoutBtn = $('#logoutBtn');
 const loadingState = $('#loadingState');
 const quizList = $('#quizList');
 const errorState = $('#errorState');
@@ -26,15 +25,11 @@ async function init() {
   const user = getUser();
   if (user) {
     userNameDisplay.textContent = `${user.name}님` || 'User';
-
-    // 골드바 계산 (임시로 랜덤 값 사용)
-    const goldPercent = Math.floor(Math.random() * 100);
-    goldFill.style.width = `${goldPercent}%`;
   }
 
   // 이벤트 리스너
-  userAvatar.addEventListener('click', handleLogout);
-  userAvatar.addEventListener('mousedown', () => playSound('click'));
+  logoutBtn.addEventListener('click', handleLogout);
+  logoutBtn.addEventListener('mousedown', () => playSound('click'));
   retryButton.addEventListener('click', loadQuizList);
 
   // 퀴즈 목록 로드
@@ -112,7 +107,12 @@ function createQuizCard(quizItem, index) {
   let buttonText = '';
   let buttonDisabled = false;
   
-  if (quizItem.isExpired) {
+
+  // LuckyDraw 별표 계산 (nes.css 아이콘으로 표시)
+  const luckyDrawCount = quizItem.luckyDrawCount || 0;
+  let luckyDrawStars = '';
+
+   if (quizItem.isExpired) {
     statusBadge = '<span class="status-badge status-badge--expired">만료</span>';
     buttonText = '만료됨 🔒';
     buttonDisabled = true;
@@ -121,14 +121,18 @@ function createQuizCard(quizItem, index) {
     buttonText = '완료 ✓';
     buttonDisabled = true;
   } else if (progressPercent > 0) {
-    buttonText = '계속하기 →';
+    buttonText = '계속하기';
   } else {
-    buttonText = '시작하기 →';
+    buttonText = '시작하기';
+  }  
+
+  // 채워진 별과 빈 별 생성
+  if (luckyDrawCount > 0) {
+    luckyDrawStars += '<i class="nes-icon is-medium star"></i>';
+  } else {
+    luckyDrawStars += '<i class="nes-icon is-medium star is-empty"></i>';
   }
 
-  // LuckyDraw 별표 계산 (임시로 랜덤)
-  const luckyDrawCount = Math.floor(Math.random() * 4); // 0~3
-  const luckyDrawStars = '⭐'.repeat(luckyDrawCount) + '☆'.repeat(3 - luckyDrawCount);
 
   board.innerHTML = `
     <div class="wood-nail wood-nail--left"></div>
@@ -137,14 +141,11 @@ function createQuizCard(quizItem, index) {
       <div class="quiz-details">
         <div class="quiz-title">${quizItem.title}</div>
       </div>
+      <div class="quiz-star-badge">${luckyDrawStars}</div>
     </div>
     <button class="nes-btn ${buttonDisabled ? 'is-disabled' : 'is-primary'} quiz-action-btn" ${buttonDisabled ? 'disabled' : ''}>
       ${buttonText}
     </button>
-    <div class="quiz-meta-right">
-      <div class="quiz-progress-text">${quizItem.totalAnswered}/${quizItem.totalQuestions} 완료</div>
-      <div class="quiz-luckydraw">${luckyDrawStars}</div>
-    </div>
     <div class="wood-nail wood-nail--right"></div>
   `;
 
@@ -173,18 +174,27 @@ async function handleStartQuiz(eventId) {
   playSound('coin');
 
   try {
+    console.log('[Quiz Start] 세션 시작 요청, eventId:', eventId);
+
     // 세션 시작 API 호출
     const response = await quiz.startSession(eventId);
 
+    console.log('[Quiz Start] API 응답:', response);
+    console.log('[Quiz Start] 첫 문제:', response.question);
+
     if (response.success) {
-      // 세션 정보 저장
-      sessionStorage.setItem('currentSession', JSON.stringify({
+      // 세션 정보 저장 (동적 문제 선택 방식)
+      const sessionData = {
         sessionId: response.session.id,
         sessionNumber: response.session.session_number,
         eventId: response.session.event_id,
-        questions: response.questions,
-        currentQuestionIndex: 0
-      }));
+        question: response.question,  // 첫 번째 문제만 저장
+        current_question_number: response.current_question_number || 1,
+        total_questions: response.total_questions || 5
+      };
+
+      console.log('[Quiz Start] 세션 데이터 저장:', sessionData);
+      sessionStorage.setItem('currentSession', JSON.stringify(sessionData));
 
       // 퀴즈 페이지로 이동
       window.location.href = '/pages/quiz.html';

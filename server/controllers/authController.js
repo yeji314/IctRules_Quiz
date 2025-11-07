@@ -1,5 +1,6 @@
 const { generateToken } = require('../utils/jwt');
 const messengerService = require('../services/messengerService');
+const swingAuthService = require('../services/swingAuthService');
 const db = require('../models');
 
 /**
@@ -101,8 +102,92 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
+/**
+ * Swing SSO - 토큰 인증
+ * POST /api/auth/swing/token
+ */
+const swingSsoTokenLogin = async (req, res) => {
+  try {
+    const { sso_token } = req.body;
+
+    // 입력 검증
+    if (!sso_token) {
+      return res.status(400).json({
+        error: 'SSO 토큰이 필요합니다'
+      });
+    }
+
+    // SSO 활성화 여부 확인
+    if (!swingAuthService.isEnabled()) {
+      return res.status(403).json({
+        error: 'Swing SSO가 비활성화되어 있습니다'
+      });
+    }
+
+    // Swing SSO 인증
+    const result = await swingAuthService.authenticateWithSsoToken(sso_token);
+
+    // 응답
+    res.json({
+      success: true,
+      token: result.token,
+      user: result.user,
+      login_method: 'swing_sso'
+    });
+
+  } catch (error) {
+    console.error('Swing SSO 토큰 인증 에러:', error);
+    res.status(401).json({
+      error: error.message || 'SSO 인증에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * Swing SSO - ID/Password 인증
+ * POST /api/auth/swing/idpw
+ */
+const swingIdPasswordLogin = async (req, res) => {
+  try {
+    const { employee_id, password } = req.body;
+
+    // 입력 검증
+    if (!employee_id || !password) {
+      return res.status(400).json({
+        error: '행원번호와 비밀번호를 입력해주세요'
+      });
+    }
+
+    // SSO 활성화 여부 확인
+    if (!swingAuthService.isEnabled()) {
+      return res.status(403).json({
+        error: 'Swing SSO가 비활성화되어 있습니다'
+      });
+    }
+
+    // Swing ID/Password 인증
+    const result = await swingAuthService.authenticateWithIdPassword(employee_id, password);
+
+    // 응답
+    res.json({
+      success: true,
+      token: result.token,
+      user: result.user,
+      login_method: 'swing_sso'
+    });
+
+  } catch (error) {
+    console.error('Swing ID/Password 인증 에러:', error);
+    res.status(401).json({
+      error: error.message || 'ID/Password 인증에 실패했습니다'
+    });
+  }
+};
+
 module.exports = {
   login,
   logout,
-  getCurrentUser
+  getCurrentUser,
+  swingSsoTokenLogin,
+  swingIdPasswordLogin
 };

@@ -35,13 +35,23 @@ module.exports = {
         role: 'user',
         created_at: new Date(),
         updated_at: new Date()
+      },
+      {
+        employee_id: 'user004',
+        password: hashedPassword,
+        name: '최지은',
+        department: '기획팀',
+        email: 'user004@company.com',
+        role: 'user',
+        created_at: new Date(),
+        updated_at: new Date()
       }
     ], {});
   },
 
   down: async (queryInterface, Sequelize) => {
     await queryInterface.bulkDelete('users', {
-      employee_id: ['user001', 'user002', 'user003']
+      employee_id: ['user001', 'user002', 'user003', 'user004']
     }, {});
   }
 };

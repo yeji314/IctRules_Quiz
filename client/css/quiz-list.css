@@ -46,25 +46,14 @@ body::after {
   background: #a0643c;
 }
 
-/* 좌측 상단: 사용자 섹션 */
+/* 우측 상단: 사용자 섹션 */
 .user-section {
-  position: fixed;
-  top: 30px;
-  left: 30px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 100;
-}
-
-/* 우측 상단: 골드바 섹션 */
-.gold-bar-section {
   position: fixed;
   top: 30px;
   right: 40px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   z-index: 100;
 }
 
@@ -79,36 +68,7 @@ body::after {
   image-rendering: pixelated;
 }
 
-/* 골드바 */
-.gold-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.gold-icon {
-  font-size: 32px;
-  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.3));
-}
-
-.gold-progress {
-  width: 150px;
-  height: 24px;
-  background: #8b4513;
-  border: 3px solid #654321;
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.gold-fill {
-  height: 100%;
-  background: linear-gradient(to right, #ffd700, #ffed4e);
-  border-radius: 10px;
-  transition: width 0.3s ease;
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.3);
-}
+/* 골드바 제거됨 - 더 이상 사용하지 않음 */
 
 /* 좌측 하단 섹션 (캐릭터 + 말풍선) */
 .left-section {
@@ -135,6 +95,7 @@ body::after {
 /* 픽셀 말풍선 (대각선 오른쪽 위에 배치) */
 .speech-bubbles {
   position: absolute;
+  border-image-repeat: space !important;
   bottom: 80px; /* 캐릭터 위쪽 */
   left: 120px; /* 캐릭터 오른쪽 */
   display: flex;
@@ -144,14 +105,15 @@ body::after {
 }
 
 .speech-bubble {
-  min-width: 750px;
-  max-width: 840px;
+  min-width: 245px;
+  max-width: 450px;
   font-size: 12px;
 }
 
 .speech-bubble p {
   margin: 0;
   line-height: 1.5;
+  color:#000000;
 }
 
 .speech-bubble::before {
@@ -177,38 +139,33 @@ body::after {
   align-items: center;
 }
 
-/* 나무판자 스타일 퀴즈 카드 - 게임 스타일 */
+/* 나무판자 스타일 퀴즈 카드 - 이미지와 같은 모양 */
 .wood-board {
   width: 100%;
   max-width: 700px;
-  height: 70px;
-  background: linear-gradient(135deg,
-    #d4a574 0%,
-    #e8c39e 25%,
-    #f5d5a8 50%,
-    #e8c39e 75%,
-    #d4a574 100%
-  );
-  border-top: 5px solid #8b5a3c;
-  border-bottom: 5px solid #5a3a1c;
+  height: 80px;
+  background: linear-gradient(180deg, #f5d5a8 0%, #e8c39e 50%, #d4a574 100%);
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   box-shadow:
-    0 6px 0 #5a3a1c,
-    0 10px 15px rgba(0, 0, 0, 0.4);
+    0 8px 0 #5a3a1c,
+    0 12px 20px rgba(0, 0, 0, 0.4);
   image-rendering: pixelated;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 40px;
+  padding: 0 50px;
   margin: 0 auto 20px;
+  /* 나무판자 특유의 각진 양 끝 모양 */
   clip-path: polygon(
-    0% 20%, 3% 0%, 97% 0%, 100% 20%,
-    100% 80%, 97% 100%, 3% 100%, 0% 80%
+    0% 25%, 2% 15%, 4% 8%, 6% 4%, 8% 2%, 10% 0%,
+    90% 0%, 92% 2%, 94% 4%, 96% 8%, 98% 15%, 100% 25%,
+    100% 75%, 98% 85%, 96% 92%, 94% 96%, 92% 98%, 90% 100%,
+    10% 100%, 8% 98%, 6% 96%, 4% 92%, 2% 85%, 0% 75%
   );
 }
 
-/* 나무 텍스처 오버레이 */
+/* 나무 텍스처 오버레이 - 나무결 패턴 */
 .wood-board::before {
   content: '';
   position: absolute;
@@ -217,35 +174,32 @@ body::after {
   right: 0;
   bottom: 0;
   background-image:
-    /* 나무결 */
+    /* 나무 나이테/무늬 */
+    radial-gradient(ellipse 80px 30px at 15% 30%, transparent 45%, rgba(139, 90, 60, 0.15) 46%, transparent 50%),
+    radial-gradient(ellipse 100px 40px at 85% 60%, transparent 45%, rgba(139, 90, 60, 0.15) 46%, transparent 50%),
+    radial-gradient(ellipse 60px 25px at 45% 70%, transparent 45%, rgba(139, 90, 60, 0.12) 46%, transparent 50%),
+    /* 가로 나무결 */
     repeating-linear-gradient(
       90deg,
       transparent 0px,
-      transparent 40px,
-      rgba(139, 90, 60, 0.15) 40px,
-      rgba(139, 90, 60, 0.15) 44px
-    ),
-    /* 나무 무늬 */
-    repeating-linear-gradient(
-      90deg,
-      transparent 0px,
-      transparent 15px,
-      rgba(139, 90, 60, 0.08) 15px,
-      rgba(139, 90, 60, 0.08) 18px,
-      transparent 18px,
-      transparent 25px,
-      rgba(200, 160, 120, 0.1) 25px,
-      rgba(200, 160, 120, 0.1) 28px
+      transparent 50px,
+      rgba(139, 90, 60, 0.08) 50px,
+      rgba(139, 90, 60, 0.08) 52px,
+      transparent 52px,
+      transparent 100px,
+      rgba(200, 160, 120, 0.06) 100px,
+      rgba(200, 160, 120, 0.06) 102px
     ),
     /* 세로 그레인 */
     repeating-linear-gradient(
       0deg,
-      rgba(0, 0, 0, 0.02) 0px,
-      rgba(0, 0, 0, 0.02) 1px,
+      rgba(0, 0, 0, 0.015) 0px,
+      rgba(0, 0, 0, 0.015) 1px,
       transparent 1px,
-      transparent 3px
+      transparent 2px
     );
   pointer-events: none;
+  opacity: 0.7;
 }
 
 /* 나무판자 그림자 효과 */
@@ -297,7 +251,9 @@ body::after {
   display: flex;
   align-items: center;
   gap: 20px;
-  flex: 0 0 auto;
+  flex: 1;
+  min-width: 0;
+  justify-content: space-between;
 }
 
 .quiz-number {
@@ -305,6 +261,7 @@ body::after {
   font-size: 24px;
   color: #654321;
   min-width: 50px;
+  flex-shrink: 0;
   text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.3);
 }
 
@@ -312,6 +269,8 @@ body::after {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .quiz-title {
@@ -319,28 +278,19 @@ body::after {
   font-size: 12px;
   color: #3e2723;
   text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* 우측 메타 정보 (진행률 + 별표) */
-.quiz-meta-right {
+/* 별표 배지 (quiz-info 가장 오른쪽에 배치) */
+.quiz-star-badge {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 4px;
+  flex-shrink: 0;
   margin-left: auto;
-  z-index: 2;
-}
-
-.quiz-progress-text {
-  font-family: var(--font-pixel);
-  font-size: 10px;
-  color: #5a3a1c;
-  font-weight: bold;
-}
-
-.quiz-luckydraw {
-  font-size: 16px;
-  display: flex;
-  gap: 2px;
+  z-index: 10;
 }
 
 .quiz-status {
@@ -586,9 +536,7 @@ body::after {
     left: 20px;
   }
 
-  .gold-bar {
-    right: 20px;
-  }
+  /* 골드바 제거됨 */
 
   .speech-bubbles {
     display: none;
@@ -613,8 +561,13 @@ body::after {
     font-size: 10px;
   }
 
-  .quiz-meta {
-    font-size: 7px;
+  .quiz-action-btn {
+    font-size: 9px;
+    padding: 6px 12px;
+  }
+
+  .quiz-star-badge {
+    gap: 2px;
   }
 
   .pixel-ground {

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir C:IctRulesQuizimages)",
+      "Bash(node download-fonts.js:*)",
+      "Bash(node download-fonts-v2.js:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

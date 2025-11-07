@@ -32,6 +32,12 @@ module.exports = (sequelize) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
       comment: '활성화 여부'
+    },
+    max_winners: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 10,
+      comment: '회차별 LuckyDraw 최대 당첨자 수'
     }
   }, {
     tableName: 'quiz_events',

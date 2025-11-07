@@ -14,18 +14,10 @@
   <link rel="stylesheet" href="../css/quiz-list.css">
 </head>
 <body>
-  <!-- 좌측 상단: 사용자 이름 + 아바타 -->
+  <!-- 우측 상단: 사용자 이름 + 로그아웃 -->
   <div class="user-section">
     <div class="user-name-display" id="userNameDisplay">Loading...</div>
-    <img class="nes-avatar is-rounded is-small" id="userAvatar" src="https://www.gravatar.com/avatar?s=24&d=identicon" style="image-rendering: pixelated; cursor: pointer;" title="로그아웃" alt="User Avatar">
-  </div>
-
-  <!-- 우측 상단: 골드바 -->
-  <div class="gold-bar-section">
-    <div class="gold-icon">⭐</div>
-    <div class="gold-progress">
-      <div class="gold-fill" id="goldFill" style="width: 0%;"></div>
-    </div>
+    <i class="nes-icon close is-small" id="logoutBtn" style="cursor: pointer;" title="로그아웃"></i>
   </div>
 
   <!-- 좌측 하단 영역 (캐릭터 + 말풍선) -->
@@ -38,10 +30,10 @@
     <!-- 픽셀 말풍선 (대각선 오른쪽 위) -->
     <div class="speech-bubbles">
       <div class="nes-balloon from-left speech-bubble">
-        <p>퀴즈를 선택하세요!</p>
-      </div>
+        <p>퀴즈를 통해 Tech그룹의 기준을 명확히 알아갑시다</p>
+    </div>
       <div class="nes-balloon from-left speech-bubble">
-        <p>나무판자를 클릭하면 시작됩니다</p>
+        <p>정답보다는 참여가 중요! 많은 문제를 풀수록 ⭐Lucky Draw⭐ 당첨 확률 UP!</p>
       </div>
     </div>
   </div>

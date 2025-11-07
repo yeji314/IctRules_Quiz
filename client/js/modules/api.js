@@ -161,77 +161,131 @@ export const quiz = {
  */
 
 export const admin = {
-  // 이벤트 관리
-  events: {
-    async list() {
-      return get('/admin/events');
-    },
-    async create(data) {
-      return post('/admin/events', data);
-    },
-    async update(id, data) {
-      return put(`/admin/events/${id}`, data);
-    },
-    async delete(id) {
-      return del(`/admin/events/${id}`);
-    }
+  /**
+   * 이벤트 목록 조회
+   */
+  async listEvents() {
+    return get('/admin/events');
   },
 
-  // 문제 관리
-  questions: {
-    async list(eventId) {
-      return get(`/admin/questions?event_id=${eventId}`);
-    },
-    async create(data) {
-      return post('/admin/questions', data);
-    },
-    async update(id, data) {
-      return put(`/admin/questions/${id}`, data);
-    },
-    async delete(id) {
-      return del(`/admin/questions/${id}`);
-    }
+  /**
+   * 이벤트 생성
+   */
+  async createEvent(data) {
+    return post('/admin/events', data);
   },
 
-  // 통계
-  stats: {
-    async getOverview() {
-      return get('/admin/stats/overview');
-    },
-    async getDepartments(eventId = null) {
-      const url = eventId
-        ? `/admin/stats/departments?event_id=${eventId}`
-        : '/admin/stats/departments';
-      return get(url);
-    },
-    async getQuestions(eventId) {
-      return get(`/admin/stats/questions?event_id=${eventId}`);
-    },
-    async getUsers(eventId = null) {
-      const url = eventId
-        ? `/admin/stats/users?event_id=${eventId}`
-        : '/admin/stats/users';
-      return get(url);
-    }
+  /**
+   * 이벤트 수정
+   */
+  async updateEvent(id, data) {
+    return put(`/admin/events/${id}`, data);
   },
 
-  // LuckyDraw
-  luckyDraw: {
-    async draw(eventId, prize, winnerCount) {
-      return post('/admin/luckydraw/draw', {
-        event_id: eventId,
-        prize,
-        winner_count: winnerCount
-      });
-    },
-    async getWinners(eventId = null) {
-      const url = eventId
-        ? `/admin/luckydraw/winners?event_id=${eventId}`
-        : '/admin/luckydraw/winners';
-      return get(url);
-    },
-    async claimPrize(id) {
-      return put(`/admin/luckydraw/${id}/claim`);
-    }
+  /**
+   * 이벤트 삭제
+   */
+  async deleteEvent(id) {
+    return del(`/admin/events/${id}`);
+  },
+
+  /**
+   * 문제 목록 조회
+   */
+  async listQuestions(eventId) {
+    return get(`/admin/questions?event_id=${eventId}`);
+  },
+
+  /**
+   * 문제 생성
+   */
+  async createQuestion(data) {
+    return post('/admin/questions', data);
+  },
+
+  /**
+   * 문제 수정
+   */
+  async updateQuestion(id, data) {
+    return put(`/admin/questions/${id}`, data);
+  },
+
+  /**
+   * 문제 삭제
+   */
+  async deleteQuestion(id) {
+    return del(`/admin/questions/${id}`);
+  },
+
+  /**
+   * 문제 대량 업로드
+   */
+  async bulkUploadQuestions(eventId, questions) {
+    return post('/admin/questions/bulk-upload', {
+      event_id: eventId,
+      questions
+    });
+  },
+
+  /**
+   * 전체 통계 조회
+   */
+  async getOverview() {
+    return get('/admin/stats/overview');
+  },
+
+  /**
+   * 부서별 통계 조회
+   */
+  async getDepartmentStats(eventId = null) {
+    const url = eventId
+      ? `/admin/stats/departments?event_id=${eventId}`
+      : '/admin/stats/departments';
+    return get(url);
+  },
+
+  /**
+   * 문제별 통계 조회
+   */
+  async getQuestionStats(eventId) {
+    return get(`/admin/stats/questions?event_id=${eventId}`);
+  },
+
+  /**
+   * 사용자 목록 조회
+   */
+  async getUserList(eventId = null) {
+    const url = eventId
+      ? `/admin/stats/users?event_id=${eventId}`
+      : '/admin/stats/users';
+    return get(url);
+  },
+
+  /**
+   * Lucky Draw 추첨
+   */
+  async drawWinners(eventId, prize, winnerCount) {
+    return post('/admin/luckydraw/draw', {
+      event_id: eventId,
+      prize,
+      winner_count: winnerCount
+    });
+  },
+
+  /**
+   * 당첨자 목록 조회
+   */
+  async getWinners(eventId = null) {
+    const url = eventId
+      ? `/admin/luckydraw/winners?event_id=${eventId}`
+      : '/admin/luckydraw/winners';
+    return get(url);
+  },
+
+  /**
+   * 상품 수령 처리
+   */
+  async claimPrize(id) {
+    return put(`/admin/luckydraw/${id}/claim`);
   }
 };

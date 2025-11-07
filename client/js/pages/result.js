@@ -3,6 +3,7 @@
  */
 
 import { requireAuth } from '../modules/auth.js';
+import { quiz as quizApi } from '../modules/api.js';
 import { $, playSound } from '../modules/utils.js';
 
 // 인증 확인
@@ -18,6 +19,12 @@ const continueButton = $('#continueButton');
  * 초기화
  */
 function init() {
+  // 브라우저 뒤로가기 방지
+  history.pushState(null, null, location.href);
+  window.addEventListener('popstate', () => {
+    history.pushState(null, null, location.href);
+  });
+
   // 결과 데이터 로드
   const resultData = sessionStorage.getItem('quizResult');
   if (!resultData) {
@@ -81,18 +88,60 @@ function handleQuit() {
 /**
  * 계속하기
  */
-function handleContinue() {
-  // 현재 세션 정보 확인
-  const sessionData = sessionStorage.getItem('currentSession');
-  if (!sessionData) {
-    alert('세션 정보가 없습니다');
+async function handleContinue() {
+  // 결과 데이터 확인
+  const resultData = sessionStorage.getItem('quizResult');
+  if (!resultData) {
+    alert('결과 정보가 없습니다');
     window.location.href = '/pages/quiz-list.html';
     return;
   }
 
-  // 결과 데이터 제거하고 퀴즈 페이지로
-  sessionStorage.removeItem('quizResult');
-  window.location.href = '/pages/quiz.html';
+  const result = JSON.parse(resultData);
+
+  if (!result.eventId) {
+    alert('이벤트 정보가 없습니다');
+    window.location.href = '/pages/quiz-list.html';
+    return;
+  }
+
+  try {
+    console.log('[Result Continue] 세션 시작 요청, eventId:', result.eventId);
+
+    // 새로운 세션 시작
+    const response = await quizApi.startSession(result.eventId);
+
+    console.log('[Result Continue] API 응답:', response);
+    console.log('[Result Continue] 첫 문제:', response.question);
+
+    if (response.success && response.session) {
+      // 새 세션 정보 저장 (동적 문제 선택 방식)
+      const sessionData = {
+        sessionId: response.session.id,
+        sessionNumber: response.session.session_number,
+        eventId: response.session.event_id,
+        question: response.question,  // 첫 번째 문제만 저장
+        current_question_number: response.current_question_number || 1,
+        total_questions: response.total_questions || 5
+      };
+
+      console.log('[Result Continue] 세션 데이터 저장:', sessionData);
+      sessionStorage.setItem('currentSession', JSON.stringify(sessionData));
+
+      // 결과 데이터 제거
+      sessionStorage.removeItem('quizResult');
+
+      // 퀴즈 페이지로 이동
+      window.location.href = '/pages/quiz.html';
+    } else {
+      alert(response.message || '세션 시작에 실패했습니다');
+      window.location.href = '/pages/quiz-list.html';
+    }
+  } catch (error) {
+    console.error('세션 시작 실패:', error);
+    alert('세션 시작에 실패했습니다: ' + error.message);
+    window.location.href = '/pages/quiz-list.html';
+  }
 }
 
 // 초기화

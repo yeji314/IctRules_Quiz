@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 대시보드 - ICT 내규 퀴즈</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="../../css/reset.css">
+  <link rel="stylesheet" href="../../css/vendor/nes.min.css">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="../../css/animations.css">
+  <link rel="stylesheet" href="../../css/admin.css">
+</head>
+<body>
+  <!-- 우측 상단: 관리자명 + 로그아웃 -->
+  <div class="admin-header">
+    <div class="admin-name" id="adminName">관리자님</div>
+    <i class="nes-icon close is-small" id="logoutBtn" style="cursor: pointer;" title="로그아웃"></i>
+  </div>
+
+  <!-- 좌측 사이드바 메뉴 -->
+  <nav class="admin-sidebar">
+    <div class="sidebar-logo">
+      <h2>ICT RULES</h2>
+      <p>관리자 페이지</p>
+    </div>
+    
+    <ul class="sidebar-menu">
+      <li class="menu-item active" data-page="dashboard">
+        <i class="nes-icon trophy is-small"></i>
+        <span>홈 (통계)</span>
+      </li>
+      <li class="menu-item" data-page="quiz">
+        <i class="nes-icon star is-small"></i>
+        <span>퀴즈 관리</span>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- 메인 컨텐츠 영역 -->
+  <main class="admin-main">
+    <!-- 대시보드 (통계) 화면 -->
+    <section id="dashboardPage" class="admin-page active">
+      <h1 class="page-title">📊 통계 대시보드</h1>
+
+      <!-- 부서별 참여율 -->
+      <div class="stats-section">
+        <h2 class="section-title">
+          <i class="nes-icon trophy is-small"></i>
+          부서별 참여율
+        </h2>
+        
+        <div class="event-selector">
+          <label for="eventSelect">
+            이벤트 선택:
+            <span id="currentYearMonth" style="color: #209cee; font-weight: bold;"></span>
+          </label>
+          <div class="nes-select">
+            <select id="eventSelect">
+              <option value="">전체</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="department-stats" id="departmentStats">
+          <!-- 부서별 게이지 차트가 여기에 렌더링됨 -->
+          <div class="loading-message">
+            <p>⏳ 로딩 중...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 이달의 Lucky Draw 당첨 현황 -->
+      <div class="stats-section">
+        <h2 class="section-title">
+          <i class="nes-icon star is-small"></i>
+          이달의 Lucky Draw 당첨 현황
+        </h2>
+
+        <div class="winners-table-container">
+          <table class="nes-table is-bordered is-centered">
+            <thead>
+              <tr>
+                <th>이름</th>
+                <th>부서</th>
+                <th>당첨일</th>
+                <th>상품</th>
+                <th>수령 여부</th>
+              </tr>
+            </thead>
+            <tbody id="winnersTableBody">
+              <tr>
+                <td colspan="5" class="loading-message">⏳ 로딩 중...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 퀴즈 관리 화면 -->
+    <section id="quizPage" class="admin-page">
+      <h1 class="page-title">📝 퀴즈 관리</h1>
+
+      <!-- 이벤트 목록 -->
+      <div class="quiz-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="nes-icon trophy is-small"></i>
+            이벤트 목록
+          </h2>
+          <button class="nes-btn is-primary" id="createEventBtn">
+            + 이벤트 생성
+          </button>
+        </div>
+
+        <div class="events-list" id="eventsList">
+          <!-- 이벤트 목록이 여기에 렌더링됨 -->
+          <div class="loading-message">
+            <p>⏳ 로딩 중...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 선택된 이벤트의 문제 목록 -->
+      <div class="quiz-section" id="questionsSection" style="display: none;">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="nes-icon star is-small"></i>
+            문제 목록
+            <span class="selected-event-name" id="selectedEventName"></span>
+          </h2>
+          <div class="section-actions">
+            <button class="nes-btn" id="uploadExcelBtn">
+              📄 엑셀 업로드
+            </button>
+            <button class="nes-btn is-primary" id="createQuestionBtn">
+              + 문제 추가
+            </button>
+          </div>
+        </div>
+
+        <div class="questions-list" id="questionsList">
+          <!-- 문제 목록이 여기에 렌더링됨 -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 이벤트 생성/수정 모달 -->
+  <dialog class="nes-dialog" id="eventModal">
+    <form method="dialog" id="eventForm">
+      <p class="modal-title" id="eventModalTitle">이벤트 생성</p>
+      
+      <div class="nes-field">
+        <label for="eventTitle">이벤트명</label>
+        <input type="text" id="eventTitle" class="nes-input" placeholder="2025년 1월" required>
+      </div>
+
+      <div class="nes-field">
+        <label for="eventYearMonth">년월 (YYYY-MM)</label>
+        <input type="month" id="eventYearMonth" class="nes-input" required>
+      </div>
+
+      <div class="nes-field">
+        <label for="eventStartDate">시작일</label>
+        <input type="date" id="eventStartDate" class="nes-input" required>
+      </div>
+
+      <div class="nes-field">
+        <label for="eventEndDate">종료일</label>
+        <input type="date" id="eventEndDate" class="nes-input" required>
+      </div>
+
+      <div class="nes-field">
+        <label for="eventMaxWinners">LuckyDraw 최대 당첨자 수</label>
+        <input type="number" id="eventMaxWinners" class="nes-input" min="1" max="1000" value="10" required>
+        <p class="field-note">이 회차의 LuckyDraw 최대 당첨자 수를 설정합니다</p>
+      </div>
+
+      <div class="nes-field">
+        <label>
+          <input type="checkbox" class="nes-checkbox" id="eventIsActive">
+          <span>활성화</span>
+        </label>
+      </div>
+
+      <menu class="dialog-menu">
+        <button class="nes-btn" type="button" id="cancelEventBtn">취소</button>
+        <button class="nes-btn is-primary" type="submit">저장</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- 문제 생성/수정 모달 -->
+  <dialog class="nes-dialog" id="questionModal" style="max-width: 700px;">
+    <form method="dialog" id="questionForm">
+      <p class="modal-title" id="questionModalTitle">문제 추가</p>
+
+      <div class="nes-field">
+        <label for="questionType">문제 유형</label>
+        <div class="nes-select">
+          <select id="questionType" required>
+            <option value="">선택하세요</option>
+            <option value="dragdrop">드래그 앤 드롭</option>
+            <option value="typing">타이핑</option>
+            <option value="fillblank">빈칸 맞추기 (객관식)</option>
+            <option value="ox">OX 퀴즈</option>
+            <option value="finderror">틀린 부분 찾기</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="nes-field">
+        <label for="questionCategory">카테고리</label>
+        <div class="nes-select">
+          <select id="questionCategory" required>
+            <option value="normal">일반</option>
+            <option value="luckydraw">Lucky Draw</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="nes-field">
+        <label for="questionText">문제 내용</label>
+        <textarea id="questionText" class="nes-textarea" rows="3" required></textarea>
+      </div>
+
+      <!-- 문제 유형별 입력 필드 -->
+      <div id="questionDataFields"></div>
+
+      <div class="nes-field">
+        <label for="questionExplanation">해설 (오답 시 표시)</label>
+        <textarea id="questionExplanation" class="nes-textarea" rows="3"></textarea>
+      </div>
+
+      <menu class="dialog-menu">
+        <button class="nes-btn" type="button" id="cancelQuestionBtn">취소</button>
+        <button class="nes-btn is-primary" type="submit">저장</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- 엑셀 업로드 모달 -->
+  <dialog class="nes-dialog" id="excelModal">
+    <form method="dialog" id="excelForm">
+      <p class="modal-title">엑셀 파일 업로드</p>
+      
+      <div class="nes-field">
+        <p>Excel 파일을 선택하세요 (.xlsx)</p>
+        <input type="file" id="excelFile" accept=".xlsx,.xls" required>
+      </div>
+
+      <div class="nes-field">
+        <p class="note">
+          ℹ️ 엑셀 파일 형식:<br>
+          열: question_type | category | question_text | question_data (JSON) | explanation
+        </p>
+      </div>
+
+      <menu class="dialog-menu">
+        <button class="nes-btn" type="button" id="cancelExcelBtn">취소</button>
+        <button class="nes-btn is-primary" type="submit">업로드</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- 픽셀 지형 (quiz.html과 동일) -->
+  <div class="pixel-ground">
+    <div class="grass-layer"></div>
+    <div class="dirt-layer"></div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  <script type="module" src="../../js/pages/admin-dashboard.js"></script>
+</body>
+</html>
+

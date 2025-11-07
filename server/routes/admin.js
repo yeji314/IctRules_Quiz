@@ -68,6 +68,12 @@ router.put('/questions/:id', adminController.updateQuestion);
 router.delete('/questions/:id', adminController.deleteQuestion);
 
 /**
+ * POST /api/admin/questions/bulk-upload
+ * 문제 대량 업로드
+ */
+router.post('/questions/bulk-upload', adminController.bulkUploadQuestions);
+
+/**
  * ==========================================
  * 통계
  * ==========================================
@@ -120,5 +126,35 @@ router.get('/luckydraw/winners', adminController.getWinners);
  * 상품 수령 처리
  */
 router.put('/luckydraw/:id/claim', adminController.claimPrize);
+
+/**
+ * ==========================================
+ * SSO 설정 관리
+ * ==========================================
+ */
+
+/**
+ * GET /api/admin/sso/settings
+ * SSO 설정 전체 조회
+ */
+router.get('/sso/settings', adminController.getSsoSettings);
+
+/**
+ * GET /api/admin/sso/settings/:key
+ * 특정 SSO 설정 조회
+ */
+router.get('/sso/settings/:key', adminController.getSsoSetting);
+
+/**
+ * PUT /api/admin/sso/settings/:key
+ * SSO 설정 업데이트
+ */
+router.put('/sso/settings/:key', adminController.updateSsoSetting);
+
+/**
+ * GET /api/admin/sso/status
+ * SSO 시스템 상태 확인
+ */
+router.get('/sso/status', adminController.getSsoStatus);
 
 module.exports = router;

@@ -11,10 +11,11 @@ requireAuth();
 
 // DOM 요소
 const userNameDisplay = $('#userNameDisplay');
-const userAvatar = $('#userAvatar');
+const logoutBtn = $('#logoutBtn');
 const starGaugeFill = $('#starGaugeFill');
 const questionNumber = $('#questionNumber');
 const questionTextHeader = $('#questionTextHeader');
+const luckyDrawBadge = $('#luckyDrawBadge');
 const questionArea = $('#questionArea');
 const explanationBubble = $('#explanationBubble');
 const explanationText = $('#explanationText');
@@ -34,6 +35,12 @@ let totalQuestions = 0;
  * 초기화
  */
 function init() {
+  // 브라우저 뒤로가기 방지
+  history.pushState(null, null, location.href);
+  window.addEventListener('popstate', () => {
+    history.pushState(null, null, location.href);
+  });
+
   // 사용자 정보 로드
   const user = getUser();
   if (user) {
@@ -41,7 +48,7 @@ function init() {
   }
 
   // 로그아웃 이벤트
-  userAvatar.addEventListener('click', () => {
+  logoutBtn.addEventListener('click', () => {
     if (confirm('로그아웃 하시겠습니까?')) {
       logout();
       window.location.href = '/pages/index.html';
@@ -57,16 +64,34 @@ function init() {
   }
 
   currentSession = JSON.parse(sessionData);
-  currentQuestionIndex = currentSession.currentQuestionIndex || 0;
-  totalQuestions = currentSession.questions.length;
+  console.log('[Quiz Init] 세션 데이터:', currentSession);
+
+  // 새 세션 시작 시 항상 1부터 시작 (서버에서 받은 값 사용)
+  currentQuestionIndex = currentSession.current_question_number || 1;
+  totalQuestions = currentSession.total_questions || 5;
+
+  console.log('[Quiz Init] 현재 문제 번호:', currentQuestionIndex);
+  console.log('[Quiz Init] 전체 문제 수:', totalQuestions);
+
+  if (!currentSession.question) {
+    alert('문제 정보가 없습니다');
+    window.location.href = '/pages/quiz-list.html';
+    return;
+  }
 
   // 별표 게이지 초기화
   updateStarGauge();
 
-  // 다음 문제 버튼 이벤트
+  // NEXT 버튼 이벤트 (제출 또는 다음 문제)
   nextQuestionBtn.addEventListener('click', () => {
     playSound('click');
-    handleNext();
+
+    // 버튼 텍스트가 "제출"이면 handleSubmit, "다음 문제"면 handleNext
+    if (nextQuestionBtn.textContent === '제출') {
+      handleSubmit();
+    } else {
+      handleNext();
+    }
   });
 
   // ESC 키로 종료
@@ -87,17 +112,20 @@ function init() {
  * 문제 로드
  */
 function loadQuestion() {
-  if (currentQuestionIndex >= currentSession.questions.length) {
-    // 모든 문제 완료
-    completeQuiz();
-    return;
-  }
+  // 세션 완료 체크는 handleNext나 handleSubmit에서 처리됨
 
-  const question = currentSession.questions[currentQuestionIndex];
+  const question = currentSession.question;
 
   // UI 업데이트
-  questionNumber.textContent = currentQuestionIndex + 1;
-  
+  questionNumber.textContent = currentQuestionIndex;
+
+  // Lucky Draw 배지 표시/숨김
+  if (question.category === 'luckydraw') {
+    luckyDrawBadge.classList.remove('hidden');
+  } else {
+    luckyDrawBadge.classList.add('hidden');
+  }
+
   // 타이핑 문제는 문제 텍스트를 숨김
   if (question.question_type === 'typing') {
     questionTextHeader.textContent = '다음 문장을 따라 입력하세요.';
@@ -107,17 +135,18 @@ function loadQuestion() {
 
   // 답변 초기화
   currentAnswer = null;
-  
+
   // 제출 상태 초기화
   questionArea.dataset.submitting = 'false';
-  
+  questionArea.dataset.isCorrect = 'false';
+
   // 해설 말풍선 내용 초기화 (숨기지 않음, 공란)
   explanationText.textContent = '';
   explanationBubble.classList.remove('ox-hint', 'long');
   explanationBubble.classList.add('empty');
 
-  // 다음 문제 버튼 숨김
-  hide(nextQuestionBtn);
+  // NEXT 버튼 초기화 (숨김 상태로 시작)
+  nextQuestionBtn.classList.add('hidden');
 
   // 문제 타입에 따라 렌더링
   renderQuestion(question);
@@ -191,9 +220,9 @@ function renderDragDrop(question) {
     targetEl.appendChild(droppedItem);
 
     playSound('coin');
-    
+
     // 자동 제출
-    setTimeout(() => handleSubmit(), 500);
+    setTimeout(() => handleSubmit(), 300);
   });
 
   // 드래그 아이템들 (하단)
@@ -263,15 +292,29 @@ function renderTyping(question) {
   // 입력 시 답변 저장 및 진행률 업데이트
   inputEl.addEventListener('input', (e) => {
     currentAnswer = e.target.value;
-    
+
     const progress = Math.min(100, Math.floor((currentAnswer.length / correct_answer.length) * 100));
     progressEl.value = progress;
 
-    // 100% 완료시 자동 제출
+    // 입력 중이면 제출 버튼 표시
+    if (currentAnswer.trim().length > 0) {
+      nextQuestionBtn.textContent = '제출';
+      nextQuestionBtn.classList.remove('hidden');
+    } else {
+      nextQuestionBtn.classList.add('hidden');
+    }
+
+    // 100% 완료시 효과음
     if (currentAnswer === correct_answer) {
-      inputEl.disabled = true;
       playSound('correct');
-      setTimeout(() => handleSubmit(), 500);
+    }
+  });
+
+  // 엔터키로 제출
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && currentAnswer && currentAnswer.trim().length > 0 && questionArea.dataset.isCorrect !== 'true') {
+      e.preventDefault();
+      handleSubmit();
     }
   });
 
@@ -373,9 +416,18 @@ function renderOX(question) {
   oButton.addEventListener('mouseleave', hideHint);
   oButton.addEventListener('click', () => {
     if (oButton.disabled) return;
-    // 클릭 시 힌트를 유지하고 답안 제출
+
+    // 기존 선택 해제
+    container.querySelectorAll('.ox-button').forEach(el => {
+      el.classList.remove('selected');
+    });
+
+    // 새 선택
+    oButton.classList.add('selected');
     currentAnswer = 'O';
     playSound('click');
+
+    // 자동 제출
     setTimeout(() => handleSubmit(), 300);
   });
 
@@ -384,9 +436,18 @@ function renderOX(question) {
   xButton.addEventListener('mouseleave', hideHint);
   xButton.addEventListener('click', () => {
     if (xButton.disabled) return;
-    // 클릭 시 힌트를 유지하고 답안 제출
+
+    // 기존 선택 해제
+    container.querySelectorAll('.ox-button').forEach(el => {
+      el.classList.remove('selected');
+    });
+
+    // 새 선택
+    xButton.classList.add('selected');
     currentAnswer = 'X';
     playSound('click');
+
+    // 자동 제출
     setTimeout(() => handleSubmit(), 300);
   });
 
@@ -445,7 +506,7 @@ function renderFindError(question) {
       playSound('click');
 
       // 자동 제출
-      setTimeout(() => handleSubmit(), 500);
+      setTimeout(() => handleSubmit(), 300);
     });
   });
 
@@ -473,7 +534,7 @@ async function handleSubmit() {
   questionArea.dataset.submitting = 'true';
 
   try {
-    const question = currentSession.questions[currentQuestionIndex];
+    const question = currentSession.question;
     const timeTaken = Math.floor((Date.now() - startTime) / 1000);
 
     const response = await quizApi.submitAnswer(
@@ -484,7 +545,12 @@ async function handleSubmit() {
     );
 
     if (response.success) {
-      showFeedback(response.result, question);
+      // 다음 문제 저장
+      currentSession.nextQuestion = response.next_question || null;
+      currentSession.session_complete = response.session_complete || false;
+      currentSession.current_question_number = response.current_question_number;
+
+      showFeedback(response.result, question, response);
     }
   } catch (error) {
     console.error('답변 제출 실패:', error);
@@ -496,67 +562,83 @@ async function handleSubmit() {
 /**
  * 피드백 표시
  */
-function showFeedback(result, question) {
+function showFeedback(result, question, response) {
   if (result.is_correct) {
-    // 정답: 초록색 표시 + 다음 문제 버튼 표시
+    // 정답: 초록색 표시 + 다음 문제 버튼으로 변경
     playSound('correct');
     highlightCorrectAnswer();
-    
+
+    // 정답 상태 저장
+    questionArea.dataset.isCorrect = 'true';
+    questionArea.dataset.submitting = 'false';
+
     // 말풍선에 격려 메시지
     explanationBubble.classList.remove('ox-hint', 'long');
-    explanationBubble.classList.add('empty');
+    explanationBubble.classList.remove('empty');
     explanationText.textContent = '정답입니다! 👏';
-    
+
     // 첫 시도에 맞춘 경우
     if (result.attempt === 1) {
       firstAttemptCorrectCount++;
-      
+
       // 별표 폭죽 효과
       triggerFireworks();
-      
+
       // 별표 게이지 채우기
       setTimeout(() => updateStarGauge(true), 500);
     }
-    
-    // 다음 문제 버튼 표시
-    setTimeout(() => {
-      questionArea.dataset.submitting = 'false';
-      show(nextQuestionBtn);
-      animate(nextQuestionBtn, 'bounce');
-    }, 1500);
-    
+
+    // LuckyDraw 추첨 결과 확인
+    if (response.luckydraw_result) {
+      // 우편 봉투 애니메이션 표시 (1초 후)
+      setTimeout(() => {
+        showLuckyDrawAnimation(response.luckydraw_result);
+      }, 1000);
+    }
+
+    // NEXT 버튼 표시
+    if (response.session_complete) {
+      nextQuestionBtn.textContent = '결과 보기';
+    } else {
+      nextQuestionBtn.textContent = '다음 문제';
+    }
+    nextQuestionBtn.classList.remove('hidden');
+    animate(nextQuestionBtn, 'bounce');
+
   } else {
-    // 오답: 빨간색 표시 + 해설 말풍선 타이핑 효과
+    // 오답: 빨간색 표시 + 해설 말풍선 표시
     playSound('wrong');
     highlightIncorrectAnswer();
-    
+
+    // 제출 상태 해제 (즉시 다시 시도 가능)
+    questionArea.dataset.submitting = 'false';
+
     // 부드러운 흔들림
     document.querySelector('.quiz-main').classList.add('gentle-shake');
     setTimeout(() => {
       document.querySelector('.quiz-main').classList.remove('gentle-shake');
     }, 300);
-    
+
     // 해설 말풍선 타이핑 효과로 표시
     if (result.explanation || question.explanation) {
       const text = result.explanation || question.explanation;
-      explanationBubble.classList.remove('ox-hint', 'empty'); // OX 힌트 클래스 제거
-      explanationBubble.classList.add('long'); // 긴 텍스트 클래스 추가
-      typeWriterEffect(explanationText, text, 30);
+      explanationBubble.classList.remove('ox-hint', 'empty');
+      explanationBubble.classList.add('long');
+      typeWriterEffect(explanationText, text, 20);
     }
 
-    // 5초 후 다시 시도
-    setTimeout(() => {
-      explanationText.textContent = '';
-      explanationBubble.classList.remove('ox-hint', 'long');
-      explanationBubble.classList.add('empty');
-      questionArea.dataset.submitting = 'false';
-      currentAnswer = null;
-      
-      // 선택 상태 초기화
-      questionArea.querySelectorAll('.selected, .incorrect').forEach(el => {
-        el.classList.remove('selected', 'incorrect');
-      });
-    }, 5000);
+    // 오답이므로 답변 초기화
+    currentAnswer = null;
+
+    // 선택 상태 초기화 (시각적으로만)
+    questionArea.querySelectorAll('.selected, .incorrect').forEach(el => {
+      el.classList.remove('selected', 'incorrect');
+    });
+
+    // 타이핑 문제가 아닐 때만 NEXT 버튼 숨김 (타이핑 문제는 제출 버튼 유지)
+    if (question.question_type !== 'typing') {
+      nextQuestionBtn.classList.add('hidden');
+    }
   }
 }
 
@@ -564,7 +646,7 @@ function showFeedback(result, question) {
  * 정답 하이라이트
  */
 function highlightCorrectAnswer() {
-  const question = currentSession.questions[currentQuestionIndex];
+  const question = currentSession.question;
 
   switch (question.question_type) {
     case 'fill_in_blank':
@@ -611,7 +693,7 @@ function highlightCorrectAnswer() {
  * 오답 하이라이트
  */
 function highlightIncorrectAnswer() {
-  const question = currentSession.questions[currentQuestionIndex];
+  const question = currentSession.question;
 
   switch (question.question_type) {
     case 'fill_in_blank':
@@ -622,7 +704,7 @@ function highlightIncorrectAnswer() {
         }
       });
       break;
-      
+
     case 'ox':
       questionArea.querySelectorAll('.ox-button').forEach(el => {
         if (el.dataset.value === currentAnswer) {
@@ -630,7 +712,7 @@ function highlightIncorrectAnswer() {
         }
       });
       break;
-      
+
     case 'find_error':
     case 'finderror':
       questionArea.querySelectorAll('.finderror-word').forEach(el => {
@@ -639,13 +721,27 @@ function highlightIncorrectAnswer() {
         }
       });
       break;
-      
+
     case 'drag_and_drop':
     case 'dragdrop':
       const target = questionArea.querySelector('.dragdrop-target');
       if (target) {
         target.style.borderColor = '#d41010';
         target.style.background = 'rgba(252, 40, 71, 0.3)';
+        // 드롭된 항목 제거 (다시 선택 가능하도록)
+        target.innerHTML = '';
+      }
+      break;
+
+    case 'typing':
+      // 타이핑 문제는 입력창 내용 유지 (다시 수정 가능)
+      const textarea = questionArea.querySelector('textarea');
+      if (textarea) {
+        textarea.classList.add('incorrect');
+        // 0.3초 후 incorrect 클래스 제거
+        setTimeout(() => {
+          textarea.classList.remove('incorrect');
+        }, 300);
       }
       break;
   }
@@ -658,11 +754,28 @@ function highlightIncorrectAnswer() {
  * 다음 문제
  */
 function handleNext() {
-  currentQuestionIndex++;
+  // 세션 완료 확인
+  if (currentSession.session_complete) {
+    completeQuiz();
+    return;
+  }
+
+  // 다음 문제가 있는지 확인
+  if (!currentSession.nextQuestion) {
+    alert('다음 문제를 불러올 수 없습니다');
+    return;
+  }
+
+  // 다음 문제로 이동
+  currentSession.question = currentSession.nextQuestion;
+  currentSession.nextQuestion = null;
+  currentQuestionIndex = currentSession.current_question_number;
 
   // 세션 업데이트
-  currentSession.currentQuestionIndex = currentQuestionIndex;
   sessionStorage.setItem('currentSession', JSON.stringify(currentSession));
+
+  // 타이머 리셋
+  startTimer();
 
   loadQuestion();
 }
@@ -675,8 +788,12 @@ async function completeQuiz() {
     const response = await quizApi.completeSession(currentSession.sessionId);
 
     if (response.success) {
-      // 결과 페이지로 이동
-      sessionStorage.setItem('quizResult', JSON.stringify(response.result));
+      // 결과 페이지로 이동 (eventId 포함)
+      const resultData = {
+        ...response.result,
+        eventId: currentSession.eventId
+      };
+      sessionStorage.setItem('quizResult', JSON.stringify(resultData));
       sessionStorage.removeItem('currentSession');
       window.location.href = '/pages/result.html';
     }
@@ -762,9 +879,111 @@ function triggerFireworks() {
  */
 function updateStarGauge(animate = false) {
   const percentage = Math.min(100, (firstAttemptCorrectCount / totalQuestions) * 100);
-  
+
   // width 스타일로 직접 설정 (quiz-list와 동일)
   starGaugeFill.style.width = percentage + '%';
+}
+
+/**
+ * LuckyDraw 우편 봉투 애니메이션
+ */
+function showLuckyDrawAnimation(result) {
+  console.log('[LuckyDraw] 애니메이션 시작:', result);
+
+  // 오버레이 생성
+  const overlay = document.createElement('div');
+  overlay.className = 'luckydraw-envelope-overlay';
+
+  // 우편 봉투 이모지 생성
+  const envelope = document.createElement('div');
+  envelope.className = 'luckydraw-envelope';
+  envelope.textContent = '📬';
+
+  overlay.appendChild(envelope);
+  document.body.appendChild(overlay);
+
+  // 1.5초 후 봉투를 결과 카드로 교체
+  setTimeout(() => {
+    envelope.remove();
+
+    // 결과 카드 생성
+    const resultCard = document.createElement('div');
+    resultCard.className = 'luckydraw-result-card';
+
+    // 당첨 여부에 따른 아이콘과 메시지
+    let icon, title, message, titleClass;
+
+    if (result.won) {
+      // 당첨!
+      icon = '🎉';
+      title = '축하합니다!';
+      message = `<strong>${result.prize}</strong>에 당첨되셨습니다!<br>관리자에게 문의하여 상품을 받아가세요.`;
+      titleClass = 'won';
+
+      // 당첨 시 폭죽 효과
+      playSound('correct');
+      createConfetti(overlay);
+    } else {
+      // 꽝
+      icon = '😢';
+      title = '아쉽네요...';
+
+      // 이유별 메시지
+      if (result.reason === 'max_winners_reached') {
+        message = '이번 회차의 당첨자가 모두 마감되었습니다.<br>다음 기회에 도전해주세요!';
+      } else if (result.reason === 'already_won') {
+        message = '이미 당첨되셨습니다!<br>한 번만 당첨 가능합니다.';
+      } else {
+        message = '이번엔 당첨되지 못했습니다.<br>다음 기회에 도전해주세요!';
+      }
+
+      titleClass = 'lost';
+      playSound('coin');
+    }
+
+    resultCard.innerHTML = `
+      <div class="luckydraw-result-icon">${icon}</div>
+      <div class="luckydraw-result-title ${titleClass}">${title}</div>
+      <div class="luckydraw-result-message">${message}</div>
+      <button class="luckydraw-close-btn">확인</button>
+    `;
+
+    overlay.appendChild(resultCard);
+
+    // 확인 버튼 클릭 시 닫기
+    const closeBtn = resultCard.querySelector('.luckydraw-close-btn');
+    closeBtn.addEventListener('click', () => {
+      overlay.remove();
+    });
+
+  }, 1500);
+}
+
+/**
+ * 당첨 시 폭죽 효과
+ */
+function createConfetti(container) {
+  const emojis = ['🎉', '🎊', '⭐', '✨', '🌟', '💫'];
+
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      const confetti = document.createElement('div');
+      confetti.className = 'luckydraw-confetti';
+      confetti.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+      // 랜덤 위치
+      confetti.style.left = Math.random() * 100 + '%';
+      confetti.style.top = Math.random() * 30 + '%';
+
+      // 랜덤 애니메이션 지연
+      confetti.style.animationDelay = Math.random() * 0.5 + 's';
+
+      container.appendChild(confetti);
+
+      // 애니메이션 후 제거
+      setTimeout(() => confetti.remove(), 3000);
+    }, i * 50);
+  }
 }
 
 // 초기화

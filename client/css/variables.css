@@ -1,12 +1,12 @@
 /* 픽셀 게임 스타일 변수 */
 
-/* Press Start 2P (영문) - Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* Press Start 2P (영문) - Local Font */
+@import url('../css/fonts.css');
 
 /* 한글 픽셀 폰트 - DungGeunMo (둥근모) */
 @font-face {
   font-family: 'DungGeunMo';
-  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
+  src: url('../fonts/DungGeunMo.woff') format('woff');
   font-weight: normal;
   font-style: normal;
 }

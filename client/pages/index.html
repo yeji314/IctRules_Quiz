@@ -33,7 +33,7 @@
         <input
           type="text"
           id="employeeId"
-          class="game-input"
+          class="nes-input"
           placeholder="사원번호"
           required
           autocomplete="username"
@@ -45,7 +45,7 @@
         <input
           type="password"
           id="password"
-          class="game-input"
+          class="nes-input"
           placeholder="비밀번호"
           required
           autocomplete="current-password"
@@ -66,40 +66,16 @@
       <div id="errorMessage" class="error-message hidden"></div>
     </form>
 
-    <!-- 손 커서 -->
-    <div class="hand-cursor">👆</div>
   </div>
 
   <!-- 픽셀 장식 요소들 -->
   <div class="decorations">
     <!-- 왼쪽 영역 -->
     <div class="deco-left">
-      <!-- 크리스마스 트리 -->
-      <div class="tree" style="bottom: 30%; left: 2%;">🎄</div>
-      <!-- 주황 풍선 -->
-      <div class="balloon balloon-orange float" style="top: 42%; left: 8.5%;">🎈</div>
-      <!-- 캐릭터 -->
-      <div class="character" style="bottom: 30%; left: 14%;">🧍‍♂️</div>
-      <!-- 파이프 -->
-      <div class="pipe" style="bottom: 30%; left: 23%;"></div>
-      <!-- 어두운 파란 풍선 -->
-      <div class="balloon balloon-darkblue float" style="top: 22%; left: 16%; animation-delay: 0.7s;">🎈</div>
     </div>
 
     <!-- 오른쪽 영역 -->
     <div class="deco-right">
-      <!-- 파란 풍선 -->
-      <div class="balloon balloon-blue float" style="top: 28%; right: 9%; animation-delay: 0.5s;">🎈</div>
-      <!-- 해바라기 -->
-      <div class="sunflower" style="bottom: 33%; right: 32%;">🌻</div>
-      <!-- 식물 -->
-      <div class="plant" style="bottom: 30%; right: 26%;">🌿</div>
-      <!-- 성 -->
-      <div class="castle" style="bottom: 30%; right: 17%;">🏰</div>
-      <!-- 성 위 플래그 -->
-      <div class="flag" style="bottom: 45%; right: 17.5%;">🚩</div>
-      <!-- TNT -->
-      <div class="tnt" style="bottom: 30%; right: 4%;">📦</div>
       <!-- 작은 버섯 구름 -->
       <div class="cloud-item" style="bottom: 30%; right: 0.5%;">☁️</div>
     </div>
@@ -110,6 +86,9 @@
     <div class="grass-layer"></div>
     <div class="dirt-layer"></div>
   </div>
+
+  <!-- 움직이는 SOL 캐릭터 -->
+  <img src="../images/SOL2.gif" alt="SOL Character" class="sol-character">
 
   <!-- JavaScript -->
   <script type="module" src="../js/pages/login.js"></script>

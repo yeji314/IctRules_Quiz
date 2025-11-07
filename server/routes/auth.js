@@ -21,4 +21,16 @@ router.post('/logout', authController.logout);
  */
 router.get('/me', authenticate, authController.getCurrentUser);
 
+/**
+ * POST /api/auth/swing/token
+ * Swing SSO 토큰 인증
+ */
+router.post('/swing/token', authController.swingSsoTokenLogin);
+
+/**
+ * POST /api/auth/swing/idpw
+ * Swing SSO ID/Password 인증
+ */
+router.post('/swing/idpw', authController.swingIdPasswordLogin);
+
 module.exports = router;

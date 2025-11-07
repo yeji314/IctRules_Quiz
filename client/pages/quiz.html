@@ -14,10 +14,10 @@
   <link rel="stylesheet" href="../css/quiz.css">
 </head>
 <body>
-  <!-- 좌상: 사용자 정보 -->
+  <!-- 좌상: 사용자 정보 + 로그아웃 -->
   <div class="user-section">
     <span class="user-name-display" id="userNameDisplay">사용자님</span>
-    <img class="nes-avatar is-rounded is-small" id="userAvatar" src="https://www.gravatar.com/avatar?s=24&d=identicon" style="image-rendering: pixelated; cursor: pointer;" title="로그아웃" alt="User Avatar">
+    <i class="nes-icon close is-small" id="logoutBtn" style="cursor: pointer;" title="로그아웃"></i>
   </div>
 
   <!-- 우상: 별표 게이지 -->
@@ -30,7 +30,11 @@
 
   <!-- 상단 중앙: QUIZ 진행 상황 -->
   <div class="quiz-header">
-    <div class="quiz-title"><span style="color: #becee2;">Q<span id="questionNumber">1</span>)</span> <span id="questionTextHeader"></span></div>
+    <div class="quiz-title">
+      <span style="color: #becee2;">Q<span id="questionNumber">1</span>)</span>
+      <span id="luckyDrawBadge" class="lucky-draw-badge hidden">🎲 LUCKY DRAW</span>
+      <span id="questionTextHeader"></span>
+    </div>
   </div>
 
   <!-- 좌측 하단: 캐릭터 + 말풍선 (해설) -->
@@ -42,8 +46,8 @@
     </div>
     <div class="pixel-character">
       <i class="nes-octocat animate"></i>
-    </div>
-  </div>
+        </div>
+      </div>
 
   <!-- 중앙: 문제 영역 -->
   <main class="quiz-main">

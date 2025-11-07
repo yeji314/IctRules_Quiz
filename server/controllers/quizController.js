@@ -1,3 +1,4 @@
+
 const db = require('../models');
 const quizService = require('../services/quizService');
 const { Op } = require('sequelize');
@@ -47,7 +48,7 @@ const startQuizSession = async (req, res) => {
       });
     }
 
-    // 이미 완료한 세션 수 확인
+    // 완료한 세션 수 확인
     const completedCount = await db.QuizSession.count({
       where: {
         user_id: userId,
@@ -56,9 +57,14 @@ const startQuizSession = async (req, res) => {
       }
     });
 
-    if (completedCount >= 3) {
+    // 푼 문제 수 = 완료된 세션 수 × 5
+    const totalAnswered = completedCount * 5;
+
+    console.log(`[퀴즈 시작] 사용자 ${userId}, 이벤트 ${event_id}: 완료된 세션 ${completedCount}개 → 이미 푼 문제 ${totalAnswered}개`);
+
+    if (totalAnswered >= 15) {
       return res.status(400).json({
-        error: '이미 모든 회차를 완료했습니다'
+        error: '이미 모든 문제를 완료했습니다 (15문제)'
       });
     }
 
@@ -70,30 +76,28 @@ const startQuizSession = async (req, res) => {
       status: 'in_progress'
     });
 
-    // 이미 푼 문제 ID 조회
-    const previousAnswers = await db.QuizAnswer.findAll({
-      include: [{
-        model: db.QuizSession,
-        where: {
-          user_id: userId,
-          event_id
-        }
-      }],
-      attributes: ['question_id']
-    });
+    // 남은 문제 수 = 15 - (완료된 세션 × 5)
+    const remainingQuestions = 15 - totalAnswered;
 
-    const excludeQuestionIds = previousAnswers.map(a => a.question_id);
+    console.log(`[퀴즈 시작] 완료된 세션: ${completedCount}개, 이미 푼 문제: ${totalAnswered}개, 남은 문제: ${remainingQuestions}개`);
 
-    // 랜덤으로 5개 문제 선택
-    const questions = await quizService.getRandomQuestions(
-      session.id,
-      event_id,
-      excludeQuestionIds
-    );
+    // 남은 문제가 5개 미만이면 완료 처리
+    if (remainingQuestions < 5) {
+      // 세션 삭제
+      await session.destroy();
 
-    if (questions.length < 5) {
       return res.status(400).json({
-        error: '선택 가능한 문제가 부족합니다'
+        error: '남은 문제가 부족합니다. 모든 퀴즈를 완료했습니다!'
+      });
+    }
+
+    // 첫 번째 문제 가져오기 (동적 선택)
+    const firstQuestion = await quizService.getNextQuestion(session.id, event_id);
+
+    if (!firstQuestion) {
+      await session.destroy();
+      return res.status(400).json({
+        error: '선택 가능한 문제가 없습니다'
       });
     }
 
@@ -104,13 +108,15 @@ const startQuizSession = async (req, res) => {
         session_number: session.session_number,
         event_id: session.event_id
       },
-      questions: questions.map(q => ({
-        id: q.id,
-        question_type: q.question_type,
-        category: q.category,
-        question_text: q.question_text,
-        question_data: q.question_data
-      }))
+      question: {
+        id: firstQuestion.id,
+        question_type: firstQuestion.question_type,
+        category: firstQuestion.category,
+        question_text: firstQuestion.question_text,
+        question_data: firstQuestion.question_data
+      },
+      current_question_number: 1,
+      total_questions: 5
     });
 
   } catch (error) {
@@ -189,15 +195,132 @@ const submitAnswer = async (req, res) => {
       });
     }
 
-    res.json({
+    // 현재까지 답변한 문제 수 확인 (고유 question_id 수)
+    const answeredCount = await db.QuizAnswer.count({
+      distinct: true,
+      col: 'question_id',
+      where: { session_id }
+    });
+
+    console.log(`[답변 제출] 세션 ${session_id}: 총 답변 수 = ${answeredCount}/5`);
+
+    // 다음 문제 가져오기
+    let nextQuestion = null;
+    let isSessionComplete = false;
+
+    if (answeredCount < 5) {
+      nextQuestion = await quizService.getNextQuestion(session_id, session.event_id);
+
+      if (nextQuestion) {
+        console.log(`[답변 제출] 다음 문제: Q${nextQuestion.id} (${nextQuestion.category})`);
+      } else {
+        console.log(`[답변 제출] 다음 문제 없음 - 세션 완료`);
+        isSessionComplete = true;
+      }
+    } else {
+      console.log(`[답변 제출] 5개 문제 모두 답변 완료`);
+      isSessionComplete = true;
+    }
+
+    const response = {
       success: true,
       result: {
         is_correct: isCorrect,
         correct_answer: isCorrect ? null : correctAnswer,
         explanation: question.explanation,
         attempt: answer.answer_attempt
+      },
+      current_question_number: isCorrect ? answeredCount + 1 : answeredCount,
+      total_questions: 5,
+      session_complete: isSessionComplete
+    };
+
+    // ✅ LuckyDraw 추첨 로직
+    if (question.category === 'luckydraw' && isCorrect && answer.answer_attempt === 1) {
+      console.log(`[LuckyDraw] 사용자 ${req.user.id} - 럭키드로우 문제 한번에 맞춤! 추첨 시작...`);
+
+      try {
+        // 트랜잭션으로 동시성 제어
+        const luckyDrawResult = await db.sequelize.transaction(async (t) => {
+          // 1. 이벤트 정보 가져오기 (락 설정)
+          const event = await db.QuizEvent.findByPk(session.event_id, {
+            lock: t.LOCK.UPDATE,
+            transaction: t
+          });
+
+          if (!event) {
+            throw new Error('이벤트를 찾을 수 없습니다');
+          }
+
+          // 2. 현재 당첨자 수 확인
+          const currentWinnerCount = await db.LuckyDraw.count({
+            where: { event_id: session.event_id },
+            transaction: t
+          });
+
+          console.log(`[LuckyDraw] 현재 당첨자: ${currentWinnerCount}명 / 최대: ${event.max_winners}명`);
+
+          // 3. 이미 당첨자 수가 최대치에 도달했는지 확인
+          if (currentWinnerCount >= event.max_winners) {
+            console.log(`[LuckyDraw] 당첨자 수 초과 → 꽝`);
+            return { won: false, reason: 'max_winners_reached' };
+          }
+
+          // 4. 이미 당첨된 사용자인지 확인
+          const existingWin = await db.LuckyDraw.findOne({
+            where: {
+              user_id: req.user.id,
+              event_id: session.event_id
+            },
+            transaction: t
+          });
+
+          if (existingWin) {
+            console.log(`[LuckyDraw] 이미 당첨된 사용자 → 꽝`);
+            return { won: false, reason: 'already_won' };
+          }
+
+          // 5. 랜덤 추첨 (50% 확률)
+          const won = Math.random() < 0.5;
+
+          if (won) {
+            // 당첨!
+            await db.LuckyDraw.create({
+              event_id: session.event_id,
+              user_id: req.user.id,
+              prize: '스타벅스 기프티콘',
+              is_claimed: false
+            }, { transaction: t });
+
+            console.log(`[LuckyDraw] 🎉 당첨! 사용자 ${req.user.id}`);
+            return { won: true, prize: '스타벅스 기프티콘' };
+          } else {
+            console.log(`[LuckyDraw] 꽝... 사용자 ${req.user.id}`);
+            return { won: false, reason: 'random' };
+          }
+        });
+
+        // 추첨 결과를 response에 추가
+        response.luckydraw_result = luckyDrawResult;
+
+      } catch (error) {
+        console.error('[LuckyDraw] 추첨 중 에러:', error);
+        // 에러가 나도 퀴즈는 계속 진행
       }
-    });
+    }
+
+    // 다음 문제가 있으면 추가
+    if (nextQuestion) {
+      response.next_question = {
+        id: nextQuestion.id,
+        question_type: nextQuestion.question_type,
+        category: nextQuestion.category,
+        question_text: nextQuestion.question_text,
+        question_data: nextQuestion.question_data
+      };
+    }
+
+    res.json(response);
 
   } catch (error) {
     console.error('답변 제출 에러:', error);
