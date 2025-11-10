@@ -35,9 +35,9 @@ function init() {
 
   const result = JSON.parse(resultData);
 
-  // 별 획득 여부 표시
-  if (result.luckydraw_count > 0) {
-    starEarned.textContent = `⭐ 획득 (Lucky Draw ${result.luckydraw_count}개 정답!)`;
+  // 선물 당첨 여부 표시
+  if (result.won_prize) {
+    starEarned.textContent = `🎁 선물 획득! (${result.prize_name || '축하합니다!'})`;
     createConfetti();
     playSound('correct');
   } else {

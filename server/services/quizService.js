@@ -226,17 +226,6 @@ class QuizService {
 
     console.log(`[getNextQuestion] 현재 세션에서 한번에 맞춘 문제 수: ${firstCorrectCount}`);
 
-    // 이 세션에서 이미 럭키드로우를 봤는지 확인
-    const hasSeenLuckyDrawInSession = await db.QuizAnswer.count({
-      where: { session_id: sessionId },
-      include: [{
-        model: db.Question,
-        where: { category: 'luckydraw' }
-      }]
-    }) > 0;
-
-    console.log(`[getNextQuestion] 이 세션에서 럭키드로우 본 적 있음: ${hasSeenLuckyDrawInSession}`);
-
     // 이미 푼 문제 ID 목록 (전체 이벤트 기준)
     const previousAnswers = await db.QuizAnswer.findAll({
       include: [{
@@ -255,7 +244,7 @@ class QuizService {
     const excludeQuestionIds = previousAnswers.map(a => a.question_id);
     console.log(`[getNextQuestion] 이미 푼 문제 ID (전체): [${excludeQuestionIds.join(', ')}]`);
 
-    // 남은 문제 가져오기
+    // 남은 문제 가져오기 (category 구분 없이 모든 문제)
     const allQuestions = await db.Question.findAll({
       where: {
         event_id: eventId,
@@ -263,79 +252,14 @@ class QuizService {
       }
     });
 
-    // ✅ 이미 당첨된 사용자인지 확인
-    const alreadyWon = await db.LuckyDraw.findOne({
-      where: {
-        user_id: currentSession.user_id,
-        event_id: eventId
-      }
-    });
+    console.log(`[getNextQuestion] 남은 문제: 총 ${allQuestions.length}개`);
 
-    // 일반 문제와 럭키드로우 분리
-    let normalQuestions = allQuestions.filter(q => q.category === 'normal');
-    let luckyQuestions = allQuestions.filter(q => q.category === 'luckydraw');
-
-    // ✅ 이미 당첨된 사용자는 럭키드로우 문제 제외
-    if (alreadyWon) {
-      console.log(`[getNextQuestion] 사용자 ${currentSession.user_id}는 이미 당첨됨 → 럭키드로우 문제 제외`);
-      luckyQuestions = [];
-    }
-
-    console.log(`[getNextQuestion] 남은 문제: 일반 ${normalQuestions.length}개, 럭키드로우 ${luckyQuestions.length}개`);
-
+    // 단순 랜덤 선택 (category 구분 없음)
     let selectedQuestion = null;
-
-    // 조건 1: 한번에 3개 이상 맞췄고, 이 세션에서 아직 럭키드로우를 보지 않았으면 무조건 럭키드로우
-    if (firstCorrectCount >= 3 && !hasSeenLuckyDrawInSession && luckyQuestions.length > 0) {
-      console.log(`[getNextQuestion] 조건 충족: 한번에 ${firstCorrectCount}개 맞춤 → 럭키드로우 문제 선택`);
-      const idx = Math.floor(Math.random() * luckyQuestions.length);
-      selectedQuestion = luckyQuestions[idx];
-    }
-    // 조건 2: 이전 문제가 럭키드로우였으면 무조건 일반 문제
-    else {
-      // 바로 이전 문제가 럭키드로우였는지 확인
-      const lastAnswer = await db.QuizAnswer.findOne({
-        where: { session_id: sessionId },
-        include: [{
-          model: db.Question,
-          attributes: ['category']
-        }],
-        order: [['answered_at', 'DESC']],
-        limit: 1
-      });
-
-      const lastWasLucky = lastAnswer && lastAnswer.Question && lastAnswer.Question.category === 'luckydraw';
-      console.log(`[getNextQuestion] 이전 문제가 럭키드로우였음: ${lastWasLucky}`);
-
-      if (lastWasLucky) {
-        // 무조건 일반 문제
-        if (normalQuestions.length > 0) {
-          const idx = Math.floor(Math.random() * normalQuestions.length);
-          selectedQuestion = normalQuestions[idx];
-          console.log(`[getNextQuestion] 이전이 럭키드로우 → 일반 문제 선택`);
-        }
-      } else {
-        // 일반적인 경우: 가중치 랜덤 (럭키드로우 40%)
-        const luckyWeight = hasSeenLuckyDrawInSession ? 0.4 : 0; // 첫 럭키드로우 후에만 40%
-
-        if (Math.random() < luckyWeight && luckyQuestions.length > 0) {
-          const idx = Math.floor(Math.random() * luckyQuestions.length);
-          selectedQuestion = luckyQuestions[idx];
-          console.log(`[getNextQuestion] 가중치 랜덤으로 럭키드로우 선택`);
-        } else if (normalQuestions.length > 0) {
-          const idx = Math.floor(Math.random() * normalQuestions.length);
-          selectedQuestion = normalQuestions[idx];
-          console.log(`[getNextQuestion] 일반 문제 선택`);
-        } else if (luckyQuestions.length > 0) {
-          const idx = Math.floor(Math.random() * luckyQuestions.length);
-          selectedQuestion = luckyQuestions[idx];
-          console.log(`[getNextQuestion] 일반 문제 없음 → 럭키드로우 선택`);
-        }
-      }
-    }
-
-    if (selectedQuestion) {
-      console.log(`[getNextQuestion] 선택된 문제: Q${selectedQuestion.id} (${selectedQuestion.category})`);
+    if (allQuestions.length > 0) {
+      const idx = Math.floor(Math.random() * allQuestions.length);
+      selectedQuestion = allQuestions[idx];
+      console.log(`[getNextQuestion] 선택된 문제: Q${selectedQuestion.id}`);
     } else {
       console.log(`[getNextQuestion] 선택 가능한 문제 없음`);
     }

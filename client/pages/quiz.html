@@ -20,20 +20,34 @@
     <i class="nes-icon close is-small" id="logoutBtn" style="cursor: pointer;" title="로그아웃"></i>
   </div>
 
-  <!-- 우상: 별표 게이지 -->
-  <div class="star-gauge-section">
-    <div class="star-icon">⭐</div>
-    <div class="star-progress">
-      <div class="star-fill" id="starGaugeFill" style="width: 0%;"></div>
+  <!-- 상단: QUIZ 헤더 + 진행 게이지 -->
+  <div class="quiz-top-section">
+    <!-- 좌측: QUIZ 제목 -->
+    <div class="quiz-header">
+      <div class="quiz-title">
+        <span style="color: #becee2;">Q<span id="questionNumber">1</span>)</span>
+        <span id="luckyDrawBadge" class="lucky-draw-badge hidden">🎲 LUCKY DRAW</span>
+        <span id="questionTextHeader"></span>
+      </div>
     </div>
-  </div>
 
-  <!-- 상단 중앙: QUIZ 진행 상황 -->
-  <div class="quiz-header">
-    <div class="quiz-title">
-      <span style="color: #becee2;">Q<span id="questionNumber">1</span>)</span>
-      <span id="luckyDrawBadge" class="lucky-draw-badge hidden">🎲 LUCKY DRAW</span>
-      <span id="questionTextHeader"></span>
+    <!-- 우측: 5칸 진행 게이지 -->
+    <div class="progress-gauge-section">
+      <div class="gauge-box" data-index="0">
+        <div class="gauge-star">☆</div>
+      </div>
+      <div class="gauge-box" data-index="1">
+        <div class="gauge-star">☆</div>
+      </div>
+      <div class="gauge-box" data-index="2">
+        <div class="gauge-star">☆</div>
+      </div>
+      <div class="gauge-box" data-index="3">
+        <div class="gauge-star">☆</div>
+      </div>
+      <div class="gauge-box" data-index="4">
+        <div class="gauge-star">☆</div>
+      </div>
     </div>
   </div>
 

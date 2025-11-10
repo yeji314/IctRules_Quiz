@@ -293,7 +293,7 @@ function createEventCard(event) {
       <div class="event-meta">
         <span>${event.year_month}</span>
         <span>${formatDate(event.start_date)} ~ ${formatDate(event.end_date)}</span>
-        <span>문제 ${event.stats?.totalQuestions || 0}개 (일반 ${event.stats?.normalQuestions || 0}, Lucky ${event.stats?.luckyQuestions || 0})</span>
+        <span>문제 ${event.stats?.totalQuestions || 0}개</span>
         <span>참여자 ${event.stats?.participants || 0}명</span>
       </div>
     </div>
@@ -402,7 +402,6 @@ function createQuestionCard(question, index) {
     <div class="question-header">
       <div>
         <span class="question-type-badge">${typeNames[question.question_type] || question.question_type}</span>
-        <span class="question-category-badge ${question.category}">${question.category === 'luckydraw' ? 'Lucky Draw' : '일반'}</span>
       </div>
       <div class="question-actions">
         <button class="nes-btn" data-action="edit">수정</button>
@@ -519,7 +518,6 @@ function openQuestionModal(question = null) {
 
   $('#questionModalTitle').textContent = question ? '문제 수정' : '문제 추가';
   $('#questionType').value = question ? question.question_type : '';
-  $('#questionCategory').value = question ? question.category : 'normal';
   $('#questionText').value = question ? question.question_text : '';
   $('#questionExplanation').value = question ? (question.explanation || '') : '';
 
@@ -682,7 +680,7 @@ async function handleQuestionSubmit(e) {
   const data = {
     event_id: selectedEventId,
     question_type: questionType,
-    category: $('#questionCategory').value,
+    category: 'normal', // 기본값으로 설정 (DB 호환성 유지)
     question_text: $('#questionText').value,
     question_data: questionData,
     explanation: $('#questionExplanation').value

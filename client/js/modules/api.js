@@ -129,12 +129,13 @@ export const quiz = {
   /**
    * 답변 제출
    */
-  async submitAnswer(sessionId, questionId, userAnswer, timeTaken = 0) {
+  async submitAnswer(sessionId, questionId, userAnswer, timeTaken = 0, wasLuckyDraw = false) {
     return post('/quiz/answer', {
       session_id: sessionId,
       question_id: questionId,
       user_answer: userAnswer,
-      time_taken: timeTaken
+      time_taken: timeTaken,
+      was_luckydraw: wasLuckyDraw
     });
   },
 

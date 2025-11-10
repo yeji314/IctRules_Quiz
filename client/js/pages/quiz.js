@@ -79,8 +79,7 @@ function init() {
     return;
   }
 
-  // 별표 게이지 초기화
-  updateStarGauge();
+  // 5칸 게이지는 HTML에서 초기화됨
 
   // NEXT 버튼 이벤트 (제출 또는 다음 문제)
   nextQuestionBtn.addEventListener('click', () => {
@@ -119,12 +118,8 @@ function loadQuestion() {
   // UI 업데이트
   questionNumber.textContent = currentQuestionIndex;
 
-  // Lucky Draw 배지 표시/숨김
-  if (question.category === 'luckydraw') {
-    luckyDrawBadge.classList.remove('hidden');
-  } else {
-    luckyDrawBadge.classList.add('hidden');
-  }
+  // Lucky Draw 배지 숨김 (모든 문제가 추첨 기회를 가질 수 있으므로 배지 제거)
+  luckyDrawBadge.classList.add('hidden');
 
   // 타이핑 문제는 문제 텍스트를 숨김
   if (question.question_type === 'typing') {
@@ -140,10 +135,23 @@ function loadQuestion() {
   questionArea.dataset.submitting = 'false';
   questionArea.dataset.isCorrect = 'false';
 
-  // 해설 말풍선 내용 초기화 (숨기지 않음, 공란)
-  explanationText.textContent = '';
-  explanationBubble.classList.remove('ox-hint', 'long');
-  explanationBubble.classList.add('empty');
+  // 해설 말풍선 내용 초기화
+  explanationBubble.classList.remove('ox-hint', 'long', 'luckydraw-hint', 'empty');
+
+  // LuckyDraw 기회가 있으면 말풍선에 표시
+  console.log(`[Quiz loadQuestion] luckydraw_eligible = ${currentSession.luckydraw_eligible}`);
+  console.log(`[Quiz loadQuestion] currentSession =`, currentSession);
+
+  if (currentSession.luckydraw_eligible) {
+    explanationText.textContent = 'luckydraw문제입니다';
+    explanationBubble.classList.add('luckydraw-hint');
+    console.log('[Quiz] ✅ LuckyDraw 말풍선 표시됨!');
+  } else {
+    // LuckyDraw가 아닌 경우 빈 말풍선
+    explanationText.textContent = '';
+    explanationBubble.classList.add('empty');
+    console.log('[Quiz] ❌ LuckyDraw 아님 - 빈 말풍선');
+  }
 
   // NEXT 버튼 초기화 (숨김 상태로 시작)
   nextQuestionBtn.classList.add('hidden');
@@ -536,19 +544,31 @@ async function handleSubmit() {
   try {
     const question = currentSession.question;
     const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+    const wasLuckyDraw = currentSession.luckydraw_eligible || false;
 
     const response = await quizApi.submitAnswer(
       currentSession.sessionId,
       question.id,
       currentAnswer,
-      timeTaken
+      timeTaken,
+      wasLuckyDraw
     );
 
     if (response.success) {
+      console.log('[Quiz handleSubmit] 서버 응답:', response);
+      console.log('[Quiz handleSubmit] luckydraw_eligible:', response.luckydraw_eligible);
+
       // 다음 문제 저장
       currentSession.nextQuestion = response.next_question || null;
       currentSession.session_complete = response.session_complete || false;
       currentSession.current_question_number = response.current_question_number;
+      currentSession.luckydraw_eligible = response.luckydraw_eligible || false;
+
+      console.log('[Quiz handleSubmit] 세션 업데이트 후 luckydraw_eligible:', currentSession.luckydraw_eligible);
+
+      // 세션을 sessionStorage에 저장
+      sessionStorage.setItem('currentSession', JSON.stringify(currentSession));
+      console.log('[Quiz handleSubmit] sessionStorage 저장 완료');
 
       showFeedback(response.result, question, response);
     }
@@ -573,7 +593,7 @@ function showFeedback(result, question, response) {
     questionArea.dataset.submitting = 'false';
 
     // 말풍선에 격려 메시지
-    explanationBubble.classList.remove('ox-hint', 'long');
+    explanationBubble.classList.remove('ox-hint', 'long', 'luckydraw-hint');
     explanationBubble.classList.remove('empty');
     explanationText.textContent = '정답입니다! 👏';
 
@@ -584,16 +604,19 @@ function showFeedback(result, question, response) {
       // 별표 폭죽 효과
       triggerFireworks();
 
-      // 별표 게이지 채우기
-      setTimeout(() => updateStarGauge(true), 500);
-    }
-
-    // LuckyDraw 추첨 결과 확인
-    if (response.luckydraw_result) {
-      // 우편 봉투 애니메이션 표시 (1초 후)
-      setTimeout(() => {
-        showLuckyDrawAnimation(response.luckydraw_result);
-      }, 1000);
+      // LuckyDraw 추첨 결과 확인
+      if (response.luckydraw_result) {
+        // 우편 봉투 애니메이션 표시 (1초 후)
+        setTimeout(() => {
+          showLuckyDrawAnimation(response.luckydraw_result, currentQuestionIndex - 1);
+        }, 1000);
+      } else {
+        // 일반 문제 - 한 번에 맞춤 (노란색 별)
+        setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'correct'), 500);
+      }
+    } else {
+      // 첫 시도에 못 맞춘 경우 (회색 별)
+      setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'incorrect'), 500);
     }
 
     // NEXT 버튼 표시
@@ -875,19 +898,41 @@ function triggerFireworks() {
 }
 
 /**
- * 별표 게이지 업데이트
+ * 별표 게이지 업데이트 (5칸 시스템)
+ * @param {number} questionIndex - 현재 문제 인덱스 (0-4)
+ * @param {string} status - 'correct', 'incorrect', 'lucky-win', 'lucky-lose'
  */
-function updateStarGauge(animate = false) {
-  const percentage = Math.min(100, (firstAttemptCorrectCount / totalQuestions) * 100);
-
-  // width 스타일로 직접 설정 (quiz-list와 동일)
-  starGaugeFill.style.width = percentage + '%';
+function updateStarGauge(questionIndex, status) {
+  const gaugeBoxes = document.querySelectorAll('.gauge-box');
+  if (questionIndex >= 0 && questionIndex < gaugeBoxes.length) {
+    const box = gaugeBoxes[questionIndex];
+    const star = box.querySelector('.gauge-star');
+    
+    // 기존 클래스 제거
+    box.classList.remove('correct', 'incorrect', 'lucky-win', 'lucky-lose');
+    
+    // 새 상태 적용
+    box.classList.add(status);
+    
+    // 별 모양 변경
+    if (status === 'correct' || status === 'lucky-win') {
+      star.textContent = '★';
+    } else if (status === 'lucky-lose') {
+      star.textContent = '☆';
+    } else if (status === 'incorrect') {
+      star.textContent = '★';
+    }
+    
+    console.log(`[게이지 업데이트] 칸 ${questionIndex + 1}: ${status}`);
+  }
 }
 
 /**
  * LuckyDraw 우편 봉투 애니메이션
+ * @param {Object} result - LuckyDraw 결과
+ * @param {number} questionIndex - 현재 문제 인덱스 (0-4)
  */
-function showLuckyDrawAnimation(result) {
+function showLuckyDrawAnimation(result, questionIndex) {
   console.log('[LuckyDraw] 애니메이션 시작:', result);
 
   // 오버레이 생성
@@ -950,9 +995,15 @@ function showLuckyDrawAnimation(result) {
 
     overlay.appendChild(resultCard);
 
-    // 확인 버튼 클릭 시 닫기
+    // 확인 버튼 클릭 시 게이지 업데이트 후 닫기
     const closeBtn = resultCard.querySelector('.luckydraw-close-btn');
     closeBtn.addEventListener('click', () => {
+      // LuckyDraw 결과에 따라 게이지 업데이트
+      if (result.won) {
+        updateStarGauge(questionIndex, 'lucky-win');
+      } else {
+        updateStarGauge(questionIndex, 'lucky-lose');
+      }
       overlay.remove();
     });
 

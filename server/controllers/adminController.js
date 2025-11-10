@@ -30,14 +30,6 @@ const listEvents = async (req, res) => {
         where: { event_id: event.id }
       });
 
-      const normalQuestions = await db.Question.count({
-        where: { event_id: event.id, category: 'normal' }
-      });
-
-      const luckyQuestions = await db.Question.count({
-        where: { event_id: event.id, category: 'luckydraw' }
-      });
-
       const participants = await db.QuizSession.count({
         where: { event_id: event.id },
         distinct: true,
@@ -52,8 +44,6 @@ const listEvents = async (req, res) => {
         ...event.toJSON(),
         stats: {
           totalQuestions,
-          normalQuestions,
-          luckyQuestions,
           participants,
           completedSessions
         }
