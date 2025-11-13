@@ -14,6 +14,13 @@
   <link rel="stylesheet" href="../css/quiz-list.css">
 </head>
 <body>
+  <!-- 배경 장식 요소들 -->
+  <div class="wavy-line"></div>
+  <div class="circle-green"></div>
+  <div class="sparkle sparkle1">✦</div>
+  <div class="sparkle sparkle2">✦</div>
+  <div class="lightning"></div>
+
   <!-- 우측 상단: 사용자 이름 + 로그아웃 -->
   <div class="user-section">
     <div class="user-name-display" id="userNameDisplay">Loading...</div>
@@ -38,6 +45,17 @@
     </div>
   </div>
 
+  <!-- 연도 네비게이션 -->
+  <div class="year-navigation">
+    <button class="year-nav-btn" id="prevYear">
+      <span class="arrow">◀</span>
+    </button>
+    <span class="year-display" id="yearDisplay">2025년</span>
+    <button class="year-nav-btn" id="nextYear">
+      <span class="arrow">▶</span>
+    </button>
+  </div>
+
   <!-- 메인 컨텐츠 -->
   <main class="main-content">
     <!-- 로딩 -->
@@ -46,7 +64,7 @@
       <p class="loading-text">LOADING<span class="loading"></span></p>
     </div>
 
-    <!-- 퀴즈 리스트 -->
+    <!-- 퀴즈 리스트 (12개월 달력) -->
     <div id="quizList" class="quiz-board-list hidden"></div>
 
     <!-- 에러 상태 -->

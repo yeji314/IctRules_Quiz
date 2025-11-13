@@ -14,76 +14,104 @@
   <link rel="stylesheet" href="../css/quiz.css">
 </head>
 <body>
-  <!-- 좌상: 사용자 정보 + 로그아웃 -->
-  <div class="user-section">
-    <span class="user-name-display" id="userNameDisplay">사용자님</span>
-    <i class="nes-icon close is-small" id="logoutBtn" style="cursor: pointer;" title="로그아웃"></i>
-  </div>
-
-  <!-- 상단: QUIZ 헤더 + 진행 게이지 -->
-  <div class="quiz-top-section">
-    <!-- 좌측: QUIZ 제목 -->
-    <div class="quiz-header">
-      <div class="quiz-title">
-        <span style="color: #becee2;">Q<span id="questionNumber">1</span>)</span>
-        <span id="luckyDrawBadge" class="lucky-draw-badge hidden">🎲 LUCKY DRAW</span>
-        <span id="questionTextHeader"></span>
-      </div>
-    </div>
-
-    <!-- 우측: 5칸 진행 게이지 -->
-    <div class="progress-gauge-section">
+  <div class="quiz-container">
+    <!-- 좌상: 사용자 정보 -->
+    <div class="user-title" id="userNameDisplay">사용자님</div>
+    
+    <!-- 우상: 5칸 게이지 바 -->
+    <div class="gauge-bar">
       <div class="gauge-box" data-index="0">
-        <div class="gauge-star">☆</div>
+        <div class="gauge-pixel"></div>
       </div>
       <div class="gauge-box" data-index="1">
-        <div class="gauge-star">☆</div>
+        <div class="gauge-pixel"></div>
       </div>
       <div class="gauge-box" data-index="2">
-        <div class="gauge-star">☆</div>
+        <div class="gauge-pixel"></div>
       </div>
       <div class="gauge-box" data-index="3">
-        <div class="gauge-star">☆</div>
+        <div class="gauge-pixel"></div>
       </div>
       <div class="gauge-box" data-index="4">
-        <div class="gauge-star">☆</div>
+        <div class="gauge-pixel"></div>
       </div>
     </div>
-  </div>
 
-  <!-- 좌측 하단: 캐릭터 + 말풍선 (해설) -->
-  <div class="left-section">
-    <div class="explanation-bubble" id="explanationBubble">
-      <div class="nes-balloon from-left">
-        <p id="explanationText"></p>
-      </div>
+    <!-- 퀴즈 번호 -->
+    <div class="quiz-number">
+      QUIZ:Q<span id="questionNumber">1</span>
+      <span id="luckyDrawBadge" class="lucky-draw-badge hidden">🎲</span>
     </div>
-    <div class="pixel-character">
-      <i class="nes-octocat animate"></i>
-        </div>
-      </div>
 
-  <!-- 중앙: 문제 영역 -->
-  <main class="quiz-main">
-    <!-- 선택지 영역 -->
-    <div class="quiz-options" id="questionArea">
+    <!-- 질문 -->
+    <div class="question" id="questionTextHeader">
       <!-- 동적으로 생성 -->
     </div>
-    
+
+    <!-- 답변 버튼들 -->
+    <div class="answers" id="questionArea">
+      <!-- 동적으로 생성 -->
+    </div>
+
     <!-- 다음 문제 버튼 -->
-    <button class="nes-btn is-primary next-question-btn hidden" id="nextQuestionBtn">
+    <button class="next-question-btn hidden" id="nextQuestionBtn">
       NEXT
     </button>
-  </main>
+
+    <!-- 지면 -->
+    <div class="ground">
+      <div class="grass-layer">
+        <div class="grass-pixels"></div>
+      </div>
+      <div class="dirt-layer">
+        <div class="dirt-pixels"></div>
+      </div>
+    </div>
+
+    <!-- 픽셀 캐릭터 -->
+    <div class="character">
+      <div class="pixel-char hair"></div>
+    </div>
+
+    <!-- 장식 요소들 -->
+    <div class="balloon-orange">
+      <div class="balloon-o-pixel"></div>
+    </div>
+    <div class="balloon-blue">
+      <div class="balloon-b-pixel"></div>
+    </div>
+    <div class="tree">
+      <div class="tree-leaves"></div>
+    </div>
+    <div class="bush bush1"></div>
+    <div class="sunflower">
+      <div class="sunflower-flower"></div>
+    </div>
+    <div class="bush bush2"></div>
+    <div class="clover"></div>
+    <div class="small-plant"></div>
+    <div class="tnt">
+      <div class="tnt-box"></div>
+      <div class="tnt-label">TNT</div>
+    </div>
+    <div class="mailbox">
+      <div class="mailbox-top"></div>
+    </div>
+    <div class="cursor">
+      <div class="cursor-pixel"></div>
+    </div>
+
+    <!-- 해설 말풍선 (숨김 상태) -->
+    <div class="explanation-bubble hidden" id="explanationBubble">
+      <p id="explanationText"></p>
+    </div>
+  </div>
 
   <!-- 별표 폭죽 컨테이너 -->
   <div class="fireworks-container" id="fireworksContainer"></div>
 
-  <!-- 픽셀 지형 -->
-  <div class="pixel-ground">
-    <div class="grass-layer"></div>
-    <div class="dirt-layer"></div>
-  </div>
+  <!-- 로그아웃 버튼 (숨김) -->
+  <i class="nes-icon close is-small hidden" id="logoutBtn" style="cursor: pointer; position: fixed; top: 20px; right: 20px; z-index: 1000;" title="로그아웃"></i>
 
   <!-- JavaScript -->
   <script type="module" src="../js/pages/quiz.js"></script>

@@ -68,13 +68,27 @@ const startQuizSession = async (req, res) => {
       });
     }
 
-    // 새 세션 생성
-    const session = await db.QuizSession.create({
-      user_id: userId,
-      event_id,
-      session_number: completedCount + 1,
-      status: 'in_progress'
+    // 진행 중인 세션이 있는지 확인
+    let session = await db.QuizSession.findOne({
+      where: {
+        user_id: userId,
+        event_id,
+        status: 'in_progress'
+      }
     });
+
+    // 진행 중인 세션이 있으면 해당 세션 사용, 없으면 새로 생성
+    if (session) {
+      console.log(`[퀴즈 시작] 진행 중인 세션 발견: ${session.id}, 이어서 진행합니다.`);
+    } else {
+      session = await db.QuizSession.create({
+        user_id: userId,
+        event_id,
+        session_number: completedCount + 1,
+        status: 'in_progress'
+      });
+      console.log(`[퀴즈 시작] 새 세션 생성: ${session.id}`);
+    }
 
     // 남은 문제 수 = 15 - (완료된 세션 × 5)
     const remainingQuestions = 15 - totalAnswered;
@@ -101,7 +115,7 @@ const startQuizSession = async (req, res) => {
       });
     }
 
-    // LuckyDraw 기회 체크
+    // LuckyDraw 기회 체크 (첫 시도 정답 2개면 다음이 3번째 정답 → LuckyDraw 기회)
     const firstAttemptCorrectCount = await db.QuizAnswer.count({
       distinct: true,
       col: 'question_id',
@@ -112,32 +126,7 @@ const startQuizSession = async (req, res) => {
       }
     });
 
-    let luckyDrawEligible = false;
-
-    // 조건 1: 첫 번째 LuckyDraw - 첫 시도 정답 3개 이상 (4번째 문제부터)
-    if (firstAttemptCorrectCount >= 3) {
-      // 조건 2: 이미 이 이벤트에서 당첨되었는지 확인
-      const alreadyWon = await db.LuckyDraw.findOne({
-        where: {
-          user_id: userId,
-          event_id: event_id
-        }
-      });
-
-      // LuckyDraw 조건: 3개 이상 맞춤 + 아직 당첨 안됨
-      // 퀴즈 시작 시점에는 이전 문제 체크 불필요 (세션 재시작)
-      if (!alreadyWon) {
-        // 첫 번째 LuckyDraw (4번째 문제)는 무조건 나옴
-        if (firstAttemptCorrectCount === 3) {
-          luckyDrawEligible = true;
-        } else {
-          // 두 번째 이후는 30% 확률로 랜덤 출현
-          luckyDrawEligible = Math.random() < 0.3;
-        }
-      }
-
-      console.log(`[퀴즈 시작] 세션 ${session.id}: 첫 시도 정답 수 = ${firstAttemptCorrectCount}, 당첨여부: ${!!alreadyWon}, LuckyDraw 기회: ${luckyDrawEligible}`);
-    }
+    console.log(`[퀴즈 시작] 세션 ${session.id}: 첫 시도 정답 수 = ${firstAttemptCorrectCount}/3 (LuckyDraw 기회: ${firstAttemptCorrectCount === 2})`);
 
     res.json({
       success: true,
@@ -155,7 +144,7 @@ const startQuizSession = async (req, res) => {
       },
       current_question_number: 1,
       total_questions: 5,
-      luckydraw_eligible: luckyDrawEligible
+      luckydraw_eligible: firstAttemptCorrectCount === 2
     });
 
   } catch (error) {
@@ -172,7 +161,7 @@ const startQuizSession = async (req, res) => {
  */
 const submitAnswer = async (req, res) => {
   try {
-    const { session_id, question_id, user_answer, time_taken, was_luckydraw } = req.body;
+    const { session_id, question_id, user_answer, time_taken } = req.body;
 
     if (!session_id || !question_id || user_answer === undefined) {
       return res.status(400).json({
@@ -287,10 +276,10 @@ const submitAnswer = async (req, res) => {
     };
 
     // ✅ LuckyDraw 추첨 로직 (모든 문제에서 추첨 가능)
-    // 조건: 정답 + 첫 시도 + 4개 이상 첫 시도 정답 + 세션당 1회만
-    // 세션에서 정답을 정확히 4개 맞춘 순간에만 추첨 (세션당 1회)
-    if (isCorrect && answer.answer_attempt === 1 && correctAnswersCount === 4) {
-      console.log(`[LuckyDraw] 사용자 ${req.user.id} - 4번째 첫 시도 정답! 추첨 시작...`);
+    // 조건: 정답 + 첫 시도 + 3개 이상 첫 시도 정답 + 세션당 1회만
+    // 세션에서 정답을 정확히 3개 맞춘 순간에만 추첨 (세션당 1회)
+    if (isCorrect && answer.answer_attempt === 1 && correctAnswersCount === 3) {
+      console.log(`[LuckyDraw] 사용자 ${req.user.id} - 3번째 첫 시도 정답! 추첨 시작...`);
 
       try {
         // 트랜잭션으로 동시성 제어
@@ -364,7 +353,7 @@ const submitAnswer = async (req, res) => {
 
     // 다음 문제가 있으면 추가
     if (nextQuestion) {
-      // LuckyDraw 기회 체크
+      // LuckyDraw 기회 체크 (현재 답변 후 첫 시도 정답이 2개면 다음 정답에서 LuckyDraw)
       const updatedCorrectCount = await db.QuizAnswer.count({
         distinct: true,
         col: 'question_id',
@@ -375,35 +364,6 @@ const submitAnswer = async (req, res) => {
         }
       });
 
-      let luckyDrawEligible = false;
-
-      // 조건 1: 첫 번째 LuckyDraw - 첫 시도 정답 3개 이상 (4번째 문제부터)
-      if (updatedCorrectCount >= 3) {
-        // 조건 2: 바로 이전 문제가 LuckyDraw였는지 확인 (클라이언트에서 전달받음)
-        const previousQuestionWasLuckyDraw = was_luckydraw || false;
-
-        // 조건 3: 이미 이 이벤트에서 당첨되었는지 확인
-        const alreadyWon = await db.LuckyDraw.findOne({
-          where: {
-            user_id: req.user.id,
-            event_id: session.event_id
-          }
-        });
-
-        // LuckyDraw 조건: 3개 이상 맞춤 + 이전 문제가 LuckyDraw 아님 + 아직 당첨 안됨
-        if (!previousQuestionWasLuckyDraw && !alreadyWon) {
-          // 첫 번째 LuckyDraw (4번째 문제)는 무조건 나옴
-          if (updatedCorrectCount === 3) {
-            luckyDrawEligible = true;
-          } else {
-            // 두 번째 이후는 30% 확률로 랜덤 출현
-            luckyDrawEligible = Math.random() < 0.3;
-          }
-        }
-
-        console.log(`[LuckyDraw 체크] 정답: ${updatedCorrectCount}, 이전 LuckyDraw: ${previousQuestionWasLuckyDraw}, 당첨여부: ${!!alreadyWon}, 결과: ${luckyDrawEligible}`);
-      }
-
       response.next_question = {
         id: nextQuestion.id,
         question_type: nextQuestion.question_type,
@@ -412,7 +372,8 @@ const submitAnswer = async (req, res) => {
         question_data: nextQuestion.question_data
       };
 
-      response.luckydraw_eligible = luckyDrawEligible;
+      response.luckydraw_eligible = updatedCorrectCount === 2;
+      console.log(`[답변 제출] 다음 문제 LuckyDraw 기회: ${response.luckydraw_eligible} (첫 시도 정답: ${updatedCorrectCount}/3)`);
     }
 
     res.json(response);
@@ -463,14 +424,18 @@ const completeSession = async (req, res) => {
     });
 
     const correctCount = answers.filter(a => a.is_correct).length;
+    const luckyDrawAnswers = answers.filter(a => a.Question.category === 'luckydraw');
 
-    // 이 이벤트에서 실제로 당첨되었는지 확인
+    // 선물 당첨 여부 확인 (이 세션에서 당첨되었는지)
     const wonPrize = await db.LuckyDraw.findOne({
       where: {
-        user_id: req.user.id,
-        event_id: session.event_id
+        user_id: session.user_id,
+        event_id: session.event_id,
+        session_id: session_id
       }
     });
+
+    console.log(`[세션 완료] 사용자 ${session.user_id}, 세션 ${session_id}: 선물 당첨 여부 = ${!!wonPrize}`);
 
     res.json({
       success: true,
@@ -479,8 +444,9 @@ const completeSession = async (req, res) => {
         total_questions: answers.length,
         correct_count: correctCount,
         incorrect_count: answers.length - correctCount,
-        won_prize: !!wonPrize,
-        prize_name: wonPrize ? wonPrize.prize : null,
+        luckydraw_count: luckyDrawAnswers.filter(a => a.is_correct).length,
+        won_prize: !!wonPrize,  // 선물 당첨 여부
+        prize_name: wonPrize ? wonPrize.prize : null,  // 당첨된 선물 이름
         answers: answers.map(a => ({
           question_id: a.question_id,
           question_type: a.Question.question_type,

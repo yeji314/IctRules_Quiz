@@ -15,9 +15,7 @@
   /* 픽셀 폰트 */
   --font-pixel: 'Press Start 2P', 'DungGeunMo', monospace;
 
-  /* 8비트 게임 색상 팔레트 (슈퍼마리오 스타일) */
-  --color-sky: #5c94fc;
-  --color-sky-dark: #4874d4;
+  /* 8비트 게임 색상 팔레트 */
   --color-ground: #d89048;
   --color-ground-dark: #b87030;
 

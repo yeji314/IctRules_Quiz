@@ -1,0 +1,60 @@
+# Node modules
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# 환경 변수 파일
+.env
+.env.local
+.env.*.local
+
+# 로그 파일
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 개발 도구
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# 테스트
+coverage/
+.nyc_output/
+
+# OS 파일
+.DS_Store
+Thumbs.db
+
+# 임시 파일
+tmp/
+temp/
+*.tmp
+
+# 문서
+README.md
+docs/
+*.md
+
+# Docker 관련
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 데이터베이스 (개발용)
+database/*.db
+database/*.db-shm
+database/*.db-wal
+
+# 빌드 결과물
+dist/
+build/
+

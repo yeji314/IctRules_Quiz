@@ -120,24 +120,45 @@ body::after {
   }
 }
 
-/* 컨페티 애니메이션 */
-@keyframes confetti-fall {
+/* 폭죽 파티클 애니메이션 */
+.firework-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: firework-explode 2s ease-out forwards;
+}
+
+@keyframes firework-explode {
   0% {
-    transform: translateY(-100vh) rotate(0deg);
+    transform: translate(0, 0) scale(1);
     opacity: 1;
   }
   100% {
-    transform: translateY(100vh) rotate(360deg);
+    transform: translate(var(--tx), var(--ty)) scale(0);
     opacity: 0;
   }
 }
 
-.confetti-piece {
+/* 폭죽 별 애니메이션 */
+.firework-star {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  background: var(--color-gold);
-  animation: confetti-fall 3s linear infinite;
+  font-size: 24px;
+  pointer-events: none;
+  animation: firework-star-explode 2s ease-out forwards;
+  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
+}
+
+@keyframes firework-star-explode {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(0.5) rotate(360deg);
+    opacity: 0;
+  }
 }
 
 /* 픽셀 지형 - bottom.png 완벽 재현 */

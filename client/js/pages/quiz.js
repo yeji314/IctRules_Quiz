@@ -32,6 +32,15 @@ let firstAttemptCorrectCount = 0;
 let totalQuestions = 0;
 
 /**
+ * 질문 헤더 포맷터 - [BLANK] 토큰을 칩 스타일로 치환
+ */
+function formatQuestionHeaderText(rawText) {
+  if (!rawText) return '';
+  // [BLANK] 토큰을 시각적 칩으로 변환
+  return rawText.replace(/\[BLANK\]/g, '<span class="blank-chip">BLANK</span>');
+}
+
+/**
  * 초기화
  */
 function init() {
@@ -40,6 +49,13 @@ function init() {
   window.addEventListener('popstate', () => {
     history.pushState(null, null, location.href);
   });
+
+  // 접근성: 진행 게이지 그룹 레이블 설정
+  const gaugeSection = document.querySelector('.progress-gauge-section');
+  if (gaugeSection) {
+    gaugeSection.setAttribute('role', 'group');
+    gaugeSection.setAttribute('aria-label', '퀴즈 진행 상태');
+  }
 
   // 사용자 정보 로드
   const user = getUser();
@@ -78,8 +94,6 @@ function init() {
     window.location.href = '/pages/quiz-list.html';
     return;
   }
-
-  // 5칸 게이지는 HTML에서 초기화됨
 
   // NEXT 버튼 이벤트 (제출 또는 다음 문제)
   nextQuestionBtn.addEventListener('click', () => {
@@ -125,7 +139,7 @@ function loadQuestion() {
   if (question.question_type === 'typing') {
     questionTextHeader.textContent = '다음 문장을 따라 입력하세요.';
   } else {
-    questionTextHeader.textContent = question.question_text;
+    questionTextHeader.innerHTML = formatQuestionHeaderText(question.question_text);
   }
 
   // 답변 초기화
@@ -139,18 +153,22 @@ function loadQuestion() {
   explanationBubble.classList.remove('ox-hint', 'long', 'luckydraw-hint', 'empty');
 
   // LuckyDraw 기회가 있으면 말풍선에 표시
-  console.log(`[Quiz loadQuestion] luckydraw_eligible = ${currentSession.luckydraw_eligible}`);
-  console.log(`[Quiz loadQuestion] currentSession =`, currentSession);
-
-  if (currentSession.luckydraw_eligible) {
+  console.log('[Quiz loadQuestion] luckydraw_eligible:', currentSession.luckydraw_eligible);
+  console.log('[Quiz loadQuestion] question category:', question.category);
+  
+  if (currentSession.luckydraw_eligible === true || question.category === 'luckydraw') {
     explanationText.textContent = 'luckydraw문제입니다';
     explanationBubble.classList.add('luckydraw-hint');
     console.log('[Quiz] ✅ LuckyDraw 말풍선 표시됨!');
   } else {
-    // LuckyDraw가 아닌 경우 빈 말풍선
-    explanationText.textContent = '';
+    // 기본 안내 문구
+    if (question.question_type === 'typing') {
+      explanationText.textContent = '';
+    } else {
+      explanationText.textContent = '정답을 선택하세요';
+    }
     explanationBubble.classList.add('empty');
-    console.log('[Quiz] ❌ LuckyDraw 아님 - 빈 말풍선');
+    console.log('[Quiz] ❌ 일반 문제 - 빈 말풍선');
   }
 
   // NEXT 버튼 초기화 (숨김 상태로 시작)
@@ -349,6 +367,10 @@ function renderFillBlank(question) {
     optionEl.className = 'fillblank-option';
     optionEl.textContent = option;
     optionEl.dataset.value = option;
+    optionEl.type = 'button';
+    optionEl.tabIndex = 0;
+    optionEl.setAttribute('role', 'button');
+    optionEl.setAttribute('aria-pressed', 'false');
 
     optionEl.addEventListener('click', () => {
       if (optionEl.disabled) return;
@@ -356,10 +378,12 @@ function renderFillBlank(question) {
       // 기존 선택 해제
       container.querySelectorAll('.fillblank-option').forEach(el => {
         el.classList.remove('selected');
+        el.setAttribute('aria-pressed', 'false');
       });
 
       // 새 선택
       optionEl.classList.add('selected');
+      optionEl.setAttribute('aria-pressed', 'true');
       currentAnswer = option;
       playSound('click');
 
@@ -368,6 +392,27 @@ function renderFillBlank(question) {
     });
 
     container.appendChild(optionEl);
+  });
+
+  // 키보드 내비게이션 지원
+  container.addEventListener('keydown', (e) => {
+    const items = Array.from(container.querySelectorAll('.fillblank-option'));
+    if (items.length === 0) return;
+    const currentIndex = items.indexOf(document.activeElement);
+
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = items[(Math.max(0, currentIndex) + 1) % items.length];
+      next.focus();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = items[(Math.max(0, currentIndex) - 1 + items.length) % items.length];
+      prev.focus();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      if (document.activeElement && document.activeElement.classList.contains('fillblank-option')) {
+        document.activeElement.click();
+      }
+    }
   });
 
   questionArea.appendChild(container);
@@ -544,31 +589,20 @@ async function handleSubmit() {
   try {
     const question = currentSession.question;
     const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-    const wasLuckyDraw = currentSession.luckydraw_eligible || false;
 
     const response = await quizApi.submitAnswer(
       currentSession.sessionId,
       question.id,
       currentAnswer,
-      timeTaken,
-      wasLuckyDraw
+      timeTaken
     );
 
     if (response.success) {
-      console.log('[Quiz handleSubmit] 서버 응답:', response);
-      console.log('[Quiz handleSubmit] luckydraw_eligible:', response.luckydraw_eligible);
-
       // 다음 문제 저장
       currentSession.nextQuestion = response.next_question || null;
       currentSession.session_complete = response.session_complete || false;
       currentSession.current_question_number = response.current_question_number;
       currentSession.luckydraw_eligible = response.luckydraw_eligible || false;
-
-      console.log('[Quiz handleSubmit] 세션 업데이트 후 luckydraw_eligible:', currentSession.luckydraw_eligible);
-
-      // 세션을 sessionStorage에 저장
-      sessionStorage.setItem('currentSession', JSON.stringify(currentSession));
-      console.log('[Quiz handleSubmit] sessionStorage 저장 완료');
 
       showFeedback(response.result, question, response);
     }
@@ -593,7 +627,7 @@ function showFeedback(result, question, response) {
     questionArea.dataset.submitting = 'false';
 
     // 말풍선에 격려 메시지
-    explanationBubble.classList.remove('ox-hint', 'long', 'luckydraw-hint');
+    explanationBubble.classList.remove('ox-hint', 'long');
     explanationBubble.classList.remove('empty');
     explanationText.textContent = '정답입니다! 👏';
 
@@ -611,11 +645,11 @@ function showFeedback(result, question, response) {
           showLuckyDrawAnimation(response.luckydraw_result, currentQuestionIndex - 1);
         }, 1000);
       } else {
-        // 일반 문제 - 한 번에 맞춤 (노란색 별)
+        // 일반 문제 - 한 번에 맞춤 (노란색 칠하기)
         setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'correct'), 500);
       }
     } else {
-      // 첫 시도에 못 맞춘 경우 (회색 별)
+      // 첫 시도에 못 맞춘 경우 (회색 칠하기)
       setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'incorrect'), 500);
     }
 
@@ -862,12 +896,18 @@ function typeWriterEffect(element, text, speed = 50) {
 }
 
 /**
- * 별표 폭죽 효과 (오른쪽 상단 진행바 위치에서)
+ * 별표 폭죽 효과 (현재 문제의 게이지 칸 위치에서)
  */
 function triggerFireworks() {
-  // 오른쪽 상단 별표 게이지 위치
-  const starGaugeSection = document.querySelector('.star-gauge-section');
-  const rect = starGaugeSection.getBoundingClientRect();
+  // 현재 문제의 게이지 칸 찾기
+  const currentGaugeBox = document.querySelector(`.gauge-box[data-index="${currentQuestionIndex - 1}"]`);
+  
+  if (!currentGaugeBox) {
+    console.warn('[Fireworks] 게이지 칸을 찾을 수 없습니다');
+    return;
+  }
+  
+  const rect = currentGaugeBox.getBoundingClientRect();
   const centerX = rect.left + (rect.width / 2);
   const centerY = rect.top + (rect.height / 2);
   
@@ -906,23 +946,21 @@ function updateStarGauge(questionIndex, status) {
   const gaugeBoxes = document.querySelectorAll('.gauge-box');
   if (questionIndex >= 0 && questionIndex < gaugeBoxes.length) {
     const box = gaugeBoxes[questionIndex];
-    const star = box.querySelector('.gauge-star');
-    
+
     // 기존 클래스 제거
     box.classList.remove('correct', 'incorrect', 'lucky-win', 'lucky-lose');
-    
+
     // 새 상태 적용
     box.classList.add(status);
-    
-    // 별 모양 변경
-    if (status === 'correct' || status === 'lucky-win') {
-      star.textContent = '★';
-    } else if (status === 'lucky-lose') {
-      star.textContent = '☆';
-    } else if (status === 'incorrect') {
-      star.textContent = '★';
-    }
-    
+
+    // 접근성 레이블 업데이트
+    let label = `${questionIndex + 1}번 문제: `;
+    if (status === 'correct') label += '한 번에 정답';
+    else if (status === 'incorrect') label += '한 번에 오답';
+    else if (status === 'lucky-win') label += '럭키드로우 당첨';
+    else if (status === 'lucky-lose') label += '럭키드로우 미당첨';
+    box.setAttribute('aria-label', label);
+
     console.log(`[게이지 업데이트] 칸 ${questionIndex + 1}: ${status}`);
   }
 }

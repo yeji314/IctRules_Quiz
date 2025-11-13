@@ -102,28 +102,21 @@ function createQuizCard(quizItem, index) {
   const startDate = formatDate(quizItem.startDate);
   const endDate = formatDate(quizItem.endDate);
 
-  // 상태 뱃지 및 버튼 텍스트
+  // 상태 뱃지 및 버튼 텍스트 (서버에서 받은 값 사용)
   let statusBadge = '';
-  let buttonText = '';
-  let buttonDisabled = false;
-  
+  let buttonText = quizItem.buttonText || '시작하기';
+  let buttonDisabled = !quizItem.buttonEnabled;
 
   // LuckyDraw 별표 계산 (nes.css 아이콘으로 표시)
   const luckyDrawCount = quizItem.luckyDrawCount || 0;
   let luckyDrawStars = '';
 
-   if (quizItem.isExpired) {
+  if (quizItem.isExpired) {
     statusBadge = '<span class="status-badge status-badge--expired">만료</span>';
-    buttonText = '만료됨 🔒';
-    buttonDisabled = true;
-  } else if (progressPercent === 100) {
+  } else if (buttonText === '완료 ✓') {
     statusBadge = '<span class="status-badge status-badge--completed">완료</span>';
-    buttonText = '완료 ✓';
-    buttonDisabled = true;
   } else if (progressPercent > 0) {
-    buttonText = '계속하기';
-  } else {
-    buttonText = '시작하기';
+    statusBadge = '<span class="status-badge status-badge--in-progress">진행중</span>';
   }  
 
   // 채워진 별과 빈 별 생성

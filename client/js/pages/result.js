@@ -35,10 +35,15 @@ function init() {
 
   const result = JSON.parse(resultData);
 
-  // 선물 당첨 여부 표시
-  if (result.won_prize) {
-    starEarned.textContent = `🎁 선물 획득! (${result.prize_name || '축하합니다!'})`;
-    createConfetti();
+  console.log('[Result] 결과 데이터:', result);
+
+  // 선물 당첨 여부 확인
+  if (result.won_prize === true) {
+    starEarned.textContent = '🎉 선물 당첨! 🎉';
+    starEarned.style.fontSize = '32px';
+    starEarned.style.fontWeight = 'bold';
+    starEarned.style.animation = 'bounce 0.6s ease infinite';
+    createFireworks();
     playSound('correct');
   } else {
     starEarned.classList.add('hidden');
@@ -47,32 +52,81 @@ function init() {
   // 이벤트 리스너
   quitButton.addEventListener('click', handleQuit);
   quitButton.addEventListener('mousedown', () => playSound('click'));
-  
+
   continueButton.addEventListener('click', handleContinue);
   continueButton.addEventListener('mousedown', () => playSound('click'));
-}
+  }
 
 
 /**
- * 컨페티 생성
+ * 폭죽 생성
  */
-function createConfetti() {
-  const colors = [
-    'var(--color-gold)',
-    'var(--color-red)',
-    'var(--color-blue)',
-    'var(--color-green)',
-    'var(--color-yellow)'
+function createFireworks() {
+  // 여러 위치에서 폭죽 터뜨리기
+  const positions = [
+    { x: 20, y: 30 },
+    { x: 50, y: 20 },
+    { x: 80, y: 35 },
+    { x: 35, y: 50 },
+    { x: 65, y: 45 }
   ];
 
-  for (let i = 0; i < 50; i++) {
-    const confetti = document.createElement('div');
-    confetti.className = 'confetti-piece';
-    confetti.style.left = `${Math.random() * 100}%`;
-    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-    confetti.style.animationDelay = `${Math.random() * 3}s`;
-    confetti.style.animationDuration = `${3 + Math.random() * 2}s`;
-    confettiContainer.appendChild(confetti);
+  positions.forEach((pos, index) => {
+    setTimeout(() => {
+      createFireworkBurst(pos.x, pos.y);
+    }, index * 400);
+  });
+}
+
+/**
+ * 개별 폭죽 폭발 생성
+ */
+function createFireworkBurst(x, y) {
+  const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd'];
+  const particleCount = 30;
+
+  for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'firework-particle';
+    particle.style.left = `${x}%`;
+    particle.style.top = `${y}%`;
+    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+    
+    const angle = (Math.PI * 2 * i) / particleCount;
+    const distance = 100 + Math.random() * 100;
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance;
+    
+    particle.style.setProperty('--tx', tx + 'px');
+    particle.style.setProperty('--ty', ty + 'px');
+    
+    confettiContainer.appendChild(particle);
+    
+    setTimeout(() => {
+      particle.remove();
+    }, 2000);
+  }
+
+  // 별 폭죽도 추가
+  for (let i = 0; i < 10; i++) {
+  setTimeout(() => {
+      const star = document.createElement('div');
+      star.className = 'firework-star';
+      star.textContent = '⭐';
+      star.style.left = `${x + (Math.random() - 0.5) * 20}%`;
+      star.style.top = `${y + (Math.random() - 0.5) * 20}%`;
+      
+      const starTx = (Math.random() - 0.5) * 150;
+      const starTy = (Math.random() - 0.5) * 150;
+      star.style.setProperty('--tx', starTx + 'px');
+      star.style.setProperty('--ty', starTy + 'px');
+      
+      confettiContainer.appendChild(star);
+
+  setTimeout(() => {
+        star.remove();
+      }, 2000);
+    }, i * 50);
   }
 }
 
@@ -103,7 +157,7 @@ async function handleContinue() {
     alert('이벤트 정보가 없습니다');
     window.location.href = '/pages/quiz-list.html';
     return;
-  }
+    }
 
   try {
     console.log('[Result Continue] 세션 시작 요청, eventId:', result.eventId);
@@ -136,11 +190,11 @@ async function handleContinue() {
     } else {
       alert(response.message || '세션 시작에 실패했습니다');
       window.location.href = '/pages/quiz-list.html';
-    }
+  }
   } catch (error) {
     console.error('세션 시작 실패:', error);
     alert('세션 시작에 실패했습니다: ' + error.message);
-    window.location.href = '/pages/quiz-list.html';
+  window.location.href = '/pages/quiz-list.html';
   }
 }
 
