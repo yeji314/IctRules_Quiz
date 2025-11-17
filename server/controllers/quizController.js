@@ -394,6 +394,8 @@ const completeSession = async (req, res) => {
   try {
     const { session_id } = req.body;
 
+    console.log('[세션 완료] 요청 받음, session_id:', session_id);
+
     if (!session_id) {
       return res.status(400).json({
         error: '세션 ID가 필요합니다'
@@ -401,20 +403,30 @@ const completeSession = async (req, res) => {
     }
 
     // 세션 확인
+    console.log('[세션 완료] 세션 조회 중...');
     const session = await db.QuizSession.findByPk(session_id);
     if (!session || session.user_id !== req.user.id) {
+      console.error('[세션 완료] 유효하지 않은 세션');
       return res.status(403).json({
         error: '유효하지 않은 세션입니다'
       });
     }
 
+    console.log('[세션 완료] 세션 확인 완료:', {
+      session_id: session.id,
+      user_id: session.user_id,
+      event_id: session.event_id
+    });
+
     // 세션 완료 처리
+    console.log('[세션 완료] 세션 상태 업데이트 중...');
     await session.update({
       status: 'completed',
       completed_at: new Date()
     });
 
     // 결과 조회
+    console.log('[세션 완료] 답변 조회 중...');
     const answers = await db.QuizAnswer.findAll({
       where: { session_id },
       include: [{
@@ -423,21 +435,23 @@ const completeSession = async (req, res) => {
       }]
     });
 
+    console.log('[세션 완료] 답변 조회 완료:', answers.length, '개');
+
     const correctCount = answers.filter(a => a.is_correct).length;
     const luckyDrawAnswers = answers.filter(a => a.Question.category === 'luckydraw');
 
-    // 선물 당첨 여부 확인 (이 세션에서 당첨되었는지)
+    // 선물 당첨 여부 확인 (이 이벤트에서 당첨되었는지)
+    console.log('[세션 완료] LuckyDraw 조회 중...');
     const wonPrize = await db.LuckyDraw.findOne({
       where: {
         user_id: session.user_id,
-        event_id: session.event_id,
-        session_id: session_id
+        event_id: session.event_id
       }
     });
 
     console.log(`[세션 완료] 사용자 ${session.user_id}, 세션 ${session_id}: 선물 당첨 여부 = ${!!wonPrize}`);
 
-    res.json({
+    const result = {
       success: true,
       result: {
         session_number: session.session_number,
@@ -454,12 +468,17 @@ const completeSession = async (req, res) => {
           attempt: a.answer_attempt
         }))
       }
-    });
+    };
+
+    console.log('[세션 완료] 응답 전송:', JSON.stringify(result, null, 2));
+    res.json(result);
 
   } catch (error) {
     console.error('세션 완료 에러:', error);
+    console.error('에러 스택:', error.stack);
     res.status(500).json({
-      error: '세션 완료 처리에 실패했습니다'
+      error: '세션 완료 처리에 실패했습니다',
+      details: error.message
     });
   }
 };

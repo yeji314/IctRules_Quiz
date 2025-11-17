@@ -7,13 +7,20 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="../css/reset.css">
-  <link rel="stylesheet" href="../css/vendor/nes.min.css">
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/decorations.css">
   <link rel="stylesheet" href="../css/result.css">
 </head>
 <body>
+  <!-- 배경 장식 요소들 -->
+  <div class="wavy-line"></div>
+  <div class="circle-green"></div>
+  <div class="sparkle sparkle1">✦</div>
+  <div class="sparkle sparkle2">✦</div>
+  <div class="lightning"></div>
+
   <!-- 배경 장식 -->
   <div class="confetti" id="confetti"></div>
 
@@ -25,20 +32,57 @@
         </div>
 
     <!-- 선택 버튼 -->
-        <div class="result-actions">
-      <button class="nes-btn" id="quitButton">
+    <div class="result-actions">
+      <button class="btn" id="quitButton">
         그만하기
       </button>
-      <button class="nes-btn is-primary" id="continueButton">
+      <button class="btn btn-primary" id="continueButton">
         계속하기
-          </button>
+      </button>
     </div>
   </main>
 
-  <!-- 픽셀 지형 -->
-  <div class="pixel-ground">
-    <div class="grass-layer"></div>
-    <div class="dirt-layer"></div>
+  <!-- 지면 -->
+  <div class="ground">
+    <div class="grass-layer">
+      <div class="grass-pixels"></div>
+    </div>
+    <div class="dirt-layer">
+      <div class="dirt-pixels"></div>
+    </div>
+  </div>
+
+  <!-- 픽셀 캐릭터 -->
+  <div class="character">
+    <div class="pixel-char hair"></div>
+  </div>
+
+  <!-- 장식 요소들 -->
+  <div class="balloon-orange">
+    <div class="balloon-o-pixel"></div>
+  </div>
+  <div class="balloon-blue">
+    <div class="balloon-b-pixel"></div>
+  </div>
+  <div class="tree">
+    <div class="tree-leaves"></div>
+  </div>
+  <div class="bush bush1"></div>
+  <div class="sunflower">
+    <div class="sunflower-flower"></div>
+  </div>
+  <div class="bush bush2"></div>
+  <div class="clover"></div>
+  <div class="small-plant"></div>
+  <div class="tnt">
+    <div class="tnt-box"></div>
+    <div class="tnt-label">TNT</div>
+  </div>
+  <div class="mailbox">
+    <div class="mailbox-top"></div>
+  </div>
+  <div class="cursor">
+    <div class="cursor-pixel"></div>
   </div>
 
   <!-- JavaScript -->

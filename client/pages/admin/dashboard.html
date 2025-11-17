@@ -7,17 +7,18 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="../../css/reset.css">
-  <link rel="stylesheet" href="../../css/vendor/nes.min.css">
   <link rel="stylesheet" href="../../css/variables.css">
   <link rel="stylesheet" href="../../css/global.css">
   <link rel="stylesheet" href="../../css/animations.css">
+  <!-- 공통 픽셀 배경 & 지형 요소 -->
+  <link rel="stylesheet" href="../../css/decorations.css">
   <link rel="stylesheet" href="../../css/admin.css">
 </head>
 <body>
   <!-- 우측 상단: 관리자명 + 로그아웃 -->
   <div class="admin-header">
     <div class="admin-name" id="adminName">관리자님</div>
-    <i class="nes-icon close is-small" id="logoutBtn" style="cursor: pointer;" title="로그아웃"></i>
+    <span class="icon-button icon-close" id="logoutBtn" style="cursor: pointer;" title="로그아웃">✕</span>
   </div>
 
   <!-- 좌측 사이드바 메뉴 -->
@@ -29,11 +30,11 @@
     
     <ul class="sidebar-menu">
       <li class="menu-item active" data-page="dashboard">
-        <i class="nes-icon trophy is-small"></i>
+        <span class="icon icon-trophy">🏆</span>
         <span>홈 (통계)</span>
       </li>
       <li class="menu-item" data-page="quiz">
-        <i class="nes-icon star is-small"></i>
+        <span class="icon icon-star">⭐</span>
         <span>퀴즈 관리</span>
       </li>
     </ul>
@@ -48,7 +49,7 @@
       <!-- 부서별 참여율 -->
       <div class="stats-section">
         <h2 class="section-title">
-          <i class="nes-icon trophy is-small"></i>
+          <span class="icon icon-trophy">🏆</span>
           부서별 참여율
         </h2>
         
@@ -57,7 +58,7 @@
             이벤트 선택:
             <span id="currentYearMonth" style="color: #209cee; font-weight: bold;"></span>
           </label>
-          <div class="nes-select">
+          <div class="select-wrapper">
             <select id="eventSelect">
               <option value="">전체</option>
             </select>
@@ -75,12 +76,12 @@
       <!-- 이달의 Lucky Draw 당첨 현황 -->
       <div class="stats-section">
         <h2 class="section-title">
-          <i class="nes-icon star is-small"></i>
+          <span class="icon icon-star">⭐</span>
           이달의 Lucky Draw 당첨 현황
         </h2>
 
         <div class="winners-table-container">
-          <table class="nes-table is-bordered is-centered">
+          <table class="pixel-table">
             <thead>
               <tr>
                 <th>이름</th>
@@ -108,10 +109,10 @@
       <div class="quiz-section">
         <div class="section-header">
           <h2 class="section-title">
-            <i class="nes-icon trophy is-small"></i>
+            <span class="icon icon-trophy">🏆</span>
             이벤트 목록
           </h2>
-          <button class="nes-btn is-primary" id="createEventBtn">
+          <button class="btn btn-primary" id="createEventBtn">
             + 이벤트 생성
           </button>
         </div>
@@ -128,15 +129,15 @@
       <div class="quiz-section" id="questionsSection" style="display: none;">
         <div class="section-header">
           <h2 class="section-title">
-            <i class="nes-icon star is-small"></i>
+            <span class="icon icon-star">⭐</span>
             문제 목록
             <span class="selected-event-name" id="selectedEventName"></span>
           </h2>
           <div class="section-actions">
-            <button class="nes-btn" id="uploadExcelBtn">
+            <button class="btn" id="uploadExcelBtn">
               📄 엑셀 업로드
             </button>
-            <button class="nes-btn is-primary" id="createQuestionBtn">
+            <button class="btn btn-primary" id="createQuestionBtn">
               + 문제 추가
             </button>
           </div>
@@ -149,59 +150,102 @@
     </section>
   </main>
 
+  <!-- 지면 -->
+  <div class="ground">
+    <div class="grass-layer">
+      <div class="grass-pixels"></div>
+    </div>
+    <div class="dirt-layer">
+      <div class="dirt-pixels"></div>
+    </div>
+  </div>
+
+  <!-- 픽셀 캐릭터 -->
+  <div class="character">
+    <div class="pixel-char hair"></div>
+  </div>
+
+  <!-- 장식 요소들 -->
+  <div class="balloon-orange">
+    <div class="balloon-o-pixel"></div>
+  </div>
+  <div class="balloon-blue">
+    <div class="balloon-b-pixel"></div>
+  </div>
+  <div class="tree">
+    <div class="tree-leaves"></div>
+  </div>
+  <div class="bush bush1"></div>
+  <div class="sunflower">
+    <div class="sunflower-flower"></div>
+  </div>
+  <div class="bush bush2"></div>
+  <div class="clover"></div>
+  <div class="small-plant"></div>
+  <div class="tnt">
+    <div class="tnt-box"></div>
+    <div class="tnt-label">TNT</div>
+  </div>
+  <div class="mailbox">
+    <div class="mailbox-top"></div>
+  </div>
+  <div class="cursor">
+    <div class="cursor-pixel"></div>
+  </div>
+
   <!-- 이벤트 생성/수정 모달 -->
-  <dialog class="nes-dialog" id="eventModal">
+  <dialog class="pixel-dialog" id="eventModal">
     <form method="dialog" id="eventForm">
       <p class="modal-title" id="eventModalTitle">이벤트 생성</p>
       
-      <div class="nes-field">
+      <div class="form-field">
         <label for="eventTitle">이벤트명</label>
-        <input type="text" id="eventTitle" class="nes-input" placeholder="2025년 1월" required>
+        <input type="text" id="eventTitle" class="text-input" placeholder="2025년 1월" required>
       </div>
 
-      <div class="nes-field">
+      <div class="form-field">
         <label for="eventYearMonth">년월 (YYYY-MM)</label>
-        <input type="month" id="eventYearMonth" class="nes-input" required>
+        <input type="month" id="eventYearMonth" class="text-input" required>
       </div>
 
-      <div class="nes-field">
+      <div class="form-field">
         <label for="eventStartDate">시작일</label>
-        <input type="date" id="eventStartDate" class="nes-input" required>
+        <input type="date" id="eventStartDate" class="text-input" required>
       </div>
 
-      <div class="nes-field">
+      <div class="form-field">
         <label for="eventEndDate">종료일</label>
-        <input type="date" id="eventEndDate" class="nes-input" required>
+        <input type="date" id="eventEndDate" class="text-input" required>
       </div>
 
-      <div class="nes-field">
+      <div class="form-field">
         <label for="eventMaxWinners">LuckyDraw 최대 당첨자 수</label>
-        <input type="number" id="eventMaxWinners" class="nes-input" min="1" max="1000" value="10" required>
+        <input type="number" id="eventMaxWinners" class="text-input" min="1" max="1000" value="10" required>
         <p class="field-note">이 회차의 LuckyDraw 최대 당첨자 수를 설정합니다</p>
       </div>
 
-      <div class="nes-field">
+      <div class="form-field">
         <label>
-          <input type="checkbox" class="nes-checkbox" id="eventIsActive">
+          <input type="checkbox" class="checkbox-input" id="eventIsActive">
           <span>활성화</span>
         </label>
       </div>
 
       <menu class="dialog-menu">
-        <button class="nes-btn" type="button" id="cancelEventBtn">취소</button>
-        <button class="nes-btn is-primary" type="submit">저장</button>
+        <button class="btn" type="button" id="cancelEventBtn">취소</button>
+        <button class="btn btn-primary" type="submit">저장</button>
       </menu>
     </form>
   </dialog>
 
   <!-- 문제 생성/수정 모달 -->
-  <dialog class="nes-dialog" id="questionModal" style="max-width: 700px;">
+  <dialog class="pixel-dialog" id="questionModal" style="max-width: 700px;">
     <form method="dialog" id="questionForm">
       <p class="modal-title" id="questionModalTitle">문제 추가</p>
 
-      <div class="nes-field">
+      <div class="form-field">
         <label for="questionType">문제 유형</label>
-        <div class="nes-select">
+        <div class="select-wrapper">
           <select id="questionType" required>
             <option value="">선택하세요</option>
             <option value="dragdrop">드래그 앤 드롭</option>
@@ -213,38 +257,38 @@
         </div>
       </div>
 
-      <div class="nes-field">
+      <div class="form-field">
         <label for="questionText">문제 내용</label>
-        <textarea id="questionText" class="nes-textarea" rows="3" required></textarea>
+        <textarea id="questionText" class="text-area" rows="3" required></textarea>
         <p class="note">💡 모든 문제가 LuckyDraw 추첨 기회를 제공할 수 있습니다. (첫 시도 정답 3개 달성 시)</p>
       </div>
 
       <!-- 문제 유형별 입력 필드 -->
       <div id="questionDataFields"></div>
 
-      <div class="nes-field">
+      <div class="form-field">
         <label for="questionExplanation">해설 (오답 시 표시)</label>
-        <textarea id="questionExplanation" class="nes-textarea" rows="3"></textarea>
+        <textarea id="questionExplanation" class="text-area" rows="3"></textarea>
       </div>
 
       <menu class="dialog-menu">
-        <button class="nes-btn" type="button" id="cancelQuestionBtn">취소</button>
-        <button class="nes-btn is-primary" type="submit">저장</button>
+        <button class="btn" type="button" id="cancelQuestionBtn">취소</button>
+        <button class="btn btn-primary" type="submit">저장</button>
       </menu>
     </form>
   </dialog>
 
   <!-- 엑셀 업로드 모달 -->
-  <dialog class="nes-dialog" id="excelModal">
+  <dialog class="pixel-dialog" id="excelModal">
     <form method="dialog" id="excelForm">
       <p class="modal-title">엑셀 파일 업로드</p>
       
-      <div class="nes-field">
+      <div class="form-field">
         <p>Excel 파일을 선택하세요 (.xlsx)</p>
         <input type="file" id="excelFile" accept=".xlsx,.xls" required>
       </div>
 
-      <div class="nes-field">
+      <div class="form-field">
         <p class="note">
           ℹ️ 엑셀 파일 형식:<br>
           열: question_type | category | question_text | question_data (JSON) | explanation
@@ -252,8 +296,8 @@
       </div>
 
       <menu class="dialog-menu">
-        <button class="nes-btn" type="button" id="cancelExcelBtn">취소</button>
-        <button class="nes-btn is-primary" type="submit">업로드</button>
+        <button class="btn" type="button" id="cancelExcelBtn">취소</button>
+        <button class="btn btn-primary" type="submit">업로드</button>
       </menu>
     </form>
   </dialog>

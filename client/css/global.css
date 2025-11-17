@@ -1,14 +1,13 @@
 /* 글로벌 스타일 */
 
-body {
+/* body {
   font-family: var(--font-pixel);
   background: var(--color-sky);
   color: var(--color-white);
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
-}
-
+} *
 /* 픽셀 게임 배경 */
 body::before {
   content: '';

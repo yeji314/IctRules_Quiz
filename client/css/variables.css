@@ -11,13 +11,22 @@
   font-style: normal;
 }
 
+/* 한글 픽셀 폰트 - Galmuri14 (로컬 폰트) */
+@font-face {
+  font-family: 'Galmuri14';
+  src: url('../fonts/Galmuri14.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* 픽셀 폰트 */
   --font-pixel: 'Press Start 2P', 'DungGeunMo', monospace;
+  --font-galmuri: 'Galmuri14', monospace;
 
   /* 8비트 게임 색상 팔레트 */
-  --color-ground: #d89048;
-  --color-ground-dark: #b87030;
+  --color-sky: #ecece5;
 
   /* 주요 색상 */
   --color-red: #fc2847;

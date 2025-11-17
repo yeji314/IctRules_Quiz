@@ -7,14 +7,19 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="../css/reset.css">
-  <link rel="stylesheet" href="../css/vendor/nes.min.css">
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/decorations.css">
   <link rel="stylesheet" href="../css/login.css">
   <link rel="stylesheet" href="../css/login-decorations.css">
 </head>
 <body>
+  <!-- 배경 장식 요소들 -->
+  <div class="sparkle sparkle1">✦</div>
+  <div class="sparkle sparkle2">✦</div>
+  <div class="lightning"></div>
+
   <!-- Player 1 표시 -->
   <div class="player-badge">PLAYER 1</div>
 
@@ -33,7 +38,7 @@
         <input
           type="text"
           id="employeeId"
-          class="nes-input"
+          class="text-input"
           placeholder="사원번호"
           required
           autocomplete="username"
@@ -45,7 +50,7 @@
         <input
           type="password"
           id="password"
-          class="nes-input"
+          class="text-input"
           placeholder="비밀번호"
           required
           autocomplete="current-password"
@@ -55,7 +60,7 @@
       <!-- START 버튼 -->
       <button
         type="submit"
-        class="nes-btn is-primary start-button fade-in"
+        class="btn btn-primary start-button fade-in"
         id="loginButton"
         style="animation-delay: 0.5s;"
       >
@@ -81,14 +86,51 @@
     </div>
   </div>
 
-  <!-- 픽셀 지형 -->
-  <div class="pixel-ground">
-    <div class="grass-layer"></div>
-    <div class="dirt-layer"></div>
+  <!-- 지면 -->
+  <div class="ground">
+    <div class="grass-layer">
+      <div class="grass-pixels"></div>
+    </div>
+    <div class="dirt-layer">
+      <div class="dirt-pixels"></div>
+    </div>
   </div>
 
   <!-- 움직이는 SOL 캐릭터 -->
-  <img src="../images/SOL2.gif" alt="SOL Character" class="sol-character">
+  <img src="../images/SOLwalking.gif" alt="SOL Character" class="sol-character">
+
+  <!-- 픽셀 캐릭터 -->
+  <div class="character">
+    <div class="pixel-char hair"></div>
+  </div>
+
+  <!-- 장식 요소들 -->
+  <div class="balloon-orange">
+    <div class="balloon-o-pixel"></div>
+  </div>
+  <div class="balloon-blue">
+    <div class="balloon-b-pixel"></div>
+  </div>
+  <div class="tree">
+    <div class="tree-leaves"></div>
+  </div>
+  <div class="bush bush1"></div>
+  <div class="sunflower">
+    <div class="sunflower-flower"></div>
+  </div>
+  <div class="bush bush2"></div>
+  <div class="clover"></div>
+  <div class="small-plant"></div>
+  <div class="tnt">
+    <div class="tnt-box"></div>
+    <div class="tnt-label">TNT</div>
+  </div>
+  <div class="mailbox">
+    <div class="mailbox-top"></div>
+  </div>
+  <div class="cursor">
+    <div class="cursor-pixel"></div>
+  </div>
 
   <!-- JavaScript -->
   <script type="module" src="../js/pages/login.js"></script>

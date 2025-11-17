@@ -1,0 +1,977 @@
+/* 공통 장식 요소 스타일 - 모든 페이지에서 사용 */
+
+/* 지면 */
+.ground {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.grass-layer {
+  position: absolute;
+  bottom: 80px;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: #00c000;
+  border-bottom: none;
+}
+
+/* 잔디 상단 픽셀 디테일 */
+.grass-layer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    /* 잔디 돌출 픽셀들 */
+    linear-gradient(90deg,
+      transparent 0px, transparent 4px,
+      #40a040 4px, #40a040 8px,
+      transparent 8px, transparent 12px,
+      #40a040 12px, #40a040 14px,
+      transparent 14px, transparent 16px,
+      #50b850 16px, #50b850 20px,
+      transparent 20px, transparent 24px,
+      #40a040 24px, #40a040 26px,
+      transparent 26px, transparent 32px
+    ),
+    /* 세로 픽셀 라인들 */
+    repeating-linear-gradient(90deg,
+
+
+      transparent 0px, transparent 7px,
+      rgba(0, 0, 0, 0.08) 7px, rgba(0, 0, 0, 0.08) 8px
+    ),
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 15px,
+      rgba(255, 255, 255, 0.1) 15px, rgba(255, 255, 255, 0.1) 16px
+    );
+  background-size: 32px 100%, 8px 100%, 16px 100%;
+  background-repeat: repeat-x, repeat, repeat;
+  pointer-events: none;
+}
+
+/* 잔디 상단 돌출 효과 */
+.grass-layer::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: repeating-linear-gradient(90deg,
+    transparent 0px, transparent 4px,
+    #50c850 4px, #50c850 6px,
+    transparent 6px, transparent 8px,
+    #40a040 8px, #40a040 10px,
+    transparent 10px, transparent 14px,
+    #50b850 14px, #50b850 16px,
+    transparent 16px, transparent 20px,
+    #40a040 20px, #40a040 22px,
+    transparent 22px, transparent 28px,
+    #50c850 28px, #50c850 30px,
+    transparent 30px, transparent 32px
+  );
+  background-size: 32px 100%;
+  background-repeat: repeat-x;
+}
+
+.grass-pixels {
+  width: 100%;
+  height: 100%;
+}
+
+.dirt-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  background: #b85800;
+}
+
+/* 흙 픽셀 디테일 효과 */
+.dirt-layer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    /* 어두운 흙 블록들 */
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 8px,
+      rgba(128, 64, 0, 0.3) 8px, rgba(128, 64, 0, 0.3) 16px
+    ),
+    repeating-linear-gradient(0deg,
+      transparent 0px, transparent 8px,
+      rgba(128, 64, 0, 0.2) 8px, rgba(128, 64, 0, 0.2) 16px
+    ),
+    /* 밝은 픽셀 디테일 */
+    repeating-linear-gradient(45deg,
+      transparent 0px, transparent 3px,
+      rgba(255, 140, 60, 0.15) 3px, rgba(255, 140, 60, 0.15) 5px,
+      transparent 5px, transparent 12px
+    ),
+    /* 세로 픽셀 라인 */
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 7px,
+      rgba(0, 0, 0, 0.15) 7px, rgba(0, 0, 0, 0.15) 8px
+    );
+  background-size: 16px 100%, 100% 16px, 12px 12px, 8px 100%;
+  pointer-events: none;
+}
+
+/* 흙 레이어 추가 텍스처 */
+.dirt-layer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle at 12% 20%, rgba(160, 80, 40, 0.4) 2px, transparent 2px),
+    radial-gradient(circle at 28% 35%, rgba(100, 50, 20, 0.3) 2px, transparent 2px),
+    radial-gradient(circle at 45% 15%, rgba(160, 80, 40, 0.4) 2px, transparent 2px),
+    radial-gradient(circle at 63% 45%, rgba(100, 50, 20, 0.3) 2px, transparent 2px),
+    radial-gradient(circle at 78% 25%, rgba(160, 80, 40, 0.4) 2px, transparent 2px),
+    radial-gradient(circle at 88% 55%, rgba(100, 50, 20, 0.3) 2px, transparent 2px);
+  background-size: 50px 50px;
+  background-repeat: repeat;
+  pointer-events: none;
+}
+
+.dirt-pixels {
+  width: 100%;
+  height: 100%;
+}
+
+/* 캐릭터 - 픽셀 아트 스타일 */
+.character {
+  position: fixed;
+  bottom: 120px; /* grass-layer 위쪽 (80px 흙 + 40px 잔디) */
+  left: 8%;
+  width: 60px;
+  height: 85px;
+  z-index: 20;
+}
+
+.pixel-char {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+}
+
+/* 머리카락 */
+.hair {
+  background: #f8d878;
+  box-shadow:
+    5px 0 0 #f8d878,
+    10px 0 0 #f8d878,
+    15px 0 0 #f8d878,
+    20px 0 0 #f8d878,
+    25px 0 0 #f8d878,
+    30px 0 0 #f8d878,
+    35px 0 0 #f8d878,
+    0 5px 0 #f8d878,
+    5px 5px 0 #f8d878,
+    10px 5px 0 #f8d878,
+    15px 5px 0 #f8d878,
+    20px 5px 0 #f8d878,
+    25px 5px 0 #f8d878,
+    30px 5px 0 #f8d878,
+    35px 5px 0 #f8d878,
+    40px 5px 0 #f8d878,
+    /* 얼굴 연결 */
+    0 10px 0 #f8c8a0,
+    5px 10px 0 #f8c8a0,
+    10px 10px 0 #f8c8a0,
+    15px 10px 0 #f8c8a0,
+    20px 10px 0 #f8c8a0,
+    25px 10px 0 #f8c8a0,
+    30px 10px 0 #f8c8a0,
+    0 15px 0 #f8c8a0,
+    5px 15px 0 #f8c8a0,
+    10px 15px 0 #f8c8a0,
+    15px 15px 0 #f8c8a0,
+    20px 15px 0 #f8c8a0,
+    25px 15px 0 #f8c8a0,
+    30px 15px 0 #f8c8a0,
+    35px 15px 0 #f8c8a0,
+    0 20px 0 #f8c8a0,
+    5px 20px 0 #f8c8a0,
+    10px 20px 0 #f8c8a0,
+    15px 20px 0 #f8c8a0,
+    20px 20px 0 #f8c8a0,
+    25px 20px 0 #f8c8a0,
+    30px 20px 0 #f8c8a0,
+    35px 20px 0 #f8c8a0,
+    /* 몸통 연결 */
+    0 25px 0 #5890d0,
+    5px 25px 0 #5890d0,
+    10px 25px 0 #5890d0,
+    15px 25px 0 #5890d0,
+    20px 25px 0 #5890d0,
+    25px 25px 0 #5890d0,
+    30px 25px 0 #5890d0,
+    0 30px 0 #5890d0,
+    5px 30px 0 #5890d0,
+    10px 30px 0 #5890d0,
+    15px 30px 0 #5890d0,
+    20px 30px 0 #5890d0,
+    25px 30px 0 #5890d0,
+    30px 30px 0 #5890d0,
+    35px 30px 0 #5890d0,
+    0 35px 0 #5890d0,
+    5px 35px 0 #5890d0,
+    10px 35px 0 #5890d0,
+    15px 35px 0 #5890d0,
+    20px 35px 0 #5890d0,
+    25px 35px 0 #5890d0,
+    30px 35px 0 #5890d0,
+    35px 35px 0 #5890d0,
+    /* 다리 연결 */
+    0 40px 0 #3068a8,
+    5px 40px 0 #3068a8,
+    10px 40px 0 #3068a8,
+    18px 40px 0 #3068a8,
+    23px 40px 0 #3068a8,
+    28px 40px 0 #3068a8,
+    0 45px 0 #3068a8,
+    5px 45px 0 #3068a8,
+    10px 45px 0 #3068a8,
+    18px 45px 0 #3068a8,
+    23px 45px 0 #3068a8,
+    28px 45px 0 #3068a8,
+    0 50px 0 #3068a8,
+    5px 50px 0 #3068a8,
+    10px 50px 0 #3068a8,
+    18px 50px 0 #3068a8,
+    23px 50px 0 #3068a8,
+    28px 50px 0 #3068a8;
+  top: 5px;
+  left: 10px;
+}
+
+/* 주황색 풍선 */
+.balloon-orange {
+  position: fixed;
+  bottom: 320px;
+  left: 115px;
+  width: 35px;
+  height: 45px;
+  z-index: 20;
+}
+
+.balloon-o-pixel {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #f87050;
+  box-shadow:
+    5px 0 0 #f87050,
+    10px 0 0 #f87050,
+    15px 0 0 #f87050,
+    20px 0 0 #f87050,
+    25px 0 0 #f87050,
+    0 5px 0 #f87050,
+    5px 5px 0 #f87050,
+    10px 5px 0 #f87050,
+    15px 5px 0 #f87050,
+    20px 5px 0 #f87050,
+    25px 5px 0 #f87050,
+    30px 5px 0 #f87050,
+    0 10px 0 #f87050,
+    5px 10px 0 #f87050,
+    10px 10px 0 #f87050,
+    15px 10px 0 #f87050,
+    20px 10px 0 #f87050,
+    25px 10px 0 #f87050,
+    30px 10px 0 #f87050,
+    0 15px 0 #f87050,
+    5px 15px 0 #f87050,
+    10px 15px 0 #f87050,
+    15px 15px 0 #f87050,
+    20px 15px 0 #f87050,
+    25px 15px 0 #f87050,
+    30px 15px 0 #f87050,
+    5px 20px 0 #f87050,
+    10px 20px 0 #f87050,
+    15px 20px 0 #f87050,
+    20px 20px 0 #f87050,
+    25px 20px 0 #f87050,
+    10px 25px 0 #f87050,
+    15px 25px 0 #f87050,
+    20px 25px 0 #f87050,
+    15px 30px 0 #000;
+}
+
+/* 파란색 풍선 */
+.balloon-blue {
+  position: fixed;
+  bottom: 280px;
+  right: 115px;
+  width: 35px;
+  height: 45px;
+  z-index: 20;
+}
+
+.balloon-b-pixel {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #5870a8;
+  box-shadow:
+    5px 0 0 #5870a8,
+    10px 0 0 #5870a8,
+    15px 0 0 #5870a8,
+    20px 0 0 #5870a8,
+    25px 0 0 #5870a8,
+    0 5px 0 #5870a8,
+    5px 5px 0 #5870a8,
+    10px 5px 0 #5870a8,
+    15px 5px 0 #5870a8,
+    20px 5px 0 #5870a8,
+    25px 5px 0 #5870a8,
+    30px 5px 0 #5870a8,
+    0 10px 0 #5870a8,
+    5px 10px 0 #5870a8,
+    10px 10px 0 #5870a8,
+    15px 10px 0 #5870a8,
+    20px 10px 0 #5870a8,
+    25px 10px 0 #5870a8,
+    30px 10px 0 #5870a8,
+    0 15px 0 #5870a8,
+    5px 15px 0 #5870a8,
+    10px 15px 0 #5870a8,
+    15px 15px 0 #5870a8,
+    20px 15px 0 #5870a8,
+    25px 15px 0 #5870a8,
+    30px 15px 0 #5870a8,
+    5px 20px 0 #5870a8,
+    10px 20px 0 #5870a8,
+    15px 20px 0 #5870a8,
+    20px 20px 0 #5870a8,
+    25px 20px 0 #5870a8,
+    10px 25px 0 #5870a8,
+    15px 25px 0 #5870a8,
+    20px 25px 0 #5870a8,
+    15px 30px 0 #000;
+}
+
+/* 나무 */
+.tree {
+  position: fixed;
+  bottom: 120px;
+  left: 3%;
+  width: 50px;
+  height: 75px;
+  z-index: 20;
+}
+
+.tree-leaves {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #089008;
+  box-shadow:
+    5px 0 0 #089008,
+    10px 0 0 #089008,
+    15px 0 0 #089008,
+    20px 0 0 #089008,
+    25px 0 0 #10b010,
+    30px 0 0 #089008,
+    35px 0 0 #089008,
+    40px 0 0 #089008,
+    0 5px 0 #10b010,
+    5px 5px 0 #10b010,
+    10px 5px 0 #089008,
+    15px 5px 0 #10b010,
+    20px 5px 0 #10b010,
+    25px 5px 0 #089008,
+    30px 5px 0 #10b010,
+    35px 5px 0 #10b010,
+    40px 5px 0 #089008,
+    0 10px 0 #089008,
+    5px 10px 0 #10b010,
+    10px 10px 0 #10b010,
+    15px 10px 0 #089008,
+    20px 10px 0 #10b010,
+    25px 10px 0 #10b010,
+    30px 10px 0 #089008,
+    35px 10px 0 #10b010,
+    40px 10px 0 #089008,
+    5px 15px 0 #089008,
+    10px 15px 0 #10b010,
+    15px 15px 0 #10b010,
+    20px 15px 0 #089008,
+    25px 15px 0 #10b010,
+    30px 15px 0 #10b010,
+    35px 15px 0 #089008,
+    10px 20px 0 #089008,
+    15px 20px 0 #10b010,
+    20px 20px 0 #10b010,
+    25px 20px 0 #089008,
+    /* 나무 기둥 연결 */
+    15px 25px 0 #6b4423,
+    20px 25px 0 #6b4423,
+    15px 30px 0 #6b4423,
+    20px 30px 0 #6b4423,
+    15px 35px 0 #6b4423,
+    20px 35px 0 #6b4423,
+    15px 40px 0 #6b4423,
+    20px 40px 0 #6b4423,
+    15px 45px 0 #6b4423,
+    20px 45px 0 #6b4423,
+    15px 50px 0 #6b4423,
+    20px 50px 0 #6b4423;
+  top: 0;
+  left: 0;
+}
+
+/* 덤불 */
+.bush {
+  position: fixed;
+  bottom: 120px;
+  width: 5px;
+  height: 5px;
+  background: #089008;
+  z-index: 20;
+}
+
+.bush1 {
+  left: 6%;
+  box-shadow:
+    5px 0 0 #089008,
+    10px 0 0 #10b010,
+    15px 0 0 #10b010,
+    20px 0 0 #089008,
+    0 5px 0 #10b010,
+    5px 5px 0 #10b010,
+    10px 5px 0 #089008,
+    15px 5px 0 #10b010,
+    20px 5px 0 #10b010,
+    25px 5px 0 #089008,
+    5px 10px 0 #089008,
+    10px 10px 0 #10b010,
+    15px 10px 0 #089008,
+    20px 10px 0 #089008;
+}
+
+/* 해바라기 */
+.sunflower {
+  position: fixed;
+  bottom: 120px; /* 잔디 라인 위 */
+  right: 34%;
+  width: 45px;
+  height: 110px;
+  z-index: 20;
+}
+
+.sunflower-flower {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #f8d030;
+  box-shadow:
+    10px 0 0 #f8d030,
+    15px 0 0 #f8d030,
+    20px 0 0 #f8d030,
+    25px 0 0 #f8d030,
+    5px 5px 0 #f8d030,
+    10px 5px 0 #f8d030,
+    15px 5px 0 #d8a020,
+    20px 5px 0 #d8a020,
+    25px 5px 0 #f8d030,
+    30px 5px 0 #f8d030,
+    5px 10px 0 #f8d030,
+    10px 10px 0 #d8a020,
+    15px 10px 0 #886020,
+    20px 10px 0 #886020,
+    25px 10px 0 #d8a020,
+    30px 10px 0 #f8d030,
+    5px 15px 0 #f8d030,
+    10px 15px 0 #d8a020,
+    15px 15px 0 #886020,
+    20px 15px 0 #886020,
+    25px 15px 0 #d8a020,
+    30px 15px 0 #f8d030,
+    10px 20px 0 #f8d030,
+    15px 20px 0 #f8d030,
+    20px 20px 0 #f8d030,
+    25px 20px 0 #f8d030,
+    /* 줄기 연결 */
+    20px 25px 0 #089008,
+    20px 30px 0 #089008,
+    20px 35px 0 #089008,
+    20px 40px 0 #089008,
+    20px 45px 0 #089008,
+    20px 50px 0 #089008,
+    20px 55px 0 #089008,
+    20px 60px 0 #089008,
+    15px 45px 0 #089008,
+    10px 45px 0 #089008,
+    5px 45px 0 #089008;
+  top: 0;
+}
+
+/* 덤불2 */
+.bush2 {
+  right: 27%;
+  box-shadow:
+    5px 0 0 #089008,
+    10px 0 0 #10b010,
+    15px 0 0 #10b010,
+    20px 0 0 #10b010,
+    25px 0 0 #089008,
+    0 5px 0 #10b010,
+    5px 5px 0 #10b010,
+    10px 5px 0 #089008,
+    15px 5px 0 #10b010,
+    20px 5px 0 #10b010,
+    25px 5px 0 #10b010,
+    30px 5px 0 #089008,
+    5px 10px 0 #089008,
+    10px 10px 0 #10b010,
+    15px 10px 0 #10b010,
+    20px 10px 0 #089008,
+    25px 10px 0 #089008;
+}
+
+/* 클로버 */
+.clover {
+  position: fixed;
+  bottom: 120px;
+  right: 19%;
+  width: 5px;
+  height: 5px;
+  background: #089008;
+  box-shadow:
+    5px 0 0 #10b010,
+    10px 0 0 #10b010,
+    15px 0 0 #10b010,
+    20px 0 0 #089008,
+    0 5px 0 #10b010,
+    5px 5px 0 #089008,
+    10px 5px 0 #10b010,
+    15px 5px 0 #089008,
+    20px 5px 0 #10b010,
+    25px 5px 0 #089008,
+    5px 10px 0 #10b010,
+    10px 10px 0 #10b010,
+    15px 10px 0 #10b010,
+    20px 10px 0 #10b010,
+    10px 15px 0 #089008,
+    10px 20px 0 #089008,
+    10px 25px 0 #089008;
+  z-index: 20;
+}
+
+/* 작은 식물 */
+.small-plant {
+  position: fixed;
+  bottom: 120px;
+  right: 12%;
+  width: 5px;
+  height: 5px;
+  background: #089008;
+  box-shadow:
+    0 5px 0 #089008,
+    -5px 5px 0 #10b010,
+    -10px 5px 0 #10b010,
+    5px 5px 0 #10b010,
+    10px 5px 0 #10b010,
+    0 10px 0 #089008,
+    0 15px 0 #089008,
+    -5px 15px 0 #10b010,
+    -10px 15px 0 #10b010,
+    5px 15px 0 #10b010,
+    10px 15px 0 #10b010,
+    0 20px 0 #089008,
+    0 25px 0 #089008;
+  z-index: 20;
+}
+
+/* TNT */
+.tnt {
+  position: fixed;
+  bottom: 120px;
+  right: 6%;
+  width: 55px;
+  height: 55px;
+  z-index: 20;
+}
+
+.tnt-box {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #c87850;
+  box-shadow:
+    5px 0 0 #c87850,
+    10px 0 0 #c87850,
+    15px 0 0 #c87850,
+    20px 0 0 #c87850,
+    25px 0 0 #c87850,
+    30px 0 0 #c87850,
+    35px 0 0 #c87850,
+    40px 0 0 #c87850,
+    0 5px 0 #c87850,
+    5px 5px 0 #c87850,
+    10px 5px 0 #c87850,
+    15px 5px 0 #c87850,
+    20px 5px 0 #c87850,
+    25px 5px 0 #c87850,
+    30px 5px 0 #c87850,
+    35px 5px 0 #c87850,
+    40px 5px 0 #c87850,
+    45px 5px 0 #c87850,
+    0 10px 0 #c87850,
+    45px 10px 0 #c87850,
+    0 15px 0 #c87850,
+    45px 15px 0 #c87850,
+    0 20px 0 #c87850,
+    45px 20px 0 #c87850,
+    0 25px 0 #c87850,
+    45px 25px 0 #c87850,
+    0 30px 0 #c87850,
+    45px 30px 0 #c87850,
+    0 35px 0 #c87850,
+    5px 35px 0 #c87850,
+    10px 35px 0 #c87850,
+    15px 35px 0 #c87850,
+    20px 35px 0 #c87850,
+    25px 35px 0 #c87850,
+    30px 35px 0 #c87850,
+    35px 35px 0 #c87850,
+    40px 35px 0 #c87850,
+    45px 35px 0 #c87850;
+}
+
+.tnt-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  font-weight: bold;
+  color: #000;
+  background: #f84030;
+  padding: 2px 8px;
+  border: 3px solid #000;
+}
+
+/* 우편함 */
+.mailbox {
+  position: fixed;
+  bottom: 120px;
+  left: 22%;
+  width: 40px;
+  height: 80px;
+  z-index: 20;
+}
+
+.mailbox-top {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #c02020;
+  box-shadow:
+    5px 0 0 #c02020,
+    10px 0 0 #c02020,
+    15px 0 0 #c02020,
+    20px 0 0 #c02020,
+    25px 0 0 #c02020,
+    30px 0 0 #c02020,
+    0 5px 0 #c02020,
+    5px 5px 0 #c02020,
+    10px 5px 0 #c02020,
+    15px 5px 0 #c02020,
+    20px 5px 0 #c02020,
+    25px 5px 0 #c02020,
+    30px 5px 0 #c02020,
+    35px 5px 0 #c02020,
+    0 10px 0 #c02020,
+    5px 10px 0 #c02020,
+    10px 10px 0 #c02020,
+    15px 10px 0 #c02020,
+    20px 10px 0 #c02020,
+    25px 10px 0 #c02020,
+    30px 10px 0 #c02020,
+    35px 10px 0 #c02020,
+    0 15px 0 #c02020,
+    5px 15px 0 #c02020,
+    10px 15px 0 #c02020,
+    15px 15px 0 #c02020,
+    20px 15px 0 #c02020,
+    25px 15px 0 #c02020,
+    30px 15px 0 #c02020,
+    35px 15px 0 #c02020,
+    /* 우편함 기둥 연결 */
+    13px 20px 0 #802020,
+    18px 20px 0 #802020,
+    13px 25px 0 #802020,
+    18px 25px 0 #802020,
+    13px 30px 0 #802020,
+    18px 30px 0 #802020,
+    13px 35px 0 #802020,
+    18px 35px 0 #802020,
+    13px 40px 0 #802020,
+    18px 40px 0 #802020,
+    13px 45px 0 #802020,
+    18px 45px 0 #802020,
+    13px 50px 0 #802020,
+    18px 50px 0 #802020;
+  top: 0;
+}
+
+/* 마우스 커서 */
+.cursor {
+  position: fixed;
+  bottom: 120px;
+  right: 3%;
+  width: 40px;
+  height: 40px;
+  z-index: 20;
+}
+
+.cursor-pixel {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #000;
+  box-shadow:
+    0 5px 0 #000,
+    0 10px 0 #000,
+    0 15px 0 #000,
+    0 20px 0 #000,
+    0 25px 0 #000,
+    5px 5px 0 #000,
+    5px 10px 0 #000,
+    5px 15px 0 #000,
+    5px 20px 0 #000,
+    10px 10px 0 #000,
+    10px 15px 0 #000,
+    15px 10px 0 #000,
+    15px 15px 0 #000,
+    20px 10px 0 #000,
+    10px 20px 0 #000;
+}
+
+/* 반응형 - 태블릿 */
+@media (max-width: 1200px) {
+  .character {
+    bottom: 120px;
+    left: 12%;
+  }
+
+  .tree {
+    bottom: 120px;
+    left: 3%;
+  }
+
+  .bush {
+    bottom: 120px;
+  }
+
+  .bush1 {
+    left: 6%;
+  }
+
+  .bush2 {
+    right: 27%;
+  }
+
+  .sunflower {
+    bottom: 120px;
+    right: 34%;
+  }
+
+  .clover {
+    bottom: 120px;
+    right: 19%;
+  }
+
+  .small-plant {
+    bottom: 120px;
+    right: 12%;
+  }
+
+  .tnt {
+    bottom: 120px;
+    right: 6%;
+  }
+
+  .mailbox {
+    bottom: 120px;
+    left: 22%;
+  }
+
+  .cursor {
+    bottom: 120px;
+    right: 3%;
+  }
+}
+
+/* 반응형 - 모바일 */
+@media (max-width: 768px) {
+  .character {
+    bottom: 120px;
+    left: 10%;
+    transform: scale(0.7);
+    transform-origin: bottom left;
+  }
+
+  .tree {
+    bottom: 120px;
+    left: 5px;
+    transform: scale(0.6);
+    transform-origin: bottom left;
+  }
+
+  .bush {
+    bottom: 120px;
+    transform: scale(0.6);
+    transform-origin: bottom left;
+  }
+
+  .bush1 {
+    left: 40px;
+  }
+
+  .bush2 {
+    right: 15%;
+  }
+
+  .sunflower {
+    bottom: 200px;
+    right: 25%;
+    transform: scale(0.6);
+    transform-origin: bottom right;
+  }
+
+  .clover {
+    bottom: 120px;
+    right: 15%;
+    transform: scale(0.7);
+    transform-origin: bottom right;
+  }
+
+  .small-plant {
+    bottom: 120px;
+    right: 10%;
+    transform: scale(0.7);
+    transform-origin: bottom right;
+  }
+
+  .tnt {
+    bottom: 120px;
+    right: 5%;
+    transform: scale(0.6);
+    transform-origin: bottom right;
+  }
+
+  .mailbox {
+    bottom: 120px;
+    left: 20%;
+    transform: scale(0.6);
+    transform-origin: bottom left;
+  }
+
+  .cursor {
+    bottom: 120px;
+    right: 5%;
+    transform: scale(0.6);
+    transform-origin: bottom right;
+  }
+
+  .balloon-orange, .balloon-blue {
+    transform: scale(0.7);
+  }
+}
+
+/* 반응형 - 소형 모바일 */
+@media (max-width: 480px) {
+  .character {
+    bottom: 120px;
+    left: 5%;
+    transform: scale(0.5);
+    transform-origin: bottom left;
+  }
+
+  .tree {
+    bottom: 120px;
+    left: 2px;
+    transform: scale(0.4);
+    transform-origin: bottom left;
+  }
+
+  .bush {
+    bottom: 120px;
+    transform: scale(0.4);
+    transform-origin: bottom left;
+  }
+
+  .bush1 {
+    left: 25px;
+  }
+
+  .bush2 {
+    right: 10%;
+  }
+
+  .sunflower {
+    bottom: 200px;
+    right: 20%;
+    transform: scale(0.4);
+    transform-origin: bottom right;
+  }
+
+  .clover {
+    bottom: 120px;
+    right: 12%;
+    transform: scale(0.5);
+    transform-origin: bottom right;
+  }
+
+  .small-plant {
+    bottom: 120px;
+    right: 8%;
+    transform: scale(0.5);
+    transform-origin: bottom right;
+  }
+
+  .tnt {
+    bottom: 120px;
+    right: 3%;
+    transform: scale(0.4);
+    transform-origin: bottom right;
+  }
+
+  .mailbox {
+    bottom: 120px;
+    left: 15%;
+    transform: scale(0.4);
+    transform-origin: bottom left;
+  }
+
+  .cursor {
+    bottom: 120px;
+    right: 2%;
+    transform: scale(0.4);
+    transform-origin: bottom right;
+  }
+
+  .balloon-orange, .balloon-blue {
+    transform: scale(0.5);
+  }
+}
+

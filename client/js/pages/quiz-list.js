@@ -95,50 +95,62 @@ function createQuizCard(quizItem, index) {
   // 애니메이션 딜레이
   board.style.animation = `fadeIn 0.3s ease-out ${index * 0.15}s both`;
 
-  // 진행률 계산
-  const progressPercent = Math.round((quizItem.totalAnswered / quizItem.totalQuestions) * 100);
+  // 진행률(문제를 푼 횟수) - 서버에서 내려주는 currentRound 기준 (0~3)
+  const rawProgress = typeof quizItem.currentRound === 'number' ? quizItem.currentRound : 0;
+  const progress = Math.max(0, Math.min(rawProgress, 3)); // 0 ~ 3 로 클램프
 
-  // 날짜 포맷
-  const startDate = formatDate(quizItem.startDate);
-  const endDate = formatDate(quizItem.endDate);
+  // 버튼 텍스트 / 활성화 여부 / 색상 클래스 - 진행률 규칙에 따라 결정
+  let buttonText;
+  let buttonDisabled;
+  let buttonClass;
 
-  // 상태 뱃지 및 버튼 텍스트 (서버에서 받은 값 사용)
-  let statusBadge = '';
-  let buttonText = quizItem.buttonText || '시작하기';
-  let buttonDisabled = !quizItem.buttonEnabled;
-
-  // LuckyDraw 별표 계산 (nes.css 아이콘으로 표시)
-  const luckyDrawCount = quizItem.luckyDrawCount || 0;
-  let luckyDrawStars = '';
-
-  if (quizItem.isExpired) {
-    statusBadge = '<span class="status-badge status-badge--expired">만료</span>';
-  } else if (buttonText === '완료 ✓') {
-    statusBadge = '<span class="status-badge status-badge--completed">완료</span>';
-  } else if (progressPercent > 0) {
-    statusBadge = '<span class="status-badge status-badge--in-progress">진행중</span>';
-  }  
-
-  // 채워진 별과 빈 별 생성
-  if (luckyDrawCount > 0) {
-    luckyDrawStars += '<i class="nes-icon is-medium star"></i>';
+  if (progress === 0) {
+    // 0회 풀었을 때
+    buttonText = 'START';
+    buttonDisabled = false;
+    buttonClass = 'btn-start';
+  } else if (progress === 1 || progress === 2) {
+    // 1회 또는 2회 풀었을 때
+    buttonText = 'CONTINUE';
+    buttonDisabled = false;
+    buttonClass = 'btn-continue';
   } else {
-    luckyDrawStars += '<i class="nes-icon is-medium star is-empty"></i>';
+    // 3회 풀었을 때 (또는 그 이상) - 완료
+    buttonText = 'COMPLETE';
+    buttonDisabled = true;
+    buttonClass = 'btn-complete';
   }
 
+  // 만료된 이벤트는 무조건 COMPLETE + 비활성화
+  if (quizItem.isExpired) {
+    buttonText = 'COMPLETE';
+    buttonDisabled = true;
+    buttonClass = 'btn-complete';
+  }
+
+  const maxSessions = 3;
+
+  // 진행률 박스 생성 (■/□)
+  let progressBoxes = '';
+  for (let i = 0; i < maxSessions; i++) {
+    const filled = i < progress ? 'filled' : '';
+    progressBoxes += `<div class="progress-box ${filled}"></div>`;
+  }
+
+  // 월 표시 (서버에서 내려준 title 우선 사용, 없으면 index 기반)
+  const monthText = quizItem.title || `${index + 1}월`;
 
   board.innerHTML = `
     <div class="wood-nail wood-nail--left"></div>
     <div class="quiz-info">
-      <div class="quiz-number">${String(index + 1).padStart(2, '0')}</div>
-      <div class="quiz-details">
-        <div class="quiz-title">${quizItem.title}</div>
+      <div class="quiz-month">${monthText}</div>
+      <button class="quiz-action-btn ${buttonClass}" ${buttonDisabled ? 'disabled' : ''}>
+        ${buttonText}
+      </button>
+      <div class="quiz-progress">
+        ${progressBoxes}
       </div>
-      <div class="quiz-star-badge">${luckyDrawStars}</div>
     </div>
-    <button class="nes-btn ${buttonDisabled ? 'is-disabled' : 'is-primary'} quiz-action-btn" ${buttonDisabled ? 'disabled' : ''}>
-      ${buttonText}
-    </button>
     <div class="wood-nail wood-nail--right"></div>
   `;
 

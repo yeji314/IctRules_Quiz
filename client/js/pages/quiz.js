@@ -12,15 +12,13 @@ requireAuth();
 // DOM 요소
 const userNameDisplay = $('#userNameDisplay');
 const logoutBtn = $('#logoutBtn');
-const starGaugeFill = $('#starGaugeFill');
-const questionNumber = $('#questionNumber');
-const questionTextHeader = $('#questionTextHeader');
-const luckyDrawBadge = $('#luckyDrawBadge');
-const questionArea = $('#questionArea');
+const questionText = $('#questionText');
+const answersArea = $('#answersArea');
 const explanationBubble = $('#explanationBubble');
 const explanationText = $('#explanationText');
 const fireworksContainer = $('#fireworksContainer');
 const nextQuestionBtn = $('#nextQuestionBtn');
+const characterImg = document.querySelector('.character-img');
 
 // 상태
 let currentSession = null;
@@ -129,46 +127,48 @@ function loadQuestion() {
 
   const question = currentSession.question;
 
-  // UI 업데이트
-  questionNumber.textContent = currentQuestionIndex;
-
-  // Lucky Draw 배지 숨김 (모든 문제가 추첨 기회를 가질 수 있으므로 배지 제거)
-  luckyDrawBadge.classList.add('hidden');
-
   // 타이핑 문제는 문제 텍스트를 숨김
   if (question.question_type === 'typing') {
-    questionTextHeader.textContent = '다음 문장을 따라 입력하세요.';
+    questionText.textContent = '다음 문장을 따라 입력하세요.';
   } else {
-    questionTextHeader.innerHTML = formatQuestionHeaderText(question.question_text);
+    questionText.innerHTML = formatQuestionHeaderText(question.question_text);
   }
+
+  // 캐릭터 감정: 문제 로딩 시 생각하는 표정
+  setCharacterEmotion('thinking');
+
+  // 문제 등장 애니메이션 (Duolingo 스타일 bounce-in)
+  questionText.classList.remove('bounce-in');
+  void questionText.offsetWidth; // Trigger reflow
+  questionText.classList.add('bounce-in');
 
   // 답변 초기화
   currentAnswer = null;
 
   // 제출 상태 초기화
-  questionArea.dataset.submitting = 'false';
-  questionArea.dataset.isCorrect = 'false';
+  answersArea.dataset.submitting = 'false';
+  answersArea.dataset.isCorrect = 'false';
 
-  // 해설 말풍선 내용 초기화
-  explanationBubble.classList.remove('ox-hint', 'long', 'luckydraw-hint', 'empty');
+  // 해설 말풍선 내용 초기화 (항상 표시)
+  explanationBubble.classList.remove('ox-hint', 'long', 'luckydraw-hint', 'empty', 'correct', 'incorrect');
 
-  // LuckyDraw 기회가 있으면 말풍선에 표시
+  // LuckyDraw 문제인지 확인하고 말풍선 표시
   console.log('[Quiz loadQuestion] luckydraw_eligible:', currentSession.luckydraw_eligible);
   console.log('[Quiz loadQuestion] question category:', question.category);
-  
-  if (currentSession.luckydraw_eligible === true || question.category === 'luckydraw') {
-    explanationText.textContent = 'luckydraw문제입니다';
+
+  if (question.category === 'luckydraw') {
+    explanationText.textContent = '이번 문제는 럭키드로우 문제입니다';
     explanationBubble.classList.add('luckydraw-hint');
     console.log('[Quiz] ✅ LuckyDraw 말풍선 표시됨!');
   } else {
     // 기본 안내 문구
     if (question.question_type === 'typing') {
-      explanationText.textContent = '';
+      explanationText.textContent = '정확히 입력하세요! 😊';
     } else {
-      explanationText.textContent = '정답을 선택하세요';
+      explanationText.textContent = '정답을 골라보세요! 💪';
     }
     explanationBubble.classList.add('empty');
-    console.log('[Quiz] ❌ 일반 문제 - 빈 말풍선');
+    console.log('[Quiz] ✅ 일반 문제 - 안내 말풍선');
   }
 
   // NEXT 버튼 초기화 (숨김 상태로 시작)
@@ -182,7 +182,7 @@ function loadQuestion() {
  * 문제 렌더링
  */
 function renderQuestion(question) {
-  questionArea.innerHTML = '';
+  answersArea.innerHTML = '';
 
   switch (question.question_type) {
     case 'dragdrop':
@@ -204,7 +204,7 @@ function renderQuestion(question) {
       renderFindError(question);
       break;
     default:
-      questionArea.innerHTML = '<p>지원하지 않는 문제 타입입니다.</p>';
+      answersArea.innerHTML = '<p>지원하지 않는 문제 타입입니다.</p>';
   }
 }
 
@@ -278,7 +278,7 @@ function renderDragDrop(question) {
 
   container.appendChild(targetEl);
   container.appendChild(itemsContainer);
-  questionArea.appendChild(container);
+  answersArea.appendChild(container);
 }
 
 /**
@@ -298,7 +298,7 @@ function renderTyping(question) {
   // 입력창
   const inputEl = document.createElement('textarea');
   inputEl.id = 'typing_textarea';
-  inputEl.className = 'nes-textarea';
+  inputEl.className = 'text-area';
   inputEl.placeholder = '위 문장을 정확히 입력하세요...';
   inputEl.autocomplete = 'off';
   inputEl.rows = 4;
@@ -309,9 +309,9 @@ function renderTyping(question) {
   inputEl.addEventListener('cut', (e) => e.preventDefault());
   inputEl.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  // nes-progress 사용
+  // 진행률 표시
   const progressEl = document.createElement('progress');
-  progressEl.className = 'nes-progress is-success';
+  progressEl.className = 'typing-progress';
   progressEl.value = 0;
   progressEl.max = 100;
 
@@ -338,7 +338,7 @@ function renderTyping(question) {
 
   // 엔터키로 제출
   inputEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && currentAnswer && currentAnswer.trim().length > 0 && questionArea.dataset.isCorrect !== 'true') {
+    if (e.key === 'Enter' && currentAnswer && currentAnswer.trim().length > 0 && answersArea.dataset.isCorrect !== 'true') {
       e.preventDefault();
       handleSubmit();
     }
@@ -347,7 +347,7 @@ function renderTyping(question) {
   container.appendChild(targetEl);
   container.appendChild(inputEl);
   container.appendChild(progressEl);
-  questionArea.appendChild(container);
+  answersArea.appendChild(container);
 
   // 포커스
   setTimeout(() => inputEl.focus(), 100);
@@ -415,7 +415,7 @@ function renderFillBlank(question) {
     }
   });
 
-  questionArea.appendChild(container);
+  answersArea.appendChild(container);
 }
 
 /**
@@ -507,7 +507,7 @@ function renderOX(question) {
   container.appendChild(oButton);
   container.appendChild(vsText);
   container.appendChild(xButton);
-  questionArea.appendChild(container);
+  answersArea.appendChild(container);
 }
 
 /**
@@ -569,7 +569,7 @@ function renderFindError(question) {
 
   container.appendChild(textEl);
   container.appendChild(hintEl);
-  questionArea.appendChild(container);
+  answersArea.appendChild(container);
 }
 
 /**
@@ -581,10 +581,10 @@ async function handleSubmit() {
   }
 
   // 중복 제출 방지
-  if (questionArea.dataset.submitting === 'true') {
+  if (answersArea.dataset.submitting === 'true') {
     return;
   }
-  questionArea.dataset.submitting = 'true';
+  answersArea.dataset.submitting = 'true';
 
   try {
     const question = currentSession.question;
@@ -609,7 +609,7 @@ async function handleSubmit() {
   } catch (error) {
     console.error('답변 제출 실패:', error);
     alert('답변 제출에 실패했습니다');
-    questionArea.dataset.submitting = 'false';
+    answersArea.dataset.submitting = 'false';
   }
 }
 
@@ -622,14 +622,32 @@ function showFeedback(result, question, response) {
     playSound('correct');
     highlightCorrectAnswer();
 
-    // 정답 상태 저장
-    questionArea.dataset.isCorrect = 'true';
-    questionArea.dataset.submitting = 'false';
+    // 캐릭터 감정: 정답 시 행복한 표정
+    if (result.attempt === 1) {
+      setCharacterEmotion('excellent');
+    } else {
+      setCharacterEmotion('good');
+    }
 
-    // 말풍선에 격려 메시지
-    explanationBubble.classList.remove('ox-hint', 'long');
+    // NES.css 스타일 글로우 효과 추가
+    answersArea.classList.add('nes-glow');
+    setTimeout(() => {
+      answersArea.classList.remove('nes-glow');
+    }, 2000);
+
+    // 정답 상태 저장
+    answersArea.dataset.isCorrect = 'true';
+    answersArea.dataset.submitting = 'false';
+
+    // 말풍선에 격려 메시지 (OX 문제는 특별한 메시지)
+    explanationBubble.classList.remove('ox-hint', 'long', 'incorrect');
     explanationBubble.classList.remove('empty');
-    explanationText.textContent = '정답입니다! 👏';
+    explanationBubble.classList.add('correct');
+
+    const positiveMsg = question.question_type === 'ox'
+      ? '느낌 GOOD! 👍'
+      : '정답입니다! 👏';
+    typeWriterEffect(explanationText, positiveMsg, 30);
 
     // 첫 시도에 맞춘 경우
     if (result.attempt === 1) {
@@ -646,11 +664,11 @@ function showFeedback(result, question, response) {
         }, 1000);
       } else {
         // 일반 문제 - 한 번에 맞춤 (노란색 칠하기)
-        setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'correct'), 500);
+        setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'correct-first'), 500);
       }
     } else {
       // 첫 시도에 못 맞춘 경우 (회색 칠하기)
-      setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'incorrect'), 500);
+      setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'correct-retry'), 500);
     }
 
     // NEXT 버튼 표시
@@ -667,35 +685,72 @@ function showFeedback(result, question, response) {
     playSound('wrong');
     highlightIncorrectAnswer();
 
+    // 캐릭터 감정: 오답 시 실망한 표정
+    setCharacterEmotion('oops');
+
     // 제출 상태 해제 (즉시 다시 시도 가능)
-    questionArea.dataset.submitting = 'false';
+    answersArea.dataset.submitting = 'false';
+    answersArea.dataset.isCorrect = 'false';
 
-    // 부드러운 흔들림
-    document.querySelector('.quiz-main').classList.add('gentle-shake');
-    setTimeout(() => {
-      document.querySelector('.quiz-main').classList.remove('gentle-shake');
-    }, 300);
-
-    // 해설 말풍선 타이핑 효과로 표시
-    if (result.explanation || question.explanation) {
-      const text = result.explanation || question.explanation;
-      explanationBubble.classList.remove('ox-hint', 'empty');
-      explanationBubble.classList.add('long');
-      typeWriterEffect(explanationText, text, 20);
+    // 퀴즈 콘텐츠 영역 Duolingo 스타일 흔들림
+    const quizContent = document.querySelector('.quiz-content');
+    if (quizContent) {
+      quizContent.classList.remove('duolingo-shake');
+      void quizContent.offsetWidth; // Trigger reflow
+      quizContent.classList.add('duolingo-shake');
+      setTimeout(() => {
+        quizContent.classList.remove('duolingo-shake');
+      }, 500);
     }
 
-    // 오답이므로 답변 초기화
+    // 말풍선도 흔들림
+    explanationBubble.classList.remove('duolingo-shake');
+    void explanationBubble.offsetWidth;
+    explanationBubble.classList.add('duolingo-shake');
+    setTimeout(() => {
+      explanationBubble.classList.remove('duolingo-shake');
+    }, 500);
+
+    // 해설 말풍선 타이핑 효과로 표시
+    explanationBubble.classList.remove('ox-hint', 'empty', 'correct');
+    explanationBubble.classList.add('incorrect');
+
+    // OX 문제는 "흠..." 표시
+    if (question.question_type === 'ox') {
+      typeWriterEffect(explanationText, '흠... 🤔', 40);
+      setTimeout(() => {
+        if (result.explanation || question.explanation) {
+          const text = result.explanation || question.explanation;
+          explanationBubble.classList.add('long');
+          typeWriterEffect(explanationText, text, 20);
+        }
+      }, 800);
+    } else {
+      // 다른 문제 타입은 바로 해설 표시
+      if (result.explanation || question.explanation) {
+        const text = result.explanation || question.explanation;
+        explanationBubble.classList.add('long');
+        typeWriterEffect(explanationText, text, 20);
+      }
+    }
+
+    // 오답이므로 답변 초기화하고 다시 선택 가능하게 함
     currentAnswer = null;
 
     // 선택 상태 초기화 (시각적으로만)
-    questionArea.querySelectorAll('.selected, .incorrect').forEach(el => {
+    answersArea.querySelectorAll('.selected, .incorrect').forEach(el => {
       el.classList.remove('selected', 'incorrect');
     });
 
-    // 타이핑 문제가 아닐 때만 NEXT 버튼 숨김 (타이핑 문제는 제출 버튼 유지)
-    if (question.question_type !== 'typing') {
-      nextQuestionBtn.classList.add('hidden');
-    }
+    // 오답 시 NEXT 버튼은 항상 숨김 (정답을 선택해야만 다음으로 넘어갈 수 있음)
+    nextQuestionBtn.classList.add('hidden');
+
+    // 사용자에게 다시 시도하라는 메시지 추가
+    setTimeout(() => {
+      if (explanationText.textContent.indexOf('다시') === -1) {
+        explanationText.textContent += '\n\n정답을 선택해야 다음 문제로 넘어갈 수 있습니다.';
+      }
+    }, 500);
   }
 }
 
@@ -708,36 +763,36 @@ function highlightCorrectAnswer() {
   switch (question.question_type) {
     case 'fill_in_blank':
     case 'fillblank':
-      questionArea.querySelectorAll('.fillblank-option').forEach(el => {
+      answersArea.querySelectorAll('.fillblank-option').forEach(el => {
         if (el.dataset.value === currentAnswer) {
           el.classList.add('correct');
         }
         el.disabled = true;
       });
       break;
-      
+
     case 'ox':
-      questionArea.querySelectorAll('.ox-button').forEach(el => {
+      answersArea.querySelectorAll('.ox-button').forEach(el => {
         if (el.dataset.value === currentAnswer) {
           el.classList.add('correct');
         }
         el.disabled = true;
       });
       break;
-      
+
     case 'find_error':
     case 'finderror':
-      questionArea.querySelectorAll('.finderror-word').forEach(el => {
+      answersArea.querySelectorAll('.finderror-word').forEach(el => {
         if (el.dataset.value === currentAnswer) {
           el.classList.add('correct');
         }
         el.classList.add('disabled');
       });
       break;
-      
+
     case 'drag_and_drop':
     case 'dragdrop':
-      const target = questionArea.querySelector('.dragdrop-target');
+      const target = answersArea.querySelector('.dragdrop-target');
       if (target) {
         target.style.borderColor = '#4aa52e';
         target.style.background = 'rgba(146, 204, 65, 0.3)';
@@ -755,7 +810,7 @@ function highlightIncorrectAnswer() {
   switch (question.question_type) {
     case 'fill_in_blank':
     case 'fillblank':
-      questionArea.querySelectorAll('.fillblank-option').forEach(el => {
+      answersArea.querySelectorAll('.fillblank-option').forEach(el => {
         if (el.dataset.value === currentAnswer) {
           el.classList.add('incorrect');
         }
@@ -763,7 +818,7 @@ function highlightIncorrectAnswer() {
       break;
 
     case 'ox':
-      questionArea.querySelectorAll('.ox-button').forEach(el => {
+      answersArea.querySelectorAll('.ox-button').forEach(el => {
         if (el.dataset.value === currentAnswer) {
           el.classList.add('incorrect');
         }
@@ -772,7 +827,7 @@ function highlightIncorrectAnswer() {
 
     case 'find_error':
     case 'finderror':
-      questionArea.querySelectorAll('.finderror-word').forEach(el => {
+      answersArea.querySelectorAll('.finderror-word').forEach(el => {
         if (el.dataset.value === currentAnswer) {
           el.classList.add('incorrect');
         }
@@ -781,7 +836,7 @@ function highlightIncorrectAnswer() {
 
     case 'drag_and_drop':
     case 'dragdrop':
-      const target = questionArea.querySelector('.dragdrop-target');
+      const target = answersArea.querySelector('.dragdrop-target');
       if (target) {
         target.style.borderColor = '#d41010';
         target.style.background = 'rgba(252, 40, 71, 0.3)';
@@ -792,7 +847,7 @@ function highlightIncorrectAnswer() {
 
     case 'typing':
       // 타이핑 문제는 입력창 내용 유지 (다시 수정 가능)
-      const textarea = questionArea.querySelector('textarea');
+      const textarea = answersArea.querySelector('textarea');
       if (textarea) {
         textarea.classList.add('incorrect');
         // 0.3초 후 incorrect 클래스 제거
@@ -803,8 +858,15 @@ function highlightIncorrectAnswer() {
       break;
   }
 
-  // 화면 흔들림 효과
-  animate(document.body, 'shake', 500);
+  // 화면 흔들림 효과 - 중앙 문제 영역 위주로
+  const quizContent = document.querySelector('.quiz-content');
+  if (quizContent) {
+    animate(quizContent, 'shake', 500);
+  }
+  // 말풍선도 함께 흔들리도록
+  if (explanationBubble) {
+    animate(explanationBubble, 'shake', 500);
+  }
 }
 
 /**
@@ -878,20 +940,65 @@ function handleQuit() {
 }
 
 /**
- * 타이핑 효과
+ * 캐릭터 감정 표현 변경 (Duolingo 스타일)
+ * @param {string} emotion - 'neutral', 'happy', 'oops', 'good', 'thinking'
+ */
+function setCharacterEmotion(emotion) {
+  if (!characterImg) return;
+
+  const emotionMap = {
+    'neutral': '../images/character_no_bg.png',
+    'happy': '../images/ohyes2.png',
+    'good': '../images/good.png',
+    'oops': '../images/oops2.png',
+    'thinking': '../images/hi.png',
+    'excellent': '../images/ohmygood2.png'
+  };
+
+  const newSrc = emotionMap[emotion] || emotionMap['neutral'];
+
+  if (characterImg.src !== newSrc) {
+    characterImg.classList.remove('character-fade');
+    void characterImg.offsetWidth; // Trigger reflow
+    characterImg.src = newSrc;
+    characterImg.classList.add('character-fade');
+  }
+}
+
+/**
+ * 타이핑 효과 (Duolingo 스타일 - 커서 깜빡임 포함)
  */
 function typeWriterEffect(element, text, speed = 50) {
   element.textContent = '';
   let i = 0;
-  
+
+  // 커서 추가
+  const cursor = document.createElement('span');
+  cursor.className = 'typing-cursor';
+  cursor.textContent = '▮';
+  cursor.style.display = 'inline-block';
+  cursor.style.marginLeft = '2px';
+
   function type() {
     if (i < text.length) {
+      // 커서 제거 후 텍스트 추가 후 다시 커서 추가
+      if (element.contains(cursor)) {
+        element.removeChild(cursor);
+      }
       element.textContent += text.charAt(i);
+      element.appendChild(cursor);
       i++;
       setTimeout(type, speed);
+    } else {
+      // 타이핑 완료 후 0.5초 뒤 커서 제거
+      setTimeout(() => {
+        if (element.contains(cursor)) {
+          element.removeChild(cursor);
+        }
+      }, 500);
     }
   }
-  
+
   type();
 }
 
@@ -999,7 +1106,7 @@ function showLuckyDrawAnimation(result, questionIndex) {
     if (result.won) {
       // 당첨!
       icon = '🎉';
-      title = '축하합니다!';
+      title = '선물에 당첨되었습니다';
       message = `<strong>${result.prize}</strong>에 당첨되셨습니다!<br>관리자에게 문의하여 상품을 받아가세요.`;
       titleClass = 'won';
 
@@ -1007,17 +1114,17 @@ function showLuckyDrawAnimation(result, questionIndex) {
       playSound('correct');
       createConfetti(overlay);
     } else {
-      // 꽝
+      // 미당첨
       icon = '😢';
-      title = '아쉽네요...';
+      title = '아쉽게도 이번에는 선물 당첨을 획득하지 못했습니다';
 
       // 이유별 메시지
       if (result.reason === 'max_winners_reached') {
-        message = '이번 회차의 당첨자가 모두 마감되었습니다.<br>다음 기회에 도전해주세요!';
+        message = '이번 회차의 당첨자가 모두 마감되었습니다.<br>문제를 많이 풀면 선물 획득 확률이 높아집니다!';
       } else if (result.reason === 'already_won') {
         message = '이미 당첨되셨습니다!<br>한 번만 당첨 가능합니다.';
       } else {
-        message = '이번엔 당첨되지 못했습니다.<br>다음 기회에 도전해주세요!';
+        message = '문제를 많이 풀면 선물 획득 확률이 높아집니다!';
       }
 
       titleClass = 'lost';

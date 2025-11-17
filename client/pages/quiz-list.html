@@ -7,53 +7,74 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="../css/reset.css">
-  <link rel="stylesheet" href="../css/vendor/nes.min.css">
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/decorations.css">
   <link rel="stylesheet" href="../css/quiz-list.css">
 </head>
 <body>
-  <!-- 배경 장식 요소들 -->
-  <div class="wavy-line"></div>
-  <div class="circle-green"></div>
-  <div class="sparkle sparkle1">✦</div>
-  <div class="sparkle sparkle2">✦</div>
-  <div class="lightning"></div>
-
   <!-- 우측 상단: 사용자 이름 + 로그아웃 -->
   <div class="user-section">
     <div class="user-name-display" id="userNameDisplay">Loading...</div>
-    <i class="nes-icon close is-small" id="logoutBtn" style="cursor: pointer;" title="로그아웃"></i>
+    <span class="icon-button icon-close" id="logoutBtn" style="cursor: pointer;" title="로그아웃">✕</span>
   </div>
 
-  <!-- 좌측 하단 영역 (캐릭터 + 말풍선) -->
+  <!-- 좌측 하단 영역 - 말풍선 -->
   <div class="left-section">
-    <!-- 픽셀 캐릭터 (nes-octocat) -->
-    <div class="pixel-character">
-      <i class="nes-octocat animate"></i>
-    </div>
+    <!-- 픽셀 말풍선 (왼쪽 꼬리) -->
+    <div class="speech-bubble">
+      <svg class="speech-bubble-svg" width="320" height="140" viewBox="0 0 320 140">
+        <!-- 메인 사각형 본체 -->
+        <rect x="20" y="10" width="280" height="100" fill="#FFF" stroke="none" />
 
-    <!-- 픽셀 말풍선 (대각선 오른쪽 위) -->
-    <div class="speech-bubbles">
-      <div class="nes-balloon from-left speech-bubble">
-        <p>퀴즈를 통해 Tech그룹의 기준을 명확히 알아갑시다</p>
-    </div>
-      <div class="nes-balloon from-left speech-bubble">
-        <p>정답보다는 참여가 중요! 많은 문제를 풀수록 ⭐Lucky Draw⭐ 당첨 확률 UP!</p>
+        <!-- 픽셀 테두리 - 상단 -->
+        <rect x="24" y="6" width="272" height="4" fill="#000" />
+
+        <!-- 픽셀 테두리 - 좌측 상단 모서리 -->
+        <rect x="20" y="10" width="4" height="4" fill="#000" />
+        <rect x="16" y="14" width="4" height="4" fill="#000" />
+        <rect x="12" y="18" width="4" height="86" fill="#000" />
+
+        <!-- 픽셀 테두리 - 좌측 하단 모서리 -->
+        <rect x="16" y="104" width="4" height="4" fill="#000" />
+        <rect x="20" y="108" width="4" height="4" fill="#000" />
+
+        <!-- 픽셀 테두리 - 하단 -->
+        <rect x="24" y="112" width="96" height="4" fill="#000" />
+
+        <!-- 픽셀 테두리 - 우측 상단 모서리 -->
+        <rect x="296" y="10" width="4" height="4" fill="#000" />
+        <rect x="300" y="14" width="4" height="4" fill="#000" />
+        <rect x="304" y="18" width="4" height="86" fill="#000" />
+
+        <!-- 꼬리 부분 - 중앙 아래 (캐릭터 중앙 위에 오도록) -->
+        <rect x="148" y="112" width="24" height="4" fill="#FFF" />
+        <rect x="144" y="116" width="4" height="8" fill="#000" />
+        <rect x="148" y="116" width="16" height="8" fill="#FFF" />
+        <rect x="164" y="116" width="4" height="4" fill="#000" />
+
+        <rect x="140" y="124" width="4" height="4" fill="#000" />
+        <rect x="144" y="124" width="12" height="4" fill="#FFF" />
+        <rect x="156" y="124" width="4" height="4" fill="#000" />
+
+        <rect x="136" y="128" width="4" height="4" fill="#000" />
+        <rect x="140" y="128" width="8" height="4" fill="#FFF" />
+        <rect x="148" y="128" width="4" height="4" fill="#000" />
+
+        <rect x="132" y="132" width="16" height="4" fill="#000" />
+
+        <!-- 픽셀 테두리 - 우측 하단 -->
+        <rect x="120" y="112" width="180" height="4" fill="#000" />
+        <rect x="300" y="108" width="4" height="4" fill="#000" />
+        <rect x="304" y="104" width="4" height="4" fill="#000" />
+      </svg>
+
+      <div class="speech-bubble-text">
+        퀴즈를 통해 Tech그룹의 기준을 명확히 알아갑시다 정답보다는 참여가 중요!<br><br>
+        많은 문제를 풀수록 Lucky Draw 당첨 확률 UP!
       </div>
     </div>
-  </div>
-
-  <!-- 연도 네비게이션 -->
-  <div class="year-navigation">
-    <button class="year-nav-btn" id="prevYear">
-      <span class="arrow">◀</span>
-    </button>
-    <span class="year-display" id="yearDisplay">2025년</span>
-    <button class="year-nav-btn" id="nextYear">
-      <span class="arrow">▶</span>
-    </button>
   </div>
 
   <!-- 메인 컨텐츠 -->
@@ -64,23 +85,59 @@
       <p class="loading-text">LOADING<span class="loading"></span></p>
     </div>
 
-    <!-- 퀴즈 리스트 (12개월 달력) -->
+    <!-- 퀴즈 리스트 (나무판자 목록) -->
     <div id="quizList" class="quiz-board-list hidden"></div>
 
     <!-- 에러 상태 -->
     <div id="errorState" class="error-state hidden">
       <p>⚠️ 퀴즈 목록을 불러올 수 없습니다</p>
-      <button class="nes-btn is-primary" id="retryButton">
+      <button class="btn btn-primary" id="retryButton">
         RETRY
       </button>
     </div>
   </main>
 
+  <!-- 지면 -->
+  <div class="ground">
+    <div class="grass-layer">
+      <div class="grass-pixels"></div>
+    </div>
+    <div class="dirt-layer">
+      <div class="dirt-pixels"></div>
+    </div>
+  </div>
 
-  <!-- 픽셀 지형 -->
-  <div class="pixel-ground">
-    <div class="grass-layer"></div>
-    <div class="dirt-layer"></div>
+  <!-- 캐릭터 이미지 (나무 옆) -->
+  <div class="character">
+    <img src="../images/character_no_bg.png" alt="캐릭터" class="character-img">
+  </div>
+
+  <!-- 장식 요소들 -->
+  <div class="balloon-orange">
+    <div class="balloon-o-pixel"></div>
+  </div>
+  <div class="balloon-blue">
+    <div class="balloon-b-pixel"></div>
+  </div>
+  <div class="tree">
+    <div class="tree-leaves"></div>
+  </div>
+  <div class="bush bush1"></div>
+  <div class="sunflower">
+    <div class="sunflower-flower"></div>
+  </div>
+  <div class="bush bush2"></div>
+  <div class="clover"></div>
+  <div class="small-plant"></div>
+  <div class="tnt">
+    <div class="tnt-box"></div>
+    <div class="tnt-label">TNT</div>
+  </div>
+  <div class="mailbox">
+    <div class="mailbox-top"></div>
+  </div>
+  <div class="cursor">
+    <div class="cursor-pixel"></div>
   </div>
 
   <!-- JavaScript -->

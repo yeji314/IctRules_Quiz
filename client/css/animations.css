@@ -276,3 +276,95 @@
 .gentle-shake {
   animation: gentleShake 0.3s;
 }
+
+/* === Duolingo 스타일 애니메이션 === */
+
+/* 바운스 인 애니메이션 (질문 등장) */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-20px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05) translateY(0);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* 말풍선 타이핑 커서 깜빡임 */
+@keyframes typingCursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.typing-cursor {
+  animation: typingCursor 0.8s infinite;
+}
+
+/* NES.css 스타일 글로우 효과 (정답) */
+@keyframes nesGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(146, 204, 65, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(146, 204, 65, 1));
+  }
+}
+
+.nes-glow {
+  animation: nesGlow 1s infinite;
+}
+
+/* Duolingo 스타일 흔들림 (오답) */
+@keyframes duolingoShake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-8px) rotate(-1deg); }
+  20%, 40%, 60%, 80% { transform: translateX(8px) rotate(1deg); }
+}
+
+.duolingo-shake {
+  animation: duolingoShake 0.5s;
+}
+
+/* 스케일 팝 애니메이션 (버튼 선택) */
+@keyframes scalePop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+.scale-pop {
+  animation: scalePop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* 캐릭터 감정 페이드 전환 */
+@keyframes characterFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(0.9) translateY(0);
+  }
+}
+
+.character-fade {
+  animation: characterFade 0.4s ease-out;
+}

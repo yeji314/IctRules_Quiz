@@ -59,6 +59,39 @@ IctRulesQuiz/
 
 ## 🚀 빠른 시작
 
+### 배포 방법 선택
+
+#### 🐳 Docker 배포 (권장)
+Docker를 사용하면 환경 설정 없이 바로 실행할 수 있습니다.
+
+**Windows:**
+```powershell
+# 1. 환경 변수 설정
+Copy-Item env.example .env
+# .env 파일 편집 (JWT_SECRET, SESSION_SECRET 변경)
+
+# 2. Docker Compose로 실행
+docker-compose up -d
+
+# 3. 브라우저에서 접속
+# http://localhost:5000
+```
+
+**Linux/Mac:**
+```bash
+# 자동 배포 스크립트 실행
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
+```
+
+📚 **상세 가이드**:
+- [Docker 배포 가이드](README_DOCKER.md)
+- [Docker 이미지 빌드 및 배포](DOCKER_IMAGE_DEPLOYMENT.md)
+
+---
+
+#### 💻 로컬 개발 환경
+
 ### 사전 요구사항
 
 - Node.js 18 이상

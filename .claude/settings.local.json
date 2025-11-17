@@ -3,7 +3,10 @@
     "allow": [
       "Bash(dir C:IctRulesQuizimages)",
       "Bash(node download-fonts.js:*)",
-      "Bash(node download-fonts-v2.js:*)"
+      "Bash(node download-fonts-v2.js:*)",
+      "Bash(docker:*)",
+      "Bash(docker info:*)",
+      "Bash(docker-compose up:*)"
     ],
     "deny": [],
     "ask": []

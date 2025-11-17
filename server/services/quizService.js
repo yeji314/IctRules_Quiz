@@ -194,6 +194,11 @@ class QuizService {
   /**
    * 다음 문제 선택 (동적 선택)
    * 현재 세션의 진행 상황을 보고 다음 문제를 결정
+   *
+   * 럭키드로우 출현 규칙:
+   * 1. 현재 세션에서 3문제 이상 맞춰야 출현 가능
+   * 2. 직전 문제가 럭키드로우인 경우 출현 불가
+   * 3. 이미 선물에 당첨된 경우 출현 불가
    */
   async getNextQuestion(sessionId, eventId) {
     // 현재 세션 정보 가져오기
@@ -215,16 +220,15 @@ class QuizService {
       return null;
     }
 
-    // 현재 세션에서 한번에 맞춘 문제 수 (is_correct = true AND answer_attempt = 1)
-    const firstCorrectCount = await db.QuizAnswer.count({
+    // 현재 세션에서 맞춘 문제 수 (answer_attempt 무관하게 정답 개수만 카운트)
+    const correctCount = await db.QuizAnswer.count({
       where: {
         session_id: sessionId,
-        is_correct: true,
-        answer_attempt: 1
+        is_correct: true
       }
     });
 
-    console.log(`[getNextQuestion] 현재 세션에서 한번에 맞춘 문제 수: ${firstCorrectCount}`);
+    console.log(`[getNextQuestion] 현재 세션에서 맞춘 문제 수: ${correctCount}`);
 
     // 이미 푼 문제 ID 목록 (전체 이벤트 기준)
     const previousAnswers = await db.QuizAnswer.findAll({
@@ -244,7 +248,31 @@ class QuizService {
     const excludeQuestionIds = previousAnswers.map(a => a.question_id);
     console.log(`[getNextQuestion] 이미 푼 문제 ID (전체): [${excludeQuestionIds.join(', ')}]`);
 
-    // 남은 문제 가져오기 (category 구분 없이 모든 문제)
+    // 현재 세션에서 이미 선물에 당첨되었는지 확인
+    const hasWonPrize = await db.LuckyDraw.count({
+      where: {
+        user_id: currentSession.user_id,
+        event_id: eventId
+      }
+    }) > 0;
+
+    console.log(`[getNextQuestion] 선물 당첨 여부: ${hasWonPrize}`);
+
+    // 현재 세션에서 직전 문제가 럭키드로우였는지 확인
+    const lastAnswer = await db.QuizAnswer.findOne({
+      where: { session_id: sessionId },
+      include: [{
+        model: db.Question,
+        attributes: ['category']
+      }],
+      order: [['answered_at', 'DESC']],
+      limit: 1
+    });
+
+    const lastWasLuckyDraw = lastAnswer && lastAnswer.Question && lastAnswer.Question.category === 'luckydraw';
+    console.log(`[getNextQuestion] 직전 문제가 럭키드로우: ${lastWasLuckyDraw}`);
+
+    // 남은 문제 가져오기
     const allQuestions = await db.Question.findAll({
       where: {
         event_id: eventId,
@@ -252,15 +280,54 @@ class QuizService {
       }
     });
 
-    console.log(`[getNextQuestion] 남은 문제: 총 ${allQuestions.length}개`);
+    // 일반 문제와 럭키드로우 분리
+    const normalQuestions = allQuestions.filter(q => q.category === 'normal');
+    const luckyQuestions = allQuestions.filter(q => q.category === 'luckydraw');
 
-    // 단순 랜덤 선택 (category 구분 없음)
+    console.log(`[getNextQuestion] 남은 문제: 일반 ${normalQuestions.length}개, 럭키드로우 ${luckyQuestions.length}개`);
+
+    // 럭키드로우 출현 가능 여부 판단
+    const canShowLuckyDraw = correctCount >= 3 && !lastWasLuckyDraw && !hasWonPrize && luckyQuestions.length > 0;
+
+    console.log(`[getNextQuestion] 럭키드로우 출현 가능: ${canShowLuckyDraw} (정답 ${correctCount}개 >= 3, 직전 럭키드로우: ${lastWasLuckyDraw}, 당첨: ${hasWonPrize})`);
+
     let selectedQuestion = null;
-    if (allQuestions.length > 0) {
-      const idx = Math.floor(Math.random() * allQuestions.length);
-      selectedQuestion = allQuestions[idx];
-      console.log(`[getNextQuestion] 선택된 문제: Q${selectedQuestion.id}`);
+
+    if (canShowLuckyDraw) {
+      // 럭키드로우 출현 가능: 40% 확률로 럭키드로우, 60% 일반
+      const showLucky = Math.random() < 0.4;
+
+      if (showLucky && luckyQuestions.length > 0) {
+        // 럭키드로우 선택
+        const idx = Math.floor(Math.random() * luckyQuestions.length);
+        selectedQuestion = luckyQuestions[idx];
+        console.log(`[getNextQuestion] ✨ 럭키드로우 문제 선택: Q${selectedQuestion.id}`);
+      } else if (normalQuestions.length > 0) {
+        // 일반 문제 선택
+        const idx = Math.floor(Math.random() * normalQuestions.length);
+        selectedQuestion = normalQuestions[idx];
+        console.log(`[getNextQuestion] 일반 문제 선택: Q${selectedQuestion.id}`);
+      } else if (luckyQuestions.length > 0) {
+        // 일반 문제 없으면 럭키드로우 선택
+        const idx = Math.floor(Math.random() * luckyQuestions.length);
+        selectedQuestion = luckyQuestions[idx];
+        console.log(`[getNextQuestion] (일반 문제 없음) 럭키드로우 문제 선택: Q${selectedQuestion.id}`);
+      }
     } else {
+      // 럭키드로우 출현 불가: 일반 문제만 선택
+      if (normalQuestions.length > 0) {
+        const idx = Math.floor(Math.random() * normalQuestions.length);
+        selectedQuestion = normalQuestions[idx];
+        console.log(`[getNextQuestion] 일반 문제 선택: Q${selectedQuestion.id}`);
+      } else if (luckyQuestions.length > 0) {
+        // 일반 문제가 없으면 럭키드로우라도 선택 (마지막 수단)
+        const idx = Math.floor(Math.random() * luckyQuestions.length);
+        selectedQuestion = luckyQuestions[idx];
+        console.log(`[getNextQuestion] (일반 문제 없음, 강제) 럭키드로우 문제 선택: Q${selectedQuestion.id}`);
+      }
+    }
+
+    if (!selectedQuestion) {
       console.log(`[getNextQuestion] 선택 가능한 문제 없음`);
     }
 
@@ -366,47 +433,47 @@ class QuizService {
       // 남은 문제 수 = 15 - (완료된 세션 × 5)
       const remainingQuestions = 15 - totalAnswered;
 
-      // 버튼 상태 결정
+      // 완료한 문제 수 (패널용)
+      const completed_questions = totalAnswered;
+
+      // 버튼/상태 결정
       let buttonText, buttonEnabled;
+      let status;
       const now = new Date();
       const isExpired = now > new Date(event.end_date);
 
       if (isExpired) {
+        status = 'completed';
         buttonText = '만료됨 🔒';
         buttonEnabled = false;
-      } else if (remainingQuestions < 5) {
-        // 남은 문제가 5개 미만이면 완료
-        buttonText = '완료 ✓';
-        buttonEnabled = false;
-      } else if (totalAnswered === 0) {
+      } else if (completed_questions === 0) {
+        status = 'start';
         buttonText = '시작하기 →';
         buttonEnabled = true;
-      } else {
+      } else if (completed_questions < 15) {
+        status = 'continue';
         buttonText = '계속하기 →';
         buttonEnabled = true;
+      } else {
+        status = 'completed';
+        buttonText = '완료 ✓';
+        buttonEnabled = false;
       }
 
-      // 퀴즈명 생성 (회차 표시)
+      // 퀴즈명 생성 (월 텍스트: "1월" 형태)
       const year = event.year_month.substring(0, 4);
       const month = event.year_month.substring(5);
-      let quizTitle;
-      let displayRound;
-
-      if (totalAnswered >= 10) {
-        displayRound = 3;
-      } else if (totalAnswered >= 5) {
-        displayRound = 2;
-      } else {
-        displayRound = 1;
-      }
-
-      quizTitle = `${year}년 ${month}월 ${displayRound}회차`;
+      const monthNumber = parseInt(month, 10);
+      const quizTitle = `${monthNumber}월`;
 
       return {
         eventId: event.id,
+        year_month: event.year_month,
         title: quizTitle,
         currentRound,
         totalAnswered,
+        completed_questions,
+        status,
         correctCount,  // 첫 시도에 맞춘 문제 수
         totalQuestions: 15,
         progressPercent: Math.round((correctCount / 15) * 100),  // 맞춘 문제 기준으로 진행률 계산
@@ -415,6 +482,7 @@ class QuizService {
         startDate: event.start_date,
         endDate: event.end_date,
         isExpired,
+        is_active: event.is_active,
         buttonText,
         buttonEnabled
       };

@@ -6,9 +6,84 @@ body {
   overflow-x: hidden;
 }
 
-body::before,
-body::after {
-  display: none;
+/* 배경 장식 - 물결 모양 파란 선 */
+.wavy-line {
+  position: fixed;
+  top: 80px;
+  left: 60px;
+  width: 150px;
+  height: 80px;
+  border: 6px solid #4169e1;
+  border-radius: 50%;
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+  transform: rotate(-20deg);
+  z-index: 1;
+}
+
+.wavy-line::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 20px;
+  width: 40px;
+  height: 40px;
+  background: #4169e1;
+  border-radius: 50% 50% 0 50%;
+  transform: rotate(45deg);
+}
+
+/* 배경 장식 - 초록 원 */
+.circle-green {
+  position: fixed;
+  top: 50px;
+  right: 80px;
+  width: 200px;
+  height: 200px;
+  border: 25px solid #7fff00;
+  border-radius: 50%;
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  transform: rotate(45deg);
+  z-index: 1;
+}
+
+/* 배경 장식 - 반짝이는 별 */
+.sparkle {
+  position: fixed;
+  color: #ffeb3b;
+  font-size: 48px;
+  animation: sparkle-twinkle 1.5s ease-in-out infinite;
+  z-index: 1;
+}
+
+.sparkle1 {
+  top: 30%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.sparkle2 {
+  top: 60%;
+  left: 15%;
+  font-size: 36px;
+  animation-delay: 0.5s;
+}
+
+/* 배경 장식 - 번개 모양 */
+.lightning {
+  position: fixed;
+  bottom: 200px;
+  right: 50px;
+  width: 80px;
+  height: 120px;
+  background: #7fff00;
+  clip-path: polygon(40% 0%, 60% 0%, 35% 50%, 55% 50%, 0% 100%, 30% 50%, 10% 50%);
+  z-index: 1;
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
 }
 
 /* 컨페티 배경 */

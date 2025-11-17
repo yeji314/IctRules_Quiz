@@ -299,9 +299,9 @@ function createEventCard(event) {
     </div>
     <div class="event-status ${statusClass}">${statusText}</div>
     <div class="event-actions">
-      <button class="nes-btn is-primary" data-action="select">문제 관리</button>
-      <button class="nes-btn" data-action="edit">수정</button>
-      <button class="nes-btn is-error" data-action="delete">삭제</button>
+      <button class="btn btn-primary" data-action="select">문제 관리</button>
+      <button class="btn" data-action="edit">수정</button>
+      <button class="btn btn-danger" data-action="delete">삭제</button>
     </div>
   `;
 
@@ -404,8 +404,8 @@ function createQuestionCard(question, index) {
         <span class="question-type-badge">${typeNames[question.question_type] || question.question_type}</span>
       </div>
       <div class="question-actions">
-        <button class="nes-btn" data-action="edit">수정</button>
-        <button class="nes-btn is-error" data-action="delete">삭제</button>
+        <button class="btn" data-action="edit">수정</button>
+        <button class="btn btn-danger" data-action="delete">삭제</button>
       </div>
     </div>
     <div class="question-text">
@@ -544,27 +544,27 @@ function renderQuestionDataFields(question = null) {
   switch (questionType) {
     case 'dragdrop':
       container.innerHTML = `
-        <div class="nes-field">
+        <div class="form-field">
           <label>드롭 영역 라벨</label>
-          <input type="text" id="targetLabel" class="nes-input" placeholder="여기에 드래그하세요" value="${questionData?.target_label || ''}">
+          <input type="text" id="targetLabel" class="text-input" placeholder="여기에 드래그하세요" value="${questionData?.target_label || ''}">
         </div>
-        <div class="nes-field">
+        <div class="form-field">
           <label>선택지 (콤마로 구분)</label>
-          <input type="text" id="dragOptions" class="nes-input" placeholder="예: 옵션1, 옵션2, 옵션3" required value="${questionData?.options?.join(', ') || ''}">
+          <input type="text" id="dragOptions" class="text-input" placeholder="예: 옵션1, 옵션2, 옵션3" required value="${questionData?.options?.join(', ') || ''}">
           <p class="note">예시: 정답항목, 오답1, 오답2, 오답3</p>
         </div>
-        <div class="nes-field">
+        <div class="form-field">
           <label>정답</label>
-          <input type="text" id="correctAnswer" class="nes-input" placeholder="정답 입력" required value="${questionData?.correct_answer || ''}">
+          <input type="text" id="correctAnswer" class="text-input" placeholder="정답 입력" required value="${questionData?.correct_answer || ''}">
         </div>
       `;
       break;
 
     case 'typing':
       container.innerHTML = `
-        <div class="nes-field">
+        <div class="form-field">
           <label>정답 문장 (사용자가 타이핑해야 할 문장)</label>
-          <textarea id="correctAnswer" class="nes-textarea" rows="3" placeholder="사용자가 정확히 입력해야 할 문장" required>${questionData?.correct_answer || ''}</textarea>
+          <textarea id="correctAnswer" class="text-area" rows="3" placeholder="사용자가 정확히 입력해야 할 문장" required>${questionData?.correct_answer || ''}</textarea>
           <p class="note">⚠️ 사용자는 이 문장을 정확히 입력해야 합니다 (대소문자, 띄어쓰기 포함)</p>
         </div>
       `;
@@ -572,23 +572,23 @@ function renderQuestionDataFields(question = null) {
 
     case 'fillblank':
       container.innerHTML = `
-        <div class="nes-field">
+        <div class="form-field">
           <label>선택지 (콤마로 구분, 5개)</label>
-          <input type="text" id="fillOptions" class="nes-input" placeholder="예: 옵션1, 옵션2, 옵션3, 옵션4, 옵션5" required value="${questionData?.options?.join(', ') || ''}">
+          <input type="text" id="fillOptions" class="text-input" placeholder="예: 옵션1, 옵션2, 옵션3, 옵션4, 옵션5" required value="${questionData?.options?.join(', ') || ''}">
           <p class="note">5개의 선택지를 콤마로 구분하여 입력하세요</p>
         </div>
-        <div class="nes-field">
+        <div class="form-field">
           <label>정답</label>
-          <input type="text" id="correctAnswer" class="nes-input" placeholder="정답 입력 (위 선택지 중 하나)" required value="${questionData?.correct_answer || ''}">
+          <input type="text" id="correctAnswer" class="text-input" placeholder="정답 입력 (위 선택지 중 하나)" required value="${questionData?.correct_answer || ''}">
         </div>
       `;
       break;
 
     case 'ox':
       container.innerHTML = `
-        <div class="nes-field">
+        <div class="form-field">
           <label>정답</label>
-          <div class="nes-select">
+          <div class="select-wrapper">
             <select id="correctAnswer" required>
               <option value="O" ${questionData?.correct_answer === 'O' ? 'selected' : ''}>O (맞다)</option>
               <option value="X" ${questionData?.correct_answer === 'X' ? 'selected' : ''}>X (틀리다)</option>
@@ -600,14 +600,14 @@ function renderQuestionDataFields(question = null) {
 
     case 'finderror':
       container.innerHTML = `
-        <div class="nes-field">
+        <div class="form-field">
           <label>밑줄 칠 단어들 (콤마로 구분)</label>
-          <input type="text" id="underlinedWords" class="nes-input" placeholder="예: 단어1, 단어2, 단어3" required value="${questionData?.underlined_words?.join(', ') || ''}">
+          <input type="text" id="underlinedWords" class="text-input" placeholder="예: 단어1, 단어2, 단어3" required value="${questionData?.underlined_words?.join(', ') || ''}">
           <p class="note">문제 내용에서 틀린 부분으로 의심될 수 있는 단어들을 나열하세요</p>
         </div>
-        <div class="nes-field">
+        <div class="form-field">
           <label>정답 (틀린 단어)</label>
-          <input type="text" id="correctAnswer" class="nes-input" placeholder="실제로 틀린 단어" required value="${questionData?.correct_answer || ''}">
+          <input type="text" id="correctAnswer" class="text-input" placeholder="실제로 틀린 단어" required value="${questionData?.correct_answer || ''}">
           <p class="note">위 밑줄 친 단어 중 실제로 틀린 단어를 입력하세요</p>
         </div>
       `;
