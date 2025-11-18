@@ -14,10 +14,10 @@
   <link rel="stylesheet" href="../css/quiz.css">
 </head>
 <body>
-  <!-- 우측 상단: 로그아웃 버튼 -->
-  <div class="user-section">
-    <span class="icon-button icon-close" id="logoutBtn" style="cursor: pointer;" title="로그아웃">✕</span>
-  </div>
+    <!-- 우측 상단: 로그아웃 버튼 -->
+    <div class="user-section">
+      <div class="logout-icon-pixel" id="logoutBtn" title="로그아웃"></div>
+    </div>
 
   <!-- 왼쪽 하단 영역: 나무 → 캐릭터 → 우체통 (quiz-list와 동일) -->
   <div class="character-section">
@@ -93,9 +93,11 @@
   <!-- 우측 상단: 사용자 정보 -->
   <div class="user-title" id="userNameDisplay">사용자님</div>
 
-  <!-- 우상: 5칸 게이지 바 (나무판자 스타일) -->
-  <div class="gauge-bar">
-    <div class="gauge-box" data-index="0"></div><div class="gauge-box" data-index="1"></div><div class="gauge-box" data-index="2"></div><div class="gauge-box" data-index="3"></div><div class="gauge-box" data-index="4"></div>
+  <!-- 우상: 진행바 (픽셀 캡슐 스타일) -->
+  <div class="quiz-progress">
+    <div class="pixel-progress">
+      <div class="pixel-progress__fill"></div>
+    </div>
   </div>
 
   <!-- 퀴즈 컨텐츠 영역 -->
@@ -110,8 +112,8 @@
       <!-- 동적으로 생성 -->
     </div>
 
-    <!-- 다음 문제 버튼 -->
-    <button class="next-question-btn hidden" id="nextQuestionBtn">
+    <!-- 다음 문제 / 결과보기 버튼 (START 버튼과 동일 NES 스타일) -->
+    <button class="nes-btn is-primary start-button next-question-btn hidden" id="nextQuestionBtn">
       NEXT
     </button>
   </div>

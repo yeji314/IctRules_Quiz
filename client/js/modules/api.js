@@ -151,6 +151,13 @@ export const quiz = {
   async getMySessions(eventId = null) {
     const url = eventId ? `/quiz/my-sessions?event_id=${eventId}` : '/quiz/my-sessions';
     return get(url);
+  },
+
+  /**
+   * 세션 취소
+   */
+  async cancelSession(sessionId) {
+    return post('/quiz/cancel', { session_id: sessionId });
   }
 };
 

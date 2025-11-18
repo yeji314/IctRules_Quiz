@@ -157,9 +157,8 @@
 /* 캐릭터 - 픽셀 아트 스타일 */
 .character {
   position: fixed;
-  bottom: 120px; /* grass-layer 위쪽 (80px 흙 + 40px 잔디) */
+  bottom: 10%; /* grass-layer 위쪽 (80px 흙 + 40px 잔디) */
   left: 8%;
-  width: 60px;
   height: 85px;
   z-index: 20;
 }
@@ -370,7 +369,7 @@
 /* 나무 */
 .tree {
   position: fixed;
-  bottom: 120px;
+  bottom: 10%;
   left: 3%;
   width: 50px;
   height: 75px;
@@ -469,7 +468,7 @@
 /* 해바라기 */
 .sunflower {
   position: fixed;
-  bottom: 120px; /* 잔디 라인 위 */
+  bottom: 7%; /* 잔디 라인 위 */
   right: 34%;
   width: 45px;
   height: 110px;
@@ -549,7 +548,7 @@
 /* 클로버 */
 .clover {
   position: fixed;
-  bottom: 120px;
+  bottom: 10%;
   right: 19%;
   width: 5px;
   height: 5px;
@@ -578,7 +577,7 @@
 /* 작은 식물 */
 .small-plant {
   position: fixed;
-  bottom: 120px;
+  bottom: 10%;
   right: 12%;
   width: 5px;
   height: 5px;
@@ -603,7 +602,7 @@
 /* TNT */
 .tnt {
   position: fixed;
-  bottom: 120px;
+  bottom: 10%;
   right: 6%;
   width: 55px;
   height: 55px;
@@ -612,7 +611,7 @@
 
 .tnt-box {
   position: absolute;
-  width: 5px;
+  bottom: 10%;
   height: 5px;
   background: #c87850;
   box-shadow:
@@ -672,7 +671,7 @@
 /* 우편함 */
 .mailbox {
   position: fixed;
-  bottom: 120px;
+  bottom: 10%;
   left: 22%;
   width: 40px;
   height: 80px;
@@ -769,17 +768,17 @@
 /* 반응형 - 태블릿 */
 @media (max-width: 1200px) {
   .character {
-    bottom: 120px;
+    bottom: 10%;
     left: 12%;
   }
 
   .tree {
-    bottom: 120px;
+    bottom: 10%;
     left: 3%;
   }
 
   .bush {
-    bottom: 120px;
+    bottom: 10%;;
   }
 
   .bush1 {
@@ -791,32 +790,32 @@
   }
 
   .sunflower {
-    bottom: 120px;
+    bottom: 7%;
     right: 34%;
   }
 
   .clover {
-    bottom: 120px;
+    bottom: 10%;
     right: 19%;
   }
 
   .small-plant {
-    bottom: 120px;
+    bottom: 10%;
     right: 12%;
   }
 
   .tnt {
-    bottom: 120px;
+    bottom: 10%;
     right: 6%;
   }
 
   .mailbox {
-    bottom: 120px;
+    bottom: 10%;
     left: 22%;
   }
 
   .cursor {
-    bottom: 120px;
+    bottom: 10%;
     right: 3%;
   }
 }
@@ -824,21 +823,21 @@
 /* 반응형 - 모바일 */
 @media (max-width: 768px) {
   .character {
-    bottom: 120px;
+    bottom: 10%;
     left: 10%;
     transform: scale(0.7);
     transform-origin: bottom left;
   }
 
   .tree {
-    bottom: 120px;
+    bottom: 10%;
     left: 5px;
     transform: scale(0.6);
     transform-origin: bottom left;
   }
 
   .bush {
-    bottom: 120px;
+    bottom: 10%;;
     transform: scale(0.6);
     transform-origin: bottom left;
   }
@@ -852,42 +851,42 @@
   }
 
   .sunflower {
-    bottom: 200px;
+    bottom: 7%;
     right: 25%;
     transform: scale(0.6);
     transform-origin: bottom right;
   }
 
   .clover {
-    bottom: 120px;
+    bbottom: 10%;
     right: 15%;
     transform: scale(0.7);
     transform-origin: bottom right;
   }
 
   .small-plant {
-    bottom: 120px;
+    bottom: 10%;
     right: 10%;
     transform: scale(0.7);
     transform-origin: bottom right;
   }
 
   .tnt {
-    bottom: 120px;
+    bottom: 10%;
     right: 5%;
     transform: scale(0.6);
     transform-origin: bottom right;
   }
 
   .mailbox {
-    bottom: 120px;
+    bottom: 10%;
     left: 20%;
     transform: scale(0.6);
     transform-origin: bottom left;
   }
 
   .cursor {
-    bottom: 120px;
+    bottom: 10%;
     right: 5%;
     transform: scale(0.6);
     transform-origin: bottom right;
@@ -901,21 +900,21 @@
 /* 반응형 - 소형 모바일 */
 @media (max-width: 480px) {
   .character {
-    bottom: 120px;
+    bottom: 10%;
     left: 5%;
     transform: scale(0.5);
     transform-origin: bottom left;
   }
 
   .tree {
-    bottom: 120px;
+    bottom: 10%;
     left: 2px;
     transform: scale(0.4);
     transform-origin: bottom left;
   }
 
   .bush {
-    bottom: 120px;
+    bottom: 10%;
     transform: scale(0.4);
     transform-origin: bottom left;
   }
@@ -929,42 +928,42 @@
   }
 
   .sunflower {
-    bottom: 200px;
+    bottom: 10%;
     right: 20%;
     transform: scale(0.4);
     transform-origin: bottom right;
   }
 
   .clover {
-    bottom: 120px;
+    bottom: 10%;
     right: 12%;
     transform: scale(0.5);
     transform-origin: bottom right;
   }
 
   .small-plant {
-    bottom: 120px;
+    bottom: 10%;
     right: 8%;
     transform: scale(0.5);
     transform-origin: bottom right;
   }
 
   .tnt {
-    bottom: 120px;
+    bottom: 10%;
     right: 3%;
     transform: scale(0.4);
     transform-origin: bottom right;
   }
 
   .mailbox {
-    bottom: 120px;
+    bottom: 10%;
     left: 15%;
     transform: scale(0.4);
     transform-origin: bottom left;
   }
 
   .cursor {
-    bottom: 120px;
+    bottom: 10%;
     right: 2%;
     transform: scale(0.4);
     transform-origin: bottom right;

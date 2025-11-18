@@ -25,7 +25,6 @@
 .tree,
 .flag {
   position: absolute !important;
-  bottom: 120px !important;
   filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.3)) !important;
 }
 

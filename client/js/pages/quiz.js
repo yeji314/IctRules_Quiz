@@ -157,7 +157,7 @@ function loadQuestion() {
   console.log('[Quiz loadQuestion] question category:', question.category);
 
   if (question.category === 'luckydraw') {
-    explanationText.textContent = '이번 문제는 럭키드로우 문제입니다';
+    explanationText.textContent = '이번문제는 luckydraw문제입니다. 맞추면 선물 획득 기회가 있어요!';
     explanationBubble.classList.add('luckydraw-hint');
     console.log('[Quiz] ✅ LuckyDraw 말풍선 표시됨!');
   } else {
@@ -187,24 +187,49 @@ function renderQuestion(question) {
   switch (question.question_type) {
     case 'dragdrop':
     case 'drag_and_drop':
+      setAnswersType('type-dragdrop');
       renderDragDrop(question);
       break;
     case 'typing':
+      setAnswersType('type-typing');
       renderTyping(question);
       break;
     case 'fillblank':
     case 'fill_in_blank':
+      setAnswersType('type-fillblank');
       renderFillBlank(question);
       break;
     case 'ox':
+      setAnswersType('type-ox');
       renderOX(question);
       break;
     case 'finderror':
     case 'find_error':
+      setAnswersType('type-finderror');
       renderFindError(question);
       break;
     default:
       answersArea.innerHTML = '<p>지원하지 않는 문제 타입입니다.</p>';
+  }
+}
+
+/**
+ * answers 영역 타입 클래스 관리 (레이아웃 전용)
+ * @param {string|null} typeClass - 'type-dragdrop' | 'type-typing' | 'type-fillblank' | 'type-ox' | 'type-finderror'
+ */
+function setAnswersType(typeClass) {
+  const typeClasses = [
+    'type-dragdrop',
+    'type-typing',
+    'type-fillblank',
+    'type-ox',
+    'type-finderror',
+  ];
+
+  typeClasses.forEach((cls) => answersArea.classList.remove(cls));
+
+  if (typeClass) {
+    answersArea.classList.add(typeClass);
   }
 }
 
@@ -286,22 +311,29 @@ function renderDragDrop(question) {
  */
 function renderTyping(question) {
   const { correct_answer } = question.question_data;
+  let lastTypedSide = 'right';
 
   const container = document.createElement('div');
   container.className = 'typing-container';
 
-  // 목표 문장 표시 (박스 없이 텍스트만)
+  // 목표 문장 표시
   const targetEl = document.createElement('div');
   targetEl.className = 'typing-target';
   targetEl.textContent = `"${correct_answer}"`;
 
-  // 입력창
+  // 모니터
+  const monitor = document.createElement('div');
+  monitor.className = 'monitor';
+
+  const screen = document.createElement('div');
+  screen.className = 'screen';
+
+  // 입력창 (모니터 스크린 안에)
   const inputEl = document.createElement('textarea');
   inputEl.id = 'typing_textarea';
-  inputEl.className = 'text-area';
+  inputEl.className = 'typing-textarea';
   inputEl.placeholder = '위 문장을 정확히 입력하세요...';
   inputEl.autocomplete = 'off';
-  inputEl.rows = 4;
 
   // 복사/붙여넣기 방지
   inputEl.addEventListener('copy', (e) => e.preventDefault());
@@ -309,18 +341,25 @@ function renderTyping(question) {
   inputEl.addEventListener('cut', (e) => e.preventDefault());
   inputEl.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  // 진행률 표시
-  const progressEl = document.createElement('progress');
-  progressEl.className = 'typing-progress';
-  progressEl.value = 0;
-  progressEl.max = 100;
+  screen.appendChild(inputEl);
+  monitor.appendChild(screen);
 
-  // 입력 시 답변 저장 및 진행률 업데이트
+  // 진행률 표시 컨테이너
+  const progressContainer = document.createElement('div');
+  progressContainer.className = 'typing-progress';
+
+  const progressBar = document.createElement('div');
+  progressBar.className = 'typing-progress-bar';
+  progressBar.style.width = '0%';
+
+  progressContainer.appendChild(progressBar);
+
+  // 입력 이벤트 - 진행률 업데이트
   inputEl.addEventListener('input', (e) => {
     currentAnswer = e.target.value;
 
     const progress = Math.min(100, Math.floor((currentAnswer.length / correct_answer.length) * 100));
-    progressEl.value = progress;
+    progressBar.style.width = progress + '%';
 
     // 입력 중이면 제출 버튼 표시
     if (currentAnswer.trim().length > 0) {
@@ -344,9 +383,10 @@ function renderTyping(question) {
     }
   });
 
+  // 구조 조립
   container.appendChild(targetEl);
-  container.appendChild(inputEl);
-  container.appendChild(progressEl);
+  container.appendChild(monitor);
+  container.appendChild(progressContainer);
   answersArea.appendChild(container);
 
   // 포커스
@@ -444,21 +484,52 @@ function renderOX(question) {
   xButton.textContent = 'X';
   xButton.dataset.value = 'X';
 
+  // 타이핑 효과를 위한 변수
+  let typingInterval = null;
+
+  // 타이핑 효과 함수
+  const typeText = (text, speed = 100) => {
+    explanationText.textContent = '';
+    let index = 0;
+
+    // 기존 타이핑 중단
+    if (typingInterval) {
+      clearInterval(typingInterval);
+    }
+
+    typingInterval = setInterval(() => {
+      if (index < text.length) {
+        explanationText.textContent += text[index];
+        index++;
+      } else {
+        clearInterval(typingInterval);
+        typingInterval = null;
+      }
+    }, speed);
+  };
+
   // 말풍선에 힌트 표시 함수
   const showHint = (option) => {
     explanationBubble.classList.add('ox-hint');
     explanationBubble.classList.remove('empty');
-    
+
+    // 타이핑 효과로 텍스트 표시
+    // 정답 선택 시: "정답입니다!"
+    // 오답 선택 시: "흠..."
     if (option === correctAnswer) {
-      // 정답에 가까우면 엄지 척 (👍)
-      explanationText.textContent = '👍';
+      typeText('정답입니다!', 80);
     } else {
-      // 오답에 가까우면 엄지 아래 (👎)
-      explanationText.textContent = '👎';
+      typeText('흠...', 120);
     }
   };
 
   const hideHint = () => {
+    // 타이핑 중단
+    if (typingInterval) {
+      clearInterval(typingInterval);
+      typingInterval = null;
+    }
+
     explanationBubble.classList.remove('ox-hint');
     explanationBubble.classList.add('empty');
     explanationText.textContent = '';
@@ -932,8 +1003,19 @@ function startTimer() {
 /**
  * 종료
  */
-function handleQuit() {
+async function handleQuit() {
   if (confirm('퀴즈를 종료하시겠습니까?\n진행 상황은 저장되지 않습니다.')) {
+    try {
+      // 서버에 세션 취소 요청 (세션 및 답변 삭제)
+      if (currentSession && currentSession.sessionId) {
+        await quizApi.cancelSession(currentSession.sessionId);
+        console.log('[Quit] 세션 취소 완료');
+      }
+    } catch (error) {
+      console.error('[Quit] 세션 취소 실패:', error);
+      // 실패해도 계속 진행
+    }
+
     sessionStorage.removeItem('currentSession');
     window.location.href = '/pages/quiz-list.html';
   }
@@ -947,12 +1029,13 @@ function setCharacterEmotion(emotion) {
   if (!characterImg) return;
 
   const emotionMap = {
-    'neutral': '../images/character_no_bg.png',
+    'neutral': '../images/hi.png',
     'happy': '../images/ohyes2.png',
-    'good': '../images/good.png',
+    'good': '../images/luckydraw.png',
     'oops': '../images/oops2.png',
-    'thinking': '../images/hi.png',
-    'excellent': '../images/ohmygood2.png'
+    'thinking': '../images/fighting2.png',
+    'excellent': '../images/ohyes2.png'
+
   };
 
   const newSrc = emotionMap[emotion] || emotionMap['neutral'];
@@ -1006,15 +1089,15 @@ function typeWriterEffect(element, text, speed = 50) {
  * 별표 폭죽 효과 (현재 문제의 게이지 칸 위치에서)
  */
 function triggerFireworks() {
-  // 현재 문제의 게이지 칸 찾기
-  const currentGaugeBox = document.querySelector(`.gauge-box[data-index="${currentQuestionIndex - 1}"]`);
-  
-  if (!currentGaugeBox) {
-    console.warn('[Fireworks] 게이지 칸을 찾을 수 없습니다');
+  // 진행바 영역 기준으로 폭죽 효과 표시
+  const progressBar = document.querySelector('.quiz-progress .pixel-progress');
+
+  if (!progressBar) {
+    console.warn('[Fireworks] 진행바를 찾을 수 없습니다');
     return;
   }
-  
-  const rect = currentGaugeBox.getBoundingClientRect();
+
+  const rect = progressBar.getBoundingClientRect();
   const centerX = rect.left + (rect.width / 2);
   const centerY = rect.top + (rect.height / 2);
   
@@ -1045,31 +1128,24 @@ function triggerFireworks() {
 }
 
 /**
- * 별표 게이지 업데이트 (5칸 시스템)
+ * 별표 게이지 업데이트 → 진행바 채우기로 변경 (0~1 사이 비율)
  * @param {number} questionIndex - 현재 문제 인덱스 (0-4)
  * @param {string} status - 'correct', 'incorrect', 'lucky-win', 'lucky-lose'
  */
 function updateStarGauge(questionIndex, status) {
-  const gaugeBoxes = document.querySelectorAll('.gauge-box');
-  if (questionIndex >= 0 && questionIndex < gaugeBoxes.length) {
-    const box = gaugeBoxes[questionIndex];
-
-    // 기존 클래스 제거
-    box.classList.remove('correct', 'incorrect', 'lucky-win', 'lucky-lose');
-
-    // 새 상태 적용
-    box.classList.add(status);
-
-    // 접근성 레이블 업데이트
-    let label = `${questionIndex + 1}번 문제: `;
-    if (status === 'correct') label += '한 번에 정답';
-    else if (status === 'incorrect') label += '한 번에 오답';
-    else if (status === 'lucky-win') label += '럭키드로우 당첨';
-    else if (status === 'lucky-lose') label += '럭키드로우 미당첨';
-    box.setAttribute('aria-label', label);
-
-    console.log(`[게이지 업데이트] 칸 ${questionIndex + 1}: ${status}`);
+  const progressFill = document.querySelector('.quiz-progress .pixel-progress__fill');
+  if (!progressFill) {
+    console.warn('[게이지] 진행바 요소를 찾을 수 없습니다');
+    return;
   }
+
+  const totalQuestions = 5;
+  const clampedIndex = Math.max(0, Math.min(questionIndex, totalQuestions - 1));
+  const progress = (clampedIndex + 1) / totalQuestions; // 1/5, 2/5, ... 5/5
+
+  progressFill.style.setProperty('--progress', progress);
+
+  console.log(`[게이지 업데이트] 문제 ${questionIndex + 1}, 상태: ${status}, 진행도: ${progress}`);
 }
 
 /**

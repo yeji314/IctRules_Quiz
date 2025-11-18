@@ -6,7 +6,12 @@
       "Bash(node download-fonts-v2.js:*)",
       "Bash(docker:*)",
       "Bash(docker info:*)",
-      "Bash(docker-compose up:*)"
+      "Bash(docker-compose up:*)",
+      "Bash(npx sequelize-cli:*)",
+      "Bash(node test-simple.js:*)",
+      "Bash(npm install:*)",
+      "Bash(node test-dev.js:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

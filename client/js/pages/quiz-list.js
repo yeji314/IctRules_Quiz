@@ -99,33 +99,33 @@ function createQuizCard(quizItem, index) {
   const rawProgress = typeof quizItem.currentRound === 'number' ? quizItem.currentRound : 0;
   const progress = Math.max(0, Math.min(rawProgress, 3)); // 0 ~ 3 로 클램프
 
-  // 버튼 텍스트 / 활성화 여부 / 색상 클래스 - 진행률 규칙에 따라 결정
+  // 버튼 텍스트 / 활성화 여부 / NES 색상 클래스 - 진행률 규칙에 따라 결정
   let buttonText;
   let buttonDisabled;
-  let buttonClass;
+  let buttonVariantClass;
 
   if (progress === 0) {
     // 0회 풀었을 때
     buttonText = 'START';
     buttonDisabled = false;
-    buttonClass = 'btn-start';
+    buttonVariantClass = 'is-primary'; // index START와 동일 파란색
   } else if (progress === 1 || progress === 2) {
     // 1회 또는 2회 풀었을 때
     buttonText = 'CONTINUE';
     buttonDisabled = false;
-    buttonClass = 'btn-continue';
+    buttonVariantClass = 'is-success'; // 진행 중 - 초록색
   } else {
     // 3회 풀었을 때 (또는 그 이상) - 완료
     buttonText = 'COMPLETE';
     buttonDisabled = true;
-    buttonClass = 'btn-complete';
+    buttonVariantClass = 'is-warning'; // 완료 - 노랑색
   }
 
   // 만료된 이벤트는 무조건 COMPLETE + 비활성화
   if (quizItem.isExpired) {
     buttonText = 'COMPLETE';
     buttonDisabled = true;
-    buttonClass = 'btn-complete';
+    buttonVariantClass = 'is-warning';
   }
 
   const maxSessions = 3;
@@ -144,7 +144,7 @@ function createQuizCard(quizItem, index) {
     <div class="wood-nail wood-nail--left"></div>
     <div class="quiz-info">
       <div class="quiz-month">${monthText}</div>
-      <button class="quiz-action-btn ${buttonClass}" ${buttonDisabled ? 'disabled' : ''}>
+      <button class="quiz-action-btn nes-btn ${buttonVariantClass}" ${buttonDisabled ? 'disabled' : ''}>
         ${buttonText}
       </button>
       <div class="quiz-progress">

@@ -125,7 +125,7 @@ body {
 /* 캐릭터 이미지 - 4배 크기 */
 .character-img {
   height: auto;
-  width: 110px; /* 원하는 크기 지정 */
+  width: 10%;; /* 원하는 크기 지정 */
   display: block;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
@@ -137,7 +137,7 @@ body {
 /* 말풍선 - 캐릭터 머리 오른쪽 위 대각선 */
 .speech-bubble {
   position: fixed;
-  bottom: 350px;px; /* 캐릭터 바로 위 */
+  bottom: 350px; /* 캐릭터 바로 위 */
   left: 8%; /* 캐릭터와 같은 left 위치 (중앙 정렬) */
   transform: translateX(-50%);
   margin-left: 55px; /* 캐릭터 너비(110px)의 절반 */
@@ -151,7 +151,7 @@ body {
 
 .speech-bubble-text {
   position: absolute;
-  top: 28px;
+  top: 14px;
   left: 32px;
   right: 32px;
   font-family: var(--font-galmuri);
@@ -163,7 +163,7 @@ body {
 /* 나무판자 퀴즈 목록 - 3x4 그리드 */
 .quiz-board-list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   padding: 20px 0;
   width: 80%;
@@ -281,45 +281,15 @@ body {
 }
 
 .quiz-board-list .wood-board .quiz-action-btn {
-  font-size: 7px; /* 10px * 2/3 */
-  padding: 5px 11px; /* 8px * 2/3, 16px * 2/3 */
+  font-size: 10px;
+  padding: 8px 16px;
   height: auto;
   white-space: nowrap;
   z-index: 10;
   flex: 0 0 auto;
-  font-family: var(--font-galmuri);
-  border: 2px solid #341f0f; /* 3px * 2/3 */
-  border-radius: 4px; /* 6px * 2/3 */
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  image-rendering: pixelated;
   margin-right: 4px; /* 버튼과 진행칸 사이 간격은 유지 */
-}
-
-.btn-primary {
-  background: #92cc41;
-  color: #ffffff;
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-}
-
-.btn-primary:hover {
-  background: #a0d850;
-  transform: translateY(-2px);
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
-}
-
-.btn-disabled {
-  background: #d8d8d8;
-  color: #888888;
-  cursor: not-allowed;
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
 }
 
 /* START 버튼 - 파란색 */
@@ -484,73 +454,11 @@ body {
   margin-bottom: 20px;
 }
 
-/* 장식 요소들 위치 오버라이드 - 잔디 라인에 배치 */
-/* 풍선들 - 공중에 떠있음 */
-.balloon-orange {
-  bottom: 320px !important;
-  left: auto !important;
-  right: 65% !important;
-}
-
-.balloon-blue {
-  bottom: 280px !important;
-  left: auto !important;
-  right: 8% !important;
-}
-
-/* 덤불 1 */
-.bush1 {
-  bottom: 120px !important;
-  left: auto !important;
-  right: 50% !important;
-}
-
-/* 해바라기 */
-.sunflower {
-  bottom: 120px !important;
-  left: auto !important;
-  right: 40% !important;
-}
-
-/* 덤불 2 */
-.bush2 {
-  bottom: 120px !important;
-  left: auto !important;
-  right: 32% !important;
-}
-
-/* 클로버 */
-.clover {
-  bottom: 120px !important;
-  left: auto !important;
-  right: 24% !important;
-}
-
-/* 작은 식물 */
-.small-plant {
-  bottom: 120px !important;
-  left: auto !important;
-  right: 16% !important;
-}
-
-/* TNT */
-.tnt {
-  bottom: 120px !important;
-  left: auto !important;
-  right: 8% !important;
-}
-
-/* 커서 */
-.cursor {
-  bottom: 120px !important;
-  left: auto !important;
-  right: 3% !important;
-}
 
 /* 반응형 */
 @media (max-width: 1200px) {
   .quiz-board-list {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

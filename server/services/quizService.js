@@ -248,15 +248,15 @@ class QuizService {
     const excludeQuestionIds = previousAnswers.map(a => a.question_id);
     console.log(`[getNextQuestion] 이미 푼 문제 ID (전체): [${excludeQuestionIds.join(', ')}]`);
 
-    // 현재 세션에서 이미 선물에 당첨되었는지 확인
-    const hasWonPrize = await db.LuckyDraw.count({
+    // 해당 월(이벤트)에서 이미 선물에 당첨되었는지 확인
+    const hasWonPrizeThisMonth = await db.LuckyDraw.count({
       where: {
         user_id: currentSession.user_id,
         event_id: eventId
       }
     }) > 0;
 
-    console.log(`[getNextQuestion] 선물 당첨 여부: ${hasWonPrize}`);
+    console.log(`[getNextQuestion] 이번 월 선물 당첨 여부: ${hasWonPrizeThisMonth}`);
 
     // 현재 세션에서 직전 문제가 럭키드로우였는지 확인
     const lastAnswer = await db.QuizAnswer.findOne({
@@ -287,9 +287,10 @@ class QuizService {
     console.log(`[getNextQuestion] 남은 문제: 일반 ${normalQuestions.length}개, 럭키드로우 ${luckyQuestions.length}개`);
 
     // 럭키드로우 출현 가능 여부 판단
-    const canShowLuckyDraw = correctCount >= 3 && !lastWasLuckyDraw && !hasWonPrize && luckyQuestions.length > 0;
+    // 조건: 정답 3개 이상 + 직전이 럭키드로우 아님 + 이번 월에 당첨 안됨 + 럭키드로우 문제 있음
+    const canShowLuckyDraw = correctCount >= 3 && !lastWasLuckyDraw && !hasWonPrizeThisMonth && luckyQuestions.length > 0;
 
-    console.log(`[getNextQuestion] 럭키드로우 출현 가능: ${canShowLuckyDraw} (정답 ${correctCount}개 >= 3, 직전 럭키드로우: ${lastWasLuckyDraw}, 당첨: ${hasWonPrize})`);
+    console.log(`[getNextQuestion] 럭키드로우 출현 가능: ${canShowLuckyDraw} (정답 ${correctCount}개 >= 3, 직전 럭키드로우: ${lastWasLuckyDraw}, 이번 월 당첨: ${hasWonPrizeThisMonth})`);
 
     let selectedQuestion = null;
 

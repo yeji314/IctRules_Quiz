@@ -36,4 +36,10 @@ router.post('/complete', quizController.completeSession);
  */
 router.get('/my-sessions', quizController.getMySessions);
 
+/**
+ * POST /api/quiz/cancel
+ * 세션 취소/중단
+ */
+router.post('/cancel', quizController.cancelSession);
+
 module.exports = router;

@@ -1,0 +1,22 @@
+{
+  "name": "swing-auth",
+  "version": "1.0.0",
+  "description": "Swing SSO 및 ID/Password 인증 모듈",
+  "main": "index.js",
+  "scripts": {
+    "test": "node example.js",
+    "example": "node example.js"
+  },
+  "keywords": [
+    "swing",
+    "sso",
+    "authentication",
+    "shinhan"
+  ],
+  "author": "ICT Rules Quiz Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3"
+  }
+}

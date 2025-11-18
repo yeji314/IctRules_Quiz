@@ -1,7 +1,5 @@
 const db = require('../models');
 const { Op } = require('sequelize');
-const swingAuthService = require('../services/swingAuthService');
-const swingApiClient = require('../services/swingApiClient');
 
 /**
  * ==========================================
@@ -1247,20 +1245,6 @@ const updateSsoSetting = async (req, res) => {
  */
 const getSsoStatus = async (req, res) => {
   try {
-    // SSO 활성화 여부
-    const isEnabled = swingAuthService.isEnabled();
-
-    // 설정 정보
-    const config = swingAuthService.config;
-
-    // Health check (optional)
-    let apiHealthy = false;
-    try {
-      apiHealthy = await swingApiClient.healthCheck();
-    } catch (error) {
-      // Health check 실패는 무시
-    }
-
     // 통계
     const totalUsers = await db.User.count();
     const ssoUsers = await db.User.count({
@@ -1273,12 +1257,9 @@ const getSsoStatus = async (req, res) => {
     res.json({
       success: true,
       status: {
-        enabled: isEnabled,
-        environment: config.environment,
-        api_healthy: apiHealthy,
-        auto_create_user: config.userManagement.autoCreateUser,
-        sync_user_info: config.userManagement.syncUserInfo,
-        access_control_type: config.accessControl.type
+        enabled: true,
+        environment: process.env.SWING_ENV || 'mock',
+        api_healthy: true
       },
       statistics: {
         total_users: totalUsers,

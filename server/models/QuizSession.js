@@ -41,6 +41,12 @@ module.exports = (sequelize) => {
     completed_at: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    won_prize_this_session: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: '이번 세션에서 선물을 획득했는지 여부'
     }
   }, {
     tableName: 'quiz_sessions',

@@ -275,11 +275,12 @@ const submitAnswer = async (req, res) => {
       session_complete: isSessionComplete
     };
 
-    // ✅ LuckyDraw 추첨 로직 (모든 문제에서 추첨 가능)
-    // 조건: 정답 + 첫 시도 + 3개 이상 첫 시도 정답 + 세션당 1회만
-    // 세션에서 정답을 정확히 3개 맞춘 순간에만 추첨 (세션당 1회)
-    if (isCorrect && answer.answer_attempt === 1 && correctAnswersCount === 3) {
-      console.log(`[LuckyDraw] 사용자 ${req.user.id} - 3번째 첫 시도 정답! 추첨 시작...`);
+    // ✅ LuckyDraw 추첨 로직
+    // 조건: LuckyDraw 문제 + 정답 + 첫 시도
+    const isLuckyDrawQuestion = question.category === 'luckydraw';
+
+    if (isLuckyDrawQuestion && isCorrect && answer.answer_attempt === 1) {
+      console.log(`[LuckyDraw] 사용자 ${req.user.id} - LuckyDraw 문제를 첫 시도에 맞춤! 추첨 시작...`);
 
       try {
         // 트랜잭션으로 동시성 제어
@@ -308,7 +309,7 @@ const submitAnswer = async (req, res) => {
             return { won: false, reason: 'max_winners_reached' };
           }
 
-          // 4. 이미 당첨된 사용자인지 확인
+          // 4. 이미 당첨된 사용자인지 확인 (이벤트 전체 기준)
           const existingWin = await db.LuckyDraw.findOne({
             where: {
               user_id: req.user.id,
@@ -332,6 +333,11 @@ const submitAnswer = async (req, res) => {
               user_id: req.user.id,
               prize: '스타벅스 기프티콘',
               is_claimed: false
+            }, { transaction: t });
+
+            // 세션에 당첨 여부 기록
+            await session.update({
+              won_prize_this_session: true
             }, { transaction: t });
 
             console.log(`[LuckyDraw] 🎉 당첨! 사용자 ${req.user.id}`);
@@ -418,13 +424,6 @@ const completeSession = async (req, res) => {
       event_id: session.event_id
     });
 
-    // 세션 완료 처리
-    console.log('[세션 완료] 세션 상태 업데이트 중...');
-    await session.update({
-      status: 'completed',
-      completed_at: new Date()
-    });
-
     // 결과 조회
     console.log('[세션 완료] 답변 조회 중...');
     const answers = await db.QuizAnswer.findAll({
@@ -437,19 +436,54 @@ const completeSession = async (req, res) => {
 
     console.log('[세션 완료] 답변 조회 완료:', answers.length, '개');
 
+    // ✅ 중요: 5개 문제를 모두 풀었을 때만 DB에 저장 (완료 처리)
+    const answeredCount = await db.QuizAnswer.count({
+      distinct: true,
+      col: 'question_id',
+      where: { session_id }
+    });
+
+    if (answeredCount < 5) {
+      console.warn(`[세션 완료] 경고: 5개 문제를 모두 풀지 않았습니다 (${answeredCount}/5). 세션 삭제`);
+
+      // 세션과 답변 모두 삭제
+      await db.QuizAnswer.destroy({ where: { session_id } });
+      await session.destroy();
+
+      return res.status(400).json({
+        error: '모든 문제를 풀어야 결과를 저장할 수 있습니다',
+        answered: answeredCount,
+        required: 5
+      });
+    }
+
+    // 세션 완료 처리
+    console.log('[세션 완료] 5개 문제 모두 완료 확인. 세션 상태 업데이트 중...');
+    await session.update({
+      status: 'completed',
+      completed_at: new Date()
+    });
+
     const correctCount = answers.filter(a => a.is_correct).length;
     const luckyDrawAnswers = answers.filter(a => a.Question.category === 'luckydraw');
 
-    // 선물 당첨 여부 확인 (이 이벤트에서 당첨되었는지)
-    console.log('[세션 완료] LuckyDraw 조회 중...');
-    const wonPrize = await db.LuckyDraw.findOne({
-      where: {
-        user_id: session.user_id,
-        event_id: session.event_id
-      }
-    });
+    // 이번 세션에서 선물 당첨 여부 확인 (세션 레벨, NOT 이벤트 레벨)
+    console.log('[세션 완료] 세션 당첨 여부 조회 중...');
+    const wonPrizeThisSession = session.won_prize_this_session;
 
-    console.log(`[세션 완료] 사용자 ${session.user_id}, 세션 ${session_id}: 선물 당첨 여부 = ${!!wonPrize}`);
+    console.log(`[세션 완료] 사용자 ${session.user_id}, 세션 ${session_id}: 이번 세션 선물 당첨 = ${wonPrizeThisSession}`);
+
+    // 당첨된 경우 선물 정보 조회
+    let prizeName = null;
+    if (wonPrizeThisSession) {
+      const luckyDrawRecord = await db.LuckyDraw.findOne({
+        where: {
+          user_id: session.user_id,
+          event_id: session.event_id
+        }
+      });
+      prizeName = luckyDrawRecord ? luckyDrawRecord.prize : null;
+    }
 
     const result = {
       success: true,
@@ -459,8 +493,8 @@ const completeSession = async (req, res) => {
         correct_count: correctCount,
         incorrect_count: answers.length - correctCount,
         luckydraw_count: luckyDrawAnswers.filter(a => a.is_correct).length,
-        won_prize: !!wonPrize,  // 선물 당첨 여부
-        prize_name: wonPrize ? wonPrize.prize : null,  // 당첨된 선물 이름
+        won_prize: wonPrizeThisSession,  // 이번 세션에서 선물 당첨 여부
+        prize_name: prizeName,  // 당첨된 선물 이름
         answers: answers.map(a => ({
           question_id: a.question_id,
           question_type: a.Question.question_type,
@@ -519,10 +553,65 @@ const getMySessions = async (req, res) => {
   }
 };
 
+/**
+ * 세션 취소/중단
+ * POST /api/quiz/cancel
+ */
+const cancelSession = async (req, res) => {
+  try {
+    const { session_id } = req.body;
+
+    console.log('[세션 취소] 요청 받음, session_id:', session_id);
+
+    if (!session_id) {
+      return res.status(400).json({
+        error: '세션 ID가 필요합니다'
+      });
+    }
+
+    // 세션 확인
+    const session = await db.QuizSession.findByPk(session_id);
+    if (!session || session.user_id !== req.user.id) {
+      return res.status(403).json({
+        error: '유효하지 않은 세션입니다'
+      });
+    }
+
+    // 진행 중인 세션만 취소 가능
+    if (session.status !== 'in_progress') {
+      return res.status(400).json({
+        error: '이미 완료된 세션은 취소할 수 없습니다'
+      });
+    }
+
+    console.log(`[세션 취소] 세션 ${session_id} 삭제 중...`);
+
+    // 관련 답변 모두 삭제
+    await db.QuizAnswer.destroy({ where: { session_id } });
+
+    // 세션 삭제
+    await session.destroy();
+
+    console.log(`[세션 취소] 세션 ${session_id} 삭제 완료`);
+
+    res.json({
+      success: true,
+      message: '세션이 취소되었습니다'
+    });
+
+  } catch (error) {
+    console.error('세션 취소 에러:', error);
+    res.status(500).json({
+      error: '세션 취소에 실패했습니다'
+    });
+  }
+};
+
 module.exports = {
   getQuizList,
   startQuizSession,
   submitAnswer,
   completeSession,
-  getMySessions
+  getMySessions,
+  cancelSession
 };

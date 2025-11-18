@@ -1,6 +1,5 @@
 const { generateToken } = require('../utils/jwt');
-const messengerService = require('../services/messengerService');
-const swingAuthService = require('../services/swingAuthService');
+const { doSwingAuthenticate } = require('../../swing-auth');
 const db = require('../models');
 
 /**
@@ -18,14 +17,36 @@ const login = async (req, res) => {
       });
     }
 
-    // 사내 메신저 API를 통한 인증 (현재는 Mock)
-    const userInfo = await messengerService.authenticateUser(employee_id, password);
+    // Swing 인증
+    const swingUser = await doSwingAuthenticate({
+      type: 'idpw',
+      employeeNo: employee_id,
+      password: password
+    });
+
+    // 로컬 DB에서 사용자 조회 또는 생성
+    let user = await db.User.findOne({
+      where: { employee_id: swingUser.employeeNo }
+    });
+
+    if (!user) {
+      // 사용자 자동 생성
+      user = await db.User.create({
+        employee_id: swingUser.employeeNo,
+        password: `swing_sso_${Date.now()}`, // 임시 비밀번호
+        name: swingUser.userName || swingUser.employeeNo,
+        department: swingUser.deptName,
+        email: swingUser.emailAddress,
+        role: 'user',
+        login_method: 'swing_sso'
+      });
+    }
 
     // JWT 토큰 생성
     const token = generateToken({
-      id: userInfo.id,
-      employee_id: userInfo.employee_id,
-      role: userInfo.role
+      id: user.id,
+      employee_id: user.employee_id,
+      role: user.role
     });
 
     // 응답
@@ -33,12 +54,12 @@ const login = async (req, res) => {
       success: true,
       token,
       user: {
-        id: userInfo.id,
-        employee_id: userInfo.employee_id,
-        name: userInfo.name,
-        department: userInfo.department,
-        email: userInfo.email,
-        role: userInfo.role
+        id: user.id,
+        employee_id: user.employee_id,
+        name: user.name,
+        department: user.department,
+        email: user.email,
+        role: user.role
       }
     });
 
@@ -117,21 +138,49 @@ const swingSsoTokenLogin = async (req, res) => {
       });
     }
 
-    // SSO 활성화 여부 확인
-    if (!swingAuthService.isEnabled()) {
-      return res.status(403).json({
-        error: 'Swing SSO가 비활성화되어 있습니다'
+    // Swing 인증
+    const swingUser = await doSwingAuthenticate({
+      type: 'sso',
+      ssoToken: sso_token
+    });
+
+    // 로컬 DB에서 사용자 조회 또는 생성
+    let user = await db.User.findOne({
+      where: { employee_id: swingUser.employeeNo }
+    });
+
+    if (!user) {
+      // 사용자 자동 생성
+      user = await db.User.create({
+        employee_id: swingUser.employeeNo,
+        password: `swing_sso_${Date.now()}`, // 임시 비밀번호
+        name: swingUser.userName || swingUser.employeeNo,
+        department: swingUser.deptName,
+        email: swingUser.emailAddress,
+        role: 'user',
+        login_method: 'swing_sso'
       });
     }
 
-    // Swing SSO 인증
-    const result = await swingAuthService.authenticateWithSsoToken(sso_token);
+    // JWT 토큰 생성
+    const token = generateToken({
+      id: user.id,
+      employee_id: user.employee_id,
+      role: user.role
+    });
 
     // 응답
     res.json({
       success: true,
-      token: result.token,
-      user: result.user,
+      token,
+      user: {
+        id: user.id,
+        employee_id: user.employee_id,
+        name: user.name,
+        department: user.department,
+        email: user.email,
+        role: user.role
+      },
       login_method: 'swing_sso'
     });
 
@@ -158,21 +207,50 @@ const swingIdPasswordLogin = async (req, res) => {
       });
     }
 
-    // SSO 활성화 여부 확인
-    if (!swingAuthService.isEnabled()) {
-      return res.status(403).json({
-        error: 'Swing SSO가 비활성화되어 있습니다'
+    // Swing 인증
+    const swingUser = await doSwingAuthenticate({
+      type: 'idpw',
+      employeeNo: employee_id,
+      password: password
+    });
+
+    // 로컬 DB에서 사용자 조회 또는 생성
+    let user = await db.User.findOne({
+      where: { employee_id: swingUser.employeeNo }
+    });
+
+    if (!user) {
+      // 사용자 자동 생성
+      user = await db.User.create({
+        employee_id: swingUser.employeeNo,
+        password: `swing_sso_${Date.now()}`, // 임시 비밀번호
+        name: swingUser.userName || swingUser.employeeNo,
+        department: swingUser.deptName,
+        email: swingUser.emailAddress,
+        role: 'user',
+        login_method: 'swing_sso'
       });
     }
 
-    // Swing ID/Password 인증
-    const result = await swingAuthService.authenticateWithIdPassword(employee_id, password);
+    // JWT 토큰 생성
+    const token = generateToken({
+      id: user.id,
+      employee_id: user.employee_id,
+      role: user.role
+    });
 
     // 응답
     res.json({
       success: true,
-      token: result.token,
-      user: result.user,
+      token,
+      user: {
+        id: user.id,
+        employee_id: user.employee_id,
+        name: user.name,
+        department: user.department,
+        email: user.email,
+        role: user.role
+      },
       login_method: 'swing_sso'
     });
 

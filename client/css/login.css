@@ -138,12 +138,92 @@ body {
   border-image-repeat: stretch !important;
 }
 
-/* START 버튼 스타일 */
+/* START 버튼 래퍼 스타일 */
 .login-form .start-button {
   width: 100%;
-  color: #6299d0;
-  border-image-repeat: space !important;
   margin-top: 10px;
+}
+
+/* NES 스타일 START 버튼 (index.html 전용) */
+.nes-btn {
+  position: relative;
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-weight: normal;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  box-shadow:
+    /* 내부 그림자만 유지 */
+    inset -4px -4px 0 0 rgba(0, 0, 0, 0.2);
+  transition: all 0.1s;
+  user-select: none;
+}
+
+.nes-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow:
+    /* 내부 그림자 */
+    inset -4px -4px 0 0 rgba(0, 0, 0, 0.2),
+    /* 3D 그림자 효과 */
+    4px 4px 0 0 rgba(0, 0, 0, 0.3),
+    6px 6px 0 0 rgba(0, 0, 0, 0.2),
+    8px 8px 0 0 rgba(0, 0, 0, 0.1);
+}
+
+.nes-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    /* 내부 그림자 */
+    inset 4px 4px 0 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Normal 버튼 */
+.nes-btn.is-normal {
+  background-color: #fff;
+  color: #000;
+}
+
+/* Primary 버튼 */
+.nes-btn.is-primary {
+  background-color: #209cee;
+  color: #fff;
+}
+
+.nes-btn.is-primary:hover {
+  background-color: #3dadf7;
+}
+
+/* Success 버튼 */
+.nes-btn.is-success {
+  background-color: #92cc41;
+  color: #fff;
+}
+
+.nes-btn.is-success:hover {
+  background-color: #a5d75e;
+}
+
+/* Warning 버튼 */
+.nes-btn.is-warning {
+  background-color: #f7d51d;
+  color: #000;
+}
+
+.nes-btn.is-warning:hover {
+  background-color: #f9e04a;
+}
+
+/* Error 버튼 */
+.nes-btn.is-error {
+  background-color: #e76e55;
+  color: #fff;
+}
+
+.nes-btn.is-error:hover {
+  background-color: #ef8d78;
 }
 
 /* 에러 메시지 */
