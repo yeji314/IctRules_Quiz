@@ -11,19 +11,68 @@ body {
 
 /* 지면 레이어는 login.css의 기본 스타일 사용 (오버라이드 제거) */
 
+/* 게임 타이틀 - index.html과 동일 */
+.game-title {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 2; /* 배경(1) 위, 나무패널(15) 아래 */
+}
+
+.title-ict {
+  font-family: var(--font-pixel);
+  font-size: clamp(36px, 6vw, 82px);
+  color: #becee2;
+  letter-spacing: 4px;
+  margin-bottom: 10px;
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  text-shadow:
+    -6px -6px 0 #000,
+    6px -6px 0 #000,
+    -6px 6px 0 #000,
+    6px 6px 0 #000,
+    0 -6px 0 #000,
+    0 6px 0 #000,
+    -6px 0 0 #000,
+    6px 0 0 #000;
+}
+
+.title-quiz {
+  font-family: var(--font-pixel);
+  font-size: clamp(36px, 6vw, 82px);
+  color: #d1d871;
+  letter-spacing: 4px;
+  text-shadow:
+    -6px -6px 0 #000,
+    6px -6px 0 #000,
+    -6px 6px 0 #000,
+    6px 6px 0 #000,
+    0 -6px 0 #000,
+    0 6px 0 #000,
+    -6px 0 0 #000,
+    6px 0 0 #000;
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
 /* 메인 컨테이너 */
 .main-content {
   position: fixed;
-  top: 100px;
+  top: 230px; /* 타이틀 아래로 이동 */
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: 1000px;
-  height: calc(100vh - 250px);
+  height: calc(100vh - 380px);
   padding: 0 20px;
   overflow-y: auto;
   overflow-x: hidden;
-  z-index: 15; /* ground(10)보다 위에 표시 */
+  z-index: 15; /* ground(10)보다 위, 타이틀(2)보다 위에 표시 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -469,8 +518,18 @@ body {
 }
 
 @media (max-width: 768px) {
+  .game-title {
+    top: 60px;
+  }
+
+  .title-ict,
+  .title-quiz {
+    font-size: clamp(28px, 5vw, 60px);
+  }
+
   .main-content {
-    top: 80px;
+    top: 180px;
+    height: calc(100vh - 330px);
   }
 
   .user-name-display {
@@ -529,6 +588,20 @@ body {
 }
 
 @media (max-width: 480px) {
+  .game-title {
+    top: 40px;
+  }
+
+  .title-ict,
+  .title-quiz {
+    font-size: clamp(24px, 4vw, 48px);
+  }
+
+  .main-content {
+    top: 150px;
+    height: calc(100vh - 300px);
+  }
+
   .tree-lineup {
     transform: scale(0.5);
   }
