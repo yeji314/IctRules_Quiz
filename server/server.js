@@ -1,6 +1,7 @@
 require('dotenv').config();
 const app = require('./app');
 const db = require('./models');
+const initAdminUser = require('./utils/initAdmin');
 
 const PORT = process.env.PORT || 5000;
 
@@ -16,6 +17,9 @@ const startServer = async () => {
       // await db.sequelize.sync({ alter: true });
       console.log('📊 데이터베이스 동기화 완료');
     }
+
+    // admin 계정 자동 생성
+    await initAdminUser(db);
 
     // 서버 시작
     app.listen(PORT, () => {
