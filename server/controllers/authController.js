@@ -1,6 +1,7 @@
 const { generateToken } = require('../utils/jwt');
 const { doSwingAuthenticate } = require('../../swing-auth');
 const db = require('../models');
+const bcrypt = require('bcryptjs');
 
 /**
  * 로그인
@@ -17,7 +18,50 @@ const login = async (req, res) => {
       });
     }
 
-    // Swing 인증
+    // admin 계정은 로컬 DB 비밀번호로 검증 (Swing 우회)
+    if (employee_id === 'admin') {
+      const adminUser = await db.User.findOne({
+        where: { employee_id: 'admin' }
+      });
+
+      if (!adminUser) {
+        return res.status(401).json({
+          error: '관리자 계정을 찾을 수 없습니다'
+        });
+      }
+
+      // 비밀번호 검증
+      const isPasswordValid = await bcrypt.compare(password, adminUser.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          error: '비밀번호가 일치하지 않습니다'
+        });
+      }
+
+      // JWT 토큰 생성
+      const token = generateToken({
+        id: adminUser.id,
+        employee_id: adminUser.employee_id,
+        role: adminUser.role
+      });
+
+      // 응답
+      return res.json({
+        success: true,
+        token,
+        user: {
+          id: adminUser.id,
+          employee_id: adminUser.employee_id,
+          name: adminUser.name,
+          department: adminUser.department,
+          email: adminUser.email,
+          role: adminUser.role
+        },
+        login_method: 'local'
+      });
+    }
+
+    // 일반 사용자는 Swing 인증
     const swingUser = await doSwingAuthenticate({
       type: 'idpw',
       employeeNo: employee_id,
@@ -60,7 +104,8 @@ const login = async (req, res) => {
         department: user.department,
         email: user.email,
         role: user.role
-      }
+      },
+      login_method: 'swing_sso'
     });
 
   } catch (error) {
