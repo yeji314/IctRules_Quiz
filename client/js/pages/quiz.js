@@ -585,7 +585,7 @@ function renderOX(question) {
  * 5. Find Error 렌더링
  */
 function renderFindError(question) {
-  const underlined_words = question.question_data?.underlined_words || [];
+  const { underlined_words } = question.question_data;
 
   const container = document.createElement('div');
   container.className = 'finderror-container';
@@ -595,7 +595,7 @@ function renderFindError(question) {
 
   // 문제 텍스트를 파싱하여 밑줄 단어를 찾아 span으로 감싸기
   let displayText = question.question_text;
-
+  
   // 각 밑줄 단어를 순서대로 찾아서 span으로 감싸기
   underlined_words.forEach((word, index) => {
     // 첫 번째 일치하는 단어만 교체 (이미 교체된 것은 건너뜀)
@@ -975,12 +975,6 @@ function handleNext() {
  */
 async function completeQuiz() {
   try {
-    console.log('[Quiz] 퀴즈 완료 호출:', {
-      sessionId: currentSession.sessionId,
-      currentQuestionNumber: currentSession.current_question_number,
-      sessionComplete: currentSession.session_complete
-    });
-
     const response = await quizApi.completeSession(currentSession.sessionId);
 
     if (response.success) {
@@ -995,7 +989,6 @@ async function completeQuiz() {
     }
   } catch (error) {
     console.error('퀴즈 완료 처리 실패:', error);
-    console.error('에러 상세:', error.message);
     alert('퀴즈 완료 처리에 실패했습니다');
   }
 }

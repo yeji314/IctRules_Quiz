@@ -10,14 +10,12 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"
-    env_file:
-      - .env
     environment:
       - NODE_ENV=production
       - PORT=5000
       - TZ=Asia/Seoul
     volumes:
-      # 데이터베이스 영속성을 위한 볼륨 마
+      # 데이터베이스 영속성을 위한 볼륨 마운트
       - quiz-data:/app/database
       # 로그 파일 저장 (선택사항)
       - ./logs:/app/logs

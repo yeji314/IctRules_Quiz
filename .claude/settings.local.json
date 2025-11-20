@@ -12,11 +12,7 @@
       "Bash(npm install:*)",
       "Bash(node test-dev.js:*)",
       "Bash(test:*)",
-      "Bash(docker-compose down:*)",
-      "Bash(node:*)",
-      "Bash(npm start)",
-      "Bash(sqlite3:*)",
-      "Bash(git show:*)"
+      "Bash(docker-compose down:*)"
     ],
     "deny": [],
     "ask": []

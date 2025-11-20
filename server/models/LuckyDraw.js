@@ -28,20 +28,10 @@ module.exports = (sequelize) => {
       allowNull: true,
       comment: '기프티콘 종류'
     },
-    won_date: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      comment: '당첨일'
-    },
     is_claimed: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       comment: '수령 여부'
-    },
-    claimed_at: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      comment: '수령일'
     }
   }, {
     tableName: 'lucky_draws',
