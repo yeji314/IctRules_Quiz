@@ -22,10 +22,14 @@ app.use(helmet({
     },
   },
 })); // 보안 헤더
+// CORS 설정 - 환경별 Origin 허용
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: corsOrigin,
   credentials: true
 }));
+
+console.log(`🌐 CORS Origin: ${corsOrigin}`);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

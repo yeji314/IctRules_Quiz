@@ -62,7 +62,7 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# 서버 시작 (마이그레이션 후 서버 시작)
+# 서버 시작 (마이그레이션 → 11월 문제 시드 → 서버 시작)
 WORKDIR /app/server
-CMD ["sh", "-c", "npx sequelize-cli db:migrate && node server.js"]
+CMD ["sh", "-c", "npx sequelize-cli db:migrate && npx sequelize-cli db:seed --seed 20250120000001-november-questions.js && node server.js"]
 

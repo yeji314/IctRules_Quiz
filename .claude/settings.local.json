@@ -14,7 +14,9 @@
       "Bash(test:*)",
       "Bash(docker-compose down:*)",
       "Bash(node:*)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(sqlite3:*)",
+      "Bash(git show:*)"
     ],
     "deny": [],
     "ask": []
