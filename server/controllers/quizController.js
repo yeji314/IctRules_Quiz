@@ -248,13 +248,16 @@ const submitAnswer = async (req, res) => {
     let nextQuestion = null;
     let isSessionComplete = false;
 
+    console.log(`[답변 제출] answeredCount=${answeredCount}, 5개 미만=${answeredCount < 5}`);
+
     if (answeredCount < 5) {
       nextQuestion = await quizService.getNextQuestion(session_id, session.event_id);
 
       if (nextQuestion) {
-        console.log(`[답변 제출] 다음 문제: Q${nextQuestion.id} (${nextQuestion.category})`);
+        console.log(`[답변 제출] 다음 문제: Q${nextQuestion.id} (${nextQuestion.category}, ${nextQuestion.question_type})`);
       } else {
-        console.log(`[답변 제출] 다음 문제 없음 - 세션 완료`);
+        console.error(`[답변 제출] ❌ 다음 문제 없음 - 세션 완료 (이것은 버그일 수 있음!)`);
+        console.error(`[답변 제출] 현재 답변 수: ${answeredCount}/5, 이벤트 ID: ${session.event_id}`);
         isSessionComplete = true;
       }
     } else {
@@ -443,8 +446,18 @@ const completeSession = async (req, res) => {
       where: { session_id }
     });
 
+    console.log(`[세션 완료] 답변 수 체크: ${answeredCount}/5`);
+
+    // 디버깅: 실제 답변 목록 출력
+    const allAnswers = await db.QuizAnswer.findAll({
+      where: { session_id },
+      attributes: ['id', 'question_id', 'is_correct'],
+      order: [['answered_at', 'ASC']]
+    });
+    console.log(`[세션 완료] 실제 답변 목록 (총 ${allAnswers.length}개):`, allAnswers.map(a => `Q${a.question_id}(정답:${a.is_correct})`).join(', '));
+
     if (answeredCount < 5) {
-      console.warn(`[세션 완료] 경고: 5개 문제를 모두 풀지 않았습니다 (${answeredCount}/5). 세션 삭제`);
+      console.warn(`[세션 완료] 경고: 5개 문제를 모두 풀지 않았습니다 (고유 문제 ${answeredCount}개/5). 세션 삭제`);
 
       // 세션과 답변 모두 삭제
       await db.QuizAnswer.destroy({ where: { session_id } });
