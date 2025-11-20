@@ -677,18 +677,13 @@ const getDepartmentStats = async (req, res) => {
       whereClause.event_id = event_id;
     }
 
-    // 부서별 참여 통계
-    const departments = await db.User.findAll({
-      attributes: [
-        'department',
-        [db.sequelize.fn('COUNT', db.sequelize.fn('DISTINCT', db.sequelize.col('User.id'))), 'total_users']
-      ],
-      where: { role: 'user' },
-      group: ['department'],
-      raw: true
+    // 부서별 정보 조회 (DepartmentInfo 테이블에서 목표 인원 가져오기)
+    const departmentInfos = await db.DepartmentInfo.findAll({
+      order: [['department_name', 'ASC']]
     });
 
-    const departmentStats = await Promise.all(departments.map(async (dept) => {
+    // DepartmentInfo에 등록된 부서들의 통계 계산
+    const departmentStats = await Promise.all(departmentInfos.map(async (deptInfo) => {
       // 해당 부서에서 참여한 사용자 수
       const participatedUsers = await db.QuizSession.count({
         distinct: true,
@@ -696,7 +691,7 @@ const getDepartmentStats = async (req, res) => {
         where: whereClause,
         include: [{
           model: db.User,
-          where: { department: dept.department },
+          where: { department: deptInfo.department_name },
           attributes: []
         }]
       });
@@ -706,27 +701,27 @@ const getDepartmentStats = async (req, res) => {
         where: { ...whereClause, status: 'completed' },
         include: [{
           model: db.User,
-          where: { department: dept.department },
+          where: { department: deptInfo.department_name },
           attributes: []
         }]
       });
 
-      // 참여율
-      const participationRate = dept.total_users > 0
-        ? Math.round((participatedUsers / dept.total_users) * 100)
+      // 참여율 (목표 인원 기준)
+      const participationRate = deptInfo.target_headcount > 0
+        ? Math.round((participatedUsers / deptInfo.target_headcount) * 100)
         : 0;
 
       return {
-        department: dept.department,
-        totalUsers: parseInt(dept.total_users),
-        participatedUsers,
-        completedSessions,
-        participationRate
+        department: deptInfo.department_name,
+        total: deptInfo.target_headcount,
+        participated: participatedUsers,
+        completed_sessions: completedSessions,
+        participation_rate: participationRate
       };
     }));
 
     // 참여율 순으로 정렬
-    departmentStats.sort((a, b) => b.participationRate - a.participationRate);
+    departmentStats.sort((a, b) => b.participation_rate - a.participation_rate);
 
     res.json({
       success: true,
@@ -1013,6 +1008,7 @@ const drawWinners = async (req, res) => {
         event_id,
         user_id: userId,
         prize,
+        won_date: new Date(),
         is_claimed: false
       });
 
@@ -1121,7 +1117,10 @@ const claimPrize = async (req, res) => {
       });
     }
 
-    await luckyDraw.update({ is_claimed: true });
+    await luckyDraw.update({
+      is_claimed: true,
+      claimed_at: new Date()
+    });
 
     res.json({
       success: true,
@@ -1295,6 +1294,157 @@ const getSsoStatus = async (req, res) => {
   }
 };
 
+/**
+ * ==========================================
+ * 부서별 인원 관리
+ * ==========================================
+ */
+
+/**
+ * GET /api/admin/departments
+ * 부서별 인원 정보 조회
+ */
+const getDepartments = async (req, res) => {
+  try {
+    const departments = await db.DepartmentInfo.findAll({
+      order: [['department_name', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      departments
+    });
+
+  } catch (error) {
+    console.error('부서 정보 조회 에러:', error);
+    res.status(500).json({
+      error: '부서 정보 조회에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * POST /api/admin/departments
+ * 부서 정보 생성
+ */
+const createDepartment = async (req, res) => {
+  try {
+    const { department_name, target_headcount, description } = req.body;
+
+    if (!department_name || target_headcount === undefined) {
+      return res.status(400).json({
+        error: '부서명과 목표 인원은 필수입니다'
+      });
+    }
+
+    // 중복 확인
+    const existing = await db.DepartmentInfo.findOne({
+      where: { department_name }
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        error: '이미 존재하는 부서입니다'
+      });
+    }
+
+    const department = await db.DepartmentInfo.create({
+      department_name,
+      target_headcount,
+      description
+    });
+
+    res.status(201).json({
+      success: true,
+      department
+    });
+
+  } catch (error) {
+    console.error('부서 생성 에러:', error);
+    res.status(500).json({
+      error: '부서 생성에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * PUT /api/admin/departments/:id
+ * 부서 정보 수정
+ */
+const updateDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { department_name, target_headcount, description } = req.body;
+
+    const department = await db.DepartmentInfo.findByPk(id);
+    if (!department) {
+      return res.status(404).json({
+        error: '부서를 찾을 수 없습니다'
+      });
+    }
+
+    // 부서명 변경 시 중복 확인
+    if (department_name && department_name !== department.department_name) {
+      const existing = await db.DepartmentInfo.findOne({
+        where: { department_name, id: { [Op.ne]: id } }
+      });
+
+      if (existing) {
+        return res.status(400).json({
+          error: '이미 존재하는 부서명입니다'
+        });
+      }
+    }
+
+    await department.update({
+      department_name: department_name || department.department_name,
+      target_headcount: target_headcount !== undefined ? target_headcount : department.target_headcount,
+      description: description !== undefined ? description : department.description
+    });
+
+    res.json({
+      success: true,
+      department
+    });
+
+  } catch (error) {
+    console.error('부서 수정 에러:', error);
+    res.status(500).json({
+      error: '부서 수정에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * DELETE /api/admin/departments/:id
+ * 부서 정보 삭제
+ */
+const deleteDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const department = await db.DepartmentInfo.findByPk(id);
+    if (!department) {
+      return res.status(404).json({
+        error: '부서를 찾을 수 없습니다'
+      });
+    }
+
+    await department.destroy();
+
+    res.json({
+      success: true,
+      message: '부서가 삭제되었습니다'
+    });
+
+  } catch (error) {
+    console.error('부서 삭제 에러:', error);
+    res.status(500).json({
+      error: '부서 삭제에 실패했습니다'
+    });
+  }
+};
+
 module.exports = {
   // 이벤트 관리
   listEvents,
@@ -1324,5 +1474,11 @@ module.exports = {
   getSsoSettings,
   getSsoSetting,
   updateSsoSetting,
-  getSsoStatus
+  getSsoStatus,
+
+  // 부서별 인원 관리
+  getDepartments,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment
 };

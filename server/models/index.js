@@ -19,6 +19,7 @@ const QuizSession = require('./QuizSession')(sequelize);
 const QuizAnswer = require('./QuizAnswer')(sequelize);
 const LuckyDraw = require('./LuckyDraw')(sequelize);
 const SSOSettings = require('./SSOSettings')(sequelize);
+const DepartmentInfo = require('./DepartmentInfo')(sequelize);
 
 // 모델 관계 설정
 const db = {
@@ -30,7 +31,8 @@ const db = {
   QuizSession,
   QuizAnswer,
   LuckyDraw,
-  SSOSettings
+  SSOSettings,
+  DepartmentInfo
 };
 
 // User 관계

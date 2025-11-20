@@ -294,5 +294,33 @@ export const admin = {
    */
   async claimPrize(id) {
     return put(`/admin/luckydraw/${id}/claim`);
+  },
+
+  /**
+   * 부서 목록 조회
+   */
+  async getDepartments() {
+    return get('/admin/departments');
+  },
+
+  /**
+   * 부서 생성
+   */
+  async createDepartment(data) {
+    return post('/admin/departments', data);
+  },
+
+  /**
+   * 부서 수정
+   */
+  async updateDepartment(id, data) {
+    return put(`/admin/departments/${id}`, data);
+  },
+
+  /**
+   * 부서 삭제
+   */
+  async deleteDepartment(id) {
+    return del(`/admin/departments/${id}`);
   }
 };

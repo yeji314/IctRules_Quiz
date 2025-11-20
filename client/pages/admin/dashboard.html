@@ -48,11 +48,16 @@
 
       <!-- 부서별 참여율 -->
       <div class="stats-section">
-        <h2 class="section-title">
-          <span class="icon icon-trophy">🏆</span>
-          부서별 참여율
-        </h2>
-        
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="icon icon-trophy">🏆</span>
+            부서별 참여율
+          </h2>
+          <button class="btn btn-primary" id="manageDepartmentsBtn">
+            ⚙️ 부서별 인원 관리
+          </button>
+        </div>
+
         <div class="event-selector">
           <label for="eventSelect">
             이벤트 선택:
@@ -282,7 +287,7 @@
   <dialog class="pixel-dialog" id="excelModal">
     <form method="dialog" id="excelForm">
       <p class="modal-title">엑셀 파일 업로드</p>
-      
+
       <div class="form-field">
         <p>Excel 파일을 선택하세요 (.xlsx)</p>
         <input type="file" id="excelFile" accept=".xlsx,.xls" required>
@@ -298,6 +303,59 @@
       <menu class="dialog-menu">
         <button class="btn" type="button" id="cancelExcelBtn">취소</button>
         <button class="btn btn-primary" type="submit">업로드</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- 부서별 인원 관리 모달 -->
+  <dialog class="pixel-dialog" id="departmentModal" style="max-width: 800px;">
+    <div>
+      <p class="modal-title">부서별 인원 관리</p>
+
+      <div class="section-header" style="margin-bottom: 1rem;">
+        <div></div>
+        <button class="btn btn-primary" id="addDepartmentBtn">
+          + 부서 추가
+        </button>
+      </div>
+
+      <div class="departments-list" id="departmentsList" style="max-height: 400px; overflow-y: auto;">
+        <!-- 부서 목록이 여기에 렌더링됨 -->
+        <div class="loading-message">
+          <p>⏳ 로딩 중...</p>
+        </div>
+      </div>
+
+      <menu class="dialog-menu">
+        <button class="btn" type="button" id="closeDepartmentModalBtn">닫기</button>
+      </menu>
+    </div>
+  </dialog>
+
+  <!-- 부서 추가/수정 모달 -->
+  <dialog class="pixel-dialog" id="departmentFormModal">
+    <form method="dialog" id="departmentForm">
+      <p class="modal-title" id="departmentFormTitle">부서 추가</p>
+
+      <div class="form-field">
+        <label for="departmentName">부서명</label>
+        <input type="text" id="departmentName" class="text-input" placeholder="예: 경영지원팀" required>
+      </div>
+
+      <div class="form-field">
+        <label for="targetHeadcount">목표 인원</label>
+        <input type="number" id="targetHeadcount" class="text-input" min="1" placeholder="예: 10" required>
+        <p class="field-note">참여율 계산의 기준이 되는 부서 인원 수입니다</p>
+      </div>
+
+      <div class="form-field">
+        <label for="departmentDescription">설명 (선택)</label>
+        <input type="text" id="departmentDescription" class="text-input" placeholder="예: 경영지원팀">
+      </div>
+
+      <menu class="dialog-menu">
+        <button class="btn" type="button" id="cancelDepartmentFormBtn">취소</button>
+        <button class="btn btn-primary" type="submit">저장</button>
       </menu>
     </form>
   </dialog>

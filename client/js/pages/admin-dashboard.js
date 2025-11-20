@@ -39,12 +39,21 @@ const cancelQuestionBtn = $('#cancelQuestionBtn');
 const excelModal = $('#excelModal');
 const excelForm = $('#excelForm');
 const cancelExcelBtn = $('#cancelExcelBtn');
+const departmentModal = $('#departmentModal');
+const departmentFormModal = $('#departmentFormModal');
+const departmentForm = $('#departmentForm');
+const manageDepartmentsBtn = $('#manageDepartmentsBtn');
+const closeDepartmentModalBtn = $('#closeDepartmentModalBtn');
+const addDepartmentBtn = $('#addDepartmentBtn');
+const cancelDepartmentFormBtn = $('#cancelDepartmentFormBtn');
+const departmentsList = $('#departmentsList');
 
 // 상태
 let currentPage = 'dashboard';
 let selectedEventId = null;
 let editingEventId = null;
 let editingQuestionId = null;
+let editingDepartmentId = null;
 let allEvents = [];
 
 /**
@@ -67,15 +76,20 @@ async function init() {
   createEventBtn.addEventListener('click', () => openEventModal());
   createQuestionBtn.addEventListener('click', () => openQuestionModal());
   uploadExcelBtn.addEventListener('click', () => openExcelModal());
+  manageDepartmentsBtn.addEventListener('click', () => openDepartmentModal());
 
   // 모달 이벤트
   cancelEventBtn.addEventListener('click', () => eventModal.close());
   cancelQuestionBtn.addEventListener('click', () => questionModal.close());
   cancelExcelBtn.addEventListener('click', () => excelModal.close());
+  closeDepartmentModalBtn.addEventListener('click', () => departmentModal.close());
+  addDepartmentBtn.addEventListener('click', () => openDepartmentFormModal());
+  cancelDepartmentFormBtn.addEventListener('click', () => departmentFormModal.close());
 
   eventForm.addEventListener('submit', handleEventSubmit);
   questionForm.addEventListener('submit', handleQuestionSubmit);
   excelForm.addEventListener('submit', handleExcelUpload);
+  departmentForm.addEventListener('submit', handleDepartmentFormSubmit);
 
   // 문제 유형 변경 시 동적 필드 렌더링
   $('#questionType').addEventListener('change', renderQuestionDataFields);
@@ -832,6 +846,148 @@ function handleLogout() {
   if (confirm('로그아웃하시겠습니까?')) {
     playSound('click');
     authLogout();
+  }
+}
+
+/**
+ * ==========================================
+ * 부서별 인원 관리
+ * ==========================================
+ */
+
+/**
+ * 부서별 인원 관리 모달 열기
+ */
+async function openDepartmentModal() {
+  departmentModal.showModal();
+  playSound('click');
+  await loadDepartmentsList();
+}
+
+/**
+ * 부서 목록 로드
+ */
+async function loadDepartmentsList() {
+  try {
+    departmentsList.innerHTML = '<div class="loading-message"><p>⏳ 로딩 중...</p></div>';
+
+    const response = await admin.getDepartments();
+
+    if (!response.departments || response.departments.length === 0) {
+      departmentsList.innerHTML = '<div class="loading-message"><p>📊 등록된 부서가 없습니다</p></div>';
+      return;
+    }
+
+    // 부서 목록 렌더링
+    departmentsList.innerHTML = '';
+    response.departments.forEach(dept => {
+      const deptItem = createDepartmentItem(dept);
+      departmentsList.appendChild(deptItem);
+    });
+
+  } catch (error) {
+    console.error('부서 목록 로드 실패:', error);
+    departmentsList.innerHTML = '<div class="loading-message"><p>❌ 로드 실패</p></div>';
+  }
+}
+
+/**
+ * 부서 아이템 생성
+ */
+function createDepartmentItem(dept) {
+  const item = document.createElement('div');
+  item.className = 'department-item';
+  item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.5rem; background: rgba(255, 255, 255, 0.1); border-radius: 4px;';
+
+  item.innerHTML = `
+    <div style="flex: 1;">
+      <div style="font-weight: bold; margin-bottom: 0.5rem;">${dept.department_name}</div>
+      <div style="font-size: 0.9rem; color: #aaa;">목표 인원: ${dept.target_headcount}명</div>
+      ${dept.description ? `<div style="font-size: 0.85rem; color: #888; margin-top: 0.25rem;">${dept.description}</div>` : ''}
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <button class="btn" data-action="edit">수정</button>
+      <button class="btn btn-danger" data-action="delete">삭제</button>
+    </div>
+  `;
+
+  // 이벤트 리스너
+  const editBtn = item.querySelector('[data-action="edit"]');
+  const deleteBtn = item.querySelector('[data-action="delete"]');
+
+  editBtn.addEventListener('click', () => openDepartmentFormModal(dept));
+  deleteBtn.addEventListener('click', () => deleteDepartmentItem(dept.id));
+
+  return item;
+}
+
+/**
+ * 부서 추가/수정 모달 열기
+ */
+function openDepartmentFormModal(dept = null) {
+  editingDepartmentId = dept ? dept.id : null;
+
+  $('#departmentFormTitle').textContent = dept ? '부서 수정' : '부서 추가';
+  $('#departmentName').value = dept ? dept.department_name : '';
+  $('#targetHeadcount').value = dept ? dept.target_headcount : '';
+  $('#departmentDescription').value = dept ? (dept.description || '') : '';
+
+  departmentFormModal.showModal();
+  playSound('click');
+}
+
+/**
+ * 부서 폼 제출
+ */
+async function handleDepartmentFormSubmit(e) {
+  e.preventDefault();
+
+  const data = {
+    department_name: $('#departmentName').value,
+    target_headcount: parseInt($('#targetHeadcount').value),
+    description: $('#departmentDescription').value
+  };
+
+  try {
+    if (editingDepartmentId) {
+      await admin.updateDepartment(editingDepartmentId, data);
+      alert('부서 정보가 수정되었습니다');
+    } else {
+      await admin.createDepartment(data);
+      alert('부서가 추가되었습니다');
+    }
+
+    departmentFormModal.close();
+    await loadDepartmentsList();
+    await loadDepartmentStats(); // 통계도 새로고침
+    playSound('correct');
+
+  } catch (error) {
+    console.error('부서 저장 실패:', error);
+    alert('저장 실패: ' + error.message);
+    playSound('wrong');
+  }
+}
+
+/**
+ * 부서 삭제
+ */
+async function deleteDepartmentItem(deptId) {
+  if (!confirm('부서를 삭제하시겠습니까?')) {
+    return;
+  }
+
+  try {
+    await admin.deleteDepartment(deptId);
+    alert('부서가 삭제되었습니다');
+    await loadDepartmentsList();
+    await loadDepartmentStats(); // 통계도 새로고침
+    playSound('correct');
+
+  } catch (error) {
+    console.error('부서 삭제 실패:', error);
+    alert('삭제 실패: ' + error.message);
+    playSound('wrong');
   }
 }
 

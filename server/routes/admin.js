@@ -157,4 +157,34 @@ router.put('/sso/settings/:key', adminController.updateSsoSetting);
  */
 router.get('/sso/status', adminController.getSsoStatus);
 
+/**
+ * ==========================================
+ * 부서별 인원 관리
+ * ==========================================
+ */
+
+/**
+ * GET /api/admin/departments
+ * 부서별 인원 정보 조회
+ */
+router.get('/departments', adminController.getDepartments);
+
+/**
+ * POST /api/admin/departments
+ * 부서 정보 생성
+ */
+router.post('/departments', adminController.createDepartment);
+
+/**
+ * PUT /api/admin/departments/:id
+ * 부서 정보 수정
+ */
+router.put('/departments/:id', adminController.updateDepartment);
+
+/**
+ * DELETE /api/admin/departments/:id
+ * 부서 정보 삭제
+ */
+router.delete('/departments/:id', adminController.deleteDepartment);
+
 module.exports = router;

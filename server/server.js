@@ -14,7 +14,7 @@ const startServer = async () => {
 
     // 개발 환경에서만 sync (프로덕션에서는 마이그레이션 사용)
     if (process.env.NODE_ENV === 'development') {
-      // await db.sequelize.sync({ alter: true });
+      await db.sequelize.sync({ alter: true });
       console.log('📊 데이터베이스 동기화 완료');
     }
 
