@@ -78,11 +78,18 @@ const login = async (req, res) => {
       user = await db.User.create({
         employee_id: swingUser.employeeNo,
         password: `swing_sso_${Date.now()}`, // 임시 비밀번호
-        name: swingUser.userName || swingUser.employeeNo,
-        department: swingUser.deptName,
-        email: swingUser.emailAddress,
+        name: swingUser.employeeName || swingUser.employeeNo,
+        department: swingUser.departmentName || swingUser.deptName || '',
+        email: swingUser.companyEmail || swingUser.emailAddress || '',
         role: 'user',
         login_method: 'swing_sso'
+      });
+    } else {
+      // 기존 사용자의 정보 업데이트 (Swing에서 최신 정보 반영)
+      await user.update({
+        name: swingUser.employeeName || user.name,
+        department: swingUser.departmentName || swingUser.deptName || user.department,
+        email: swingUser.companyEmail || swingUser.emailAddress || user.email
       });
     }
 
@@ -199,11 +206,18 @@ const swingSsoTokenLogin = async (req, res) => {
       user = await db.User.create({
         employee_id: swingUser.employeeNo,
         password: `swing_sso_${Date.now()}`, // 임시 비밀번호
-        name: swingUser.userName || swingUser.employeeNo,
-        department: swingUser.deptName,
-        email: swingUser.emailAddress,
+        name: swingUser.employeeName || swingUser.employeeNo,
+        department: swingUser.departmentName || swingUser.deptName || '',
+        email: swingUser.companyEmail || swingUser.emailAddress || '',
         role: 'user',
         login_method: 'swing_sso'
+      });
+    } else {
+      // 기존 사용자의 정보 업데이트 (Swing에서 최신 정보 반영)
+      await user.update({
+        name: swingUser.employeeName || user.name,
+        department: swingUser.departmentName || swingUser.deptName || user.department,
+        email: swingUser.companyEmail || swingUser.emailAddress || user.email
       });
     }
 
@@ -269,11 +283,18 @@ const swingIdPasswordLogin = async (req, res) => {
       user = await db.User.create({
         employee_id: swingUser.employeeNo,
         password: `swing_sso_${Date.now()}`, // 임시 비밀번호
-        name: swingUser.userName || swingUser.employeeNo,
-        department: swingUser.deptName,
-        email: swingUser.emailAddress,
+        name: swingUser.employeeName || swingUser.employeeNo,
+        department: swingUser.departmentName || swingUser.deptName || '',
+        email: swingUser.companyEmail || swingUser.emailAddress || '',
         role: 'user',
         login_method: 'swing_sso'
+      });
+    } else {
+      // 기존 사용자의 정보 업데이트 (Swing에서 최신 정보 반영)
+      await user.update({
+        name: swingUser.employeeName || user.name,
+        department: swingUser.departmentName || swingUser.deptName || user.department,
+        email: swingUser.companyEmail || swingUser.emailAddress || user.email
       });
     }
 

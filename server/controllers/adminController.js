@@ -1042,35 +1042,54 @@ const drawWinners = async (req, res) => {
 
 /**
  * LuckyDraw 당첨자 목록 조회
- * GET /api/admin/luckydraw/winners?event_id=1
+ * GET /api/admin/luckydraw/winners?event_id=1&year_month=2025-01
  */
 const getWinners = async (req, res) => {
   try {
-    const { event_id } = req.query;
+    const { event_id, year_month } = req.query;
 
     let whereClause = {};
+    let includeClause = [
+      {
+        model: db.User,
+        attributes: ['id', 'employee_id', 'name', 'department', 'email']
+      },
+      {
+        model: db.QuizEvent,
+        attributes: ['id', 'title', 'year_month'],
+        where: {}
+      }
+    ];
+
+    // event_id 필터
     if (event_id) {
       whereClause.event_id = event_id;
     }
 
+    // year_month 필터 (예: 2025-01)
+    if (year_month) {
+      includeClause[1].where.year_month = year_month;
+    }
+
     const winners = await db.LuckyDraw.findAll({
       where: whereClause,
-      include: [
-        {
-          model: db.User,
-          attributes: ['id', 'employee_id', 'name', 'department', 'email']
-        },
-        {
-          model: db.QuizEvent,
-          attributes: ['id', 'title', 'year_month']
-        }
-      ],
+      include: includeClause,
       order: [['created_at', 'DESC']]
+    });
+
+    // 날짜 정보를 명시적으로 포맷팅하여 응답
+    const winnersWithFormattedDates = winners.map(winner => {
+      const winnerData = winner.toJSON();
+      return {
+        ...winnerData,
+        won_date: winnerData.created_at, // 당첨 날짜
+        claimed_date: winnerData.claimed_at // 수령 날짜
+      };
     });
 
     res.json({
       success: true,
-      winners
+      winners: winnersWithFormattedDates
     });
 
   } catch (error) {

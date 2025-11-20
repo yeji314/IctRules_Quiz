@@ -24,7 +24,7 @@ body::after {
 }
 
 .admin-name {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 12px;
   color: #000000;
   background: rgba(255, 255, 255, 0.9);
@@ -57,7 +57,7 @@ body::after {
 }
 
 .sidebar-logo h2 {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 20px;
   color: #000000;
   margin-bottom: 8px;
@@ -67,7 +67,7 @@ body::after {
 }
 
 .sidebar-logo p {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 10px;
   color: #666;
 }
@@ -84,7 +84,7 @@ body::after {
   gap: 12px;
   padding: 16px;
   margin-bottom: 10px;
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 12px;
   color: #000000;
   background: #f0f0f0;
@@ -128,7 +128,7 @@ body::after {
 }
 
 .page-title {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 24px;
   color: #000000;
   margin-bottom: 30px;
@@ -149,7 +149,7 @@ body::after {
 }
 
 .section-title {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 16px;
   color: #000000;
   margin-bottom: 20px;
@@ -166,7 +166,7 @@ body::after {
 }
 
 .event-selector label {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 12px;
   color: #000000;
 }
@@ -192,7 +192,7 @@ body::after {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 12px;
   color: #000000;
 }
@@ -241,7 +241,7 @@ body::after {
 
 .pixel-table {
   width: 100%;
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 12px;
   color: #000000;
 }
@@ -341,7 +341,7 @@ body::after {
 }
 
 .event-title {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 14px;
   font-weight: bold;
   color: #000000;
@@ -349,7 +349,7 @@ body::after {
 }
 
 .event-meta {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 10px;
   color: #666;
   display: flex;
@@ -360,7 +360,7 @@ body::after {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 4px;
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 10px;
   font-weight: bold;
 }
@@ -381,7 +381,7 @@ body::after {
 }
 
 .event-actions button {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 10px;
   padding: 8px 16px;
 }
@@ -416,7 +416,7 @@ body::after {
   padding: 4px 12px;
   background: #92cc41;
   color: #ffffff;
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 10px;
   border: 2px solid #000000;
   margin-right: 10px;
@@ -427,7 +427,7 @@ body::after {
   padding: 4px 12px;
   background: #f7d51d;
   color: #000000;
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 10px;
   border: 2px solid #000000;
 }
@@ -438,7 +438,7 @@ body::after {
 }
 
 .question-text {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 12px;
   color: #000000;
   line-height: 1.6;
@@ -451,7 +451,7 @@ body::after {
 }
 
 .question-actions button {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 10px;
   padding: 8px 16px;
 }
@@ -465,7 +465,7 @@ body::after {
 }
 
 .modal-title {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 16px;
   font-weight: bold;
   margin-bottom: 20px;
@@ -478,7 +478,7 @@ body::after {
 
 .form-field label {
   display: block;
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 12px;
   color: #000000;
   margin-bottom: 8px;
@@ -488,16 +488,17 @@ body::after {
 .form-field input[type="month"],
 .form-field input[type="date"],
 .form-field input[type="file"],
+.form-field input[type="number"],
 .form-field textarea,
 .form-field select {
   width: 100%;
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 12px;
   box-sizing: border-box;
 }
 
 .form-field .note {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 10px;
   color: #666;
   line-height: 1.6;
@@ -530,7 +531,7 @@ body::after {
 }
 
 .dialog-menu button {
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 12px;
   padding: 10px 20px;
 }
@@ -539,7 +540,7 @@ body::after {
 .loading-message {
   text-align: center;
   padding: 40px 20px;
-  font-family: var(--font-pixel);
+  font-family: var(--font-galmuri);
   font-size: 14px;
   color: #666;
 }

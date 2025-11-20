@@ -11,7 +11,7 @@ body {
 
 /* 지면 레이어는 login.css의 기본 스타일 사용 (오버라이드 제거) */
 
-/* 게임 타이틀 - index.html과 동일 */
+/* 게임 타이틀 - 한 줄로 표시 */
 .game-title {
   position: fixed;
   top: 80px;
@@ -21,15 +21,19 @@ body {
   z-index: 2; /* 배경(1) 위, 나무패널(15) 아래 */
 }
 
+.title-text {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
 .title-ict {
   font-family: var(--font-pixel);
   font-size: clamp(36px, 6vw, 82px);
   color: #becee2;
   letter-spacing: 4px;
-  margin-bottom: 10px;
-  position: relative;
-  display: inline-block;
-  width: 100%;
   text-shadow:
     -6px -6px 0 #000,
     6px -6px 0 #000,
@@ -55,9 +59,6 @@ body {
     0 6px 0 #000,
     -6px 0 0 #000,
     6px 0 0 #000;
-  position: relative;
-  display: inline-block;
-  width: 100%;
 }
 
 /* 메인 컨테이너 */

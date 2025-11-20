@@ -228,7 +228,7 @@ async function loadWinners() {
       row.innerHTML = `
         <td>${winner.User?.name || '-'}</td>
         <td>${winner.User?.department || '-'}</td>
-        <td>${formatDate(winner.won_at)}</td>
+        <td>${formatDate(winner.won_date || winner.created_at)}</td>
         <td>${winner.prize_name || '기프티콘'}</td>
         <td>${claimStatus}</td>
       `;
