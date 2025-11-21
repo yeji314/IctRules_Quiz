@@ -665,7 +665,8 @@ async function handleSubmit() {
       currentSession.sessionId,
       question.id,
       currentAnswer,
-      timeTaken
+      timeTaken,
+      question.is_lucky_draw || false
     );
 
     if (response.success) {

@@ -47,6 +47,12 @@ module.exports = (sequelize) => {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW
+    },
+    is_lucky_draw: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+      comment: '럭키드로우 문제 여부'
     }
   }, {
     tableName: 'quiz_answers',

@@ -140,7 +140,8 @@ const startQuizSession = async (req, res) => {
         question_type: firstQuestion.question_type,
         category: firstQuestion.category,
         question_text: firstQuestion.question_text,
-        question_data: firstQuestion.question_data
+        question_data: firstQuestion.question_data,
+        is_lucky_draw: firstQuestion.dataValues?.isLuckyDraw || false
       },
       current_question_number: 1,
       total_questions: 5,
@@ -161,7 +162,7 @@ const startQuizSession = async (req, res) => {
  */
 const submitAnswer = async (req, res) => {
   try {
-    const { session_id, question_id, user_answer, time_taken } = req.body;
+    const { session_id, question_id, user_answer, time_taken, is_lucky_draw } = req.body;
 
     if (!session_id || !question_id || user_answer === undefined) {
       return res.status(400).json({
@@ -219,7 +220,8 @@ const submitAnswer = async (req, res) => {
         user_answer,
         is_correct: isCorrect,
         answer_attempt: 1,
-        time_taken
+        time_taken,
+        is_lucky_draw: is_lucky_draw || false
       });
     }
 
@@ -375,7 +377,8 @@ const submitAnswer = async (req, res) => {
         question_type: nextQuestion.question_type,
         category: nextQuestion.category,
         question_text: nextQuestion.question_text,
-        question_data: nextQuestion.question_data
+        question_data: nextQuestion.question_data,
+        is_lucky_draw: nextQuestion.dataValues?.isLuckyDraw || false
       };
 
       response.luckydraw_eligible = updatedCorrectCount === 2;
