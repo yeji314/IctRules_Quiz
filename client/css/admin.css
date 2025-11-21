@@ -637,3 +637,105 @@ body::after {
   }
 }
 
+/* 부서 관리 */
+.departments-table-container {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+/* 럭키드로우 현황 */
+.luckydraw-event-card {
+  background: #ffffff;
+  border: 3px solid #000000;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+}
+
+.luckydraw-event-card .event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.luckydraw-event-card .event-header h3 {
+  font-family: var(--font-galmuri);
+  font-size: 16px;
+  color: #000000;
+  margin: 0;
+}
+
+.luckydraw-event-card .event-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stat-badge {
+  font-family: var(--font-galmuri);
+  font-size: 10px;
+  padding: 6px 12px;
+  border: 2px solid #000000;
+  background: #f0f0f0;
+  color: #000000;
+  image-rendering: pixelated;
+}
+
+.stat-badge.success {
+  background: #48c774;
+  color: #ffffff;
+}
+
+.stat-badge.warning {
+  background: #ffdd57;
+  color: #000000;
+}
+
+.stat-badge.info {
+  background: #209cee;
+  color: #ffffff;
+}
+
+.progress-bar {
+  position: relative;
+  height: 30px;
+  background: #f0f0f0;
+  border: 3px solid #000000;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #48c774 0%, #3abb67 100%);
+  transition: width 0.5s ease;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-galmuri);
+  font-size: 12px;
+  color: #000000;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 #ffffff;
+  z-index: 1;
+}
+
+.winners-list {
+  margin-top: 20px;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  font-family: var(--font-galmuri);
+  font-size: 12px;
+  color: #666;
+}
+

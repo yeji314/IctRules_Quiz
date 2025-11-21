@@ -37,6 +37,18 @@
         <span class="icon icon-star">⭐</span>
         <span>퀴즈 관리</span>
       </li>
+      <li class="menu-item" data-page="departments">
+        <span class="icon icon-building">🏢</span>
+        <span>부서 관리</span>
+      </li>
+      <li class="menu-item" data-page="luckydraw">
+        <span class="icon icon-gift">🎁</span>
+        <span>럭키드로우</span>
+      </li>
+      <li class="menu-item" data-page="admins">
+        <span class="icon icon-key">🔑</span>
+        <span>관리자 설정</span>
+      </li>
     </ul>
   </nav>
 
@@ -92,6 +104,101 @@
               </tr>
             </thead>
             <tbody id="winnersTableBody">
+              <tr>
+                <td colspan="5" class="loading-message">⏳ 로딩 중...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 부서 관리 화면 -->
+    <section id="departmentsPage" class="admin-page">
+      <h1 class="page-title">🏢 부서 관리</h1>
+
+      <div class="quiz-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="icon icon-building">🏢</span>
+            부서 목록
+          </h2>
+          <button class="btn btn-primary" id="createDepartmentBtn">
+            + 부서 추가
+          </button>
+        </div>
+
+        <div class="departments-table-container">
+          <table class="pixel-table">
+            <thead>
+              <tr>
+                <th>부서명</th>
+                <th>총 인원</th>
+                <th>등록된 인원</th>
+                <th>설명</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="departmentsTableBody">
+              <tr>
+                <td colspan="5" class="loading-message">⏳ 로딩 중...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 럭키드로우 현황 화면 -->
+    <section id="luckydrawPage" class="admin-page">
+      <h1 class="page-title">🎁 럭키드로우 현황</h1>
+
+      <div class="quiz-section">
+        <h2 class="section-title">
+          <span class="icon icon-trophy">🏆</span>
+          퀴즈별 당첨 현황
+        </h2>
+
+        <div id="luckyDrawEventsList">
+          <!-- 이벤트별 럭키드로우 현황이 여기에 렌더링됨 -->
+          <div class="loading-message">
+            <p>⏳ 로딩 중...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 관리자 설정 화면 -->
+    <section id="adminsPage" class="admin-page">
+      <h1 class="page-title">🔑 관리자 설정</h1>
+
+      <div class="quiz-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="icon icon-key">🔑</span>
+            관리자 행번 목록
+          </h2>
+          <button class="btn btn-primary" id="addAdminBtn">
+            + 관리자 추가
+          </button>
+        </div>
+
+        <p class="section-note" style="margin-bottom: 16px; color: #666;">
+          여기에 등록된 행번은 로그인 시 관리자 권한을 부여받습니다.
+        </p>
+
+        <div class="admins-table-container">
+          <table class="pixel-table">
+            <thead>
+              <tr>
+                <th>행번</th>
+                <th>이름</th>
+                <th>추가한 관리자</th>
+                <th>추가일</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="adminsTableBody">
               <tr>
                 <td colspan="5" class="loading-message">⏳ 로딩 중...</td>
               </tr>
@@ -298,6 +405,59 @@
       <menu class="dialog-menu">
         <button class="btn" type="button" id="cancelExcelBtn">취소</button>
         <button class="btn btn-primary" type="submit">업로드</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- 관리자 추가 모달 -->
+  <dialog class="pixel-dialog" id="adminModal">
+    <form method="dialog" id="adminForm">
+      <p class="modal-title">관리자 추가</p>
+
+      <div class="form-field">
+        <label for="adminEmployeeId">행번</label>
+        <input type="text" id="adminEmployeeId" class="text-input" placeholder="예: 19200617" required>
+      </div>
+
+      <div class="form-field">
+        <label for="adminName">이름 (선택)</label>
+        <input type="text" id="adminName" class="text-input" placeholder="참고용 이름">
+      </div>
+
+      <p class="note" style="margin-top: 12px;">
+        💡 추가된 행번으로 로그인하면 자동으로 관리자 권한이 부여됩니다.
+      </p>
+
+      <menu class="dialog-menu">
+        <button class="btn" type="button" id="cancelAdminBtn">취소</button>
+        <button class="btn btn-primary" type="submit">추가</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- 부서 생성/수정 모달 -->
+  <dialog class="pixel-dialog" id="departmentModal">
+    <form method="dialog" id="departmentForm">
+      <p class="modal-title" id="departmentModalTitle">부서 추가</p>
+      
+      <div class="form-field">
+        <label for="departmentName">부서명</label>
+        <input type="text" id="departmentName" class="text-input" placeholder="예: 디지털전략부" required>
+      </div>
+
+      <div class="form-field">
+        <label for="departmentTotalMembers">총 인원</label>
+        <input type="number" id="departmentTotalMembers" class="text-input" min="1" placeholder="예: 20" required>
+      </div>
+
+      <div class="form-field">
+        <label for="departmentDescription">설명 (선택)</label>
+        <textarea id="departmentDescription" class="text-area" rows="2" placeholder="부서 설명"></textarea>
+      </div>
+
+      <menu class="dialog-menu">
+        <button class="btn" type="button" id="cancelDepartmentBtn">취소</button>
+        <button class="btn btn-primary" type="submit">저장</button>
       </menu>
     </form>
   </dialog>

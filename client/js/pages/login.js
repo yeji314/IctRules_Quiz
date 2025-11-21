@@ -76,13 +76,9 @@ async function handleLogin(e) {
       // 성공 메시지 표시
       showSuccess('로그인 성공!');
 
-      // 페이지 이동
+      // 페이지 이동 (관리자도 quiz-list.html로 이동, 톱니바퀴로 대시보드 접근)
       setTimeout(() => {
-        if (response.user.role === 'admin') {
-          window.location.href = '/pages/admin/dashboard.html';
-        } else {
-          window.location.href = '/pages/quiz-list.html';
-        }
+        window.location.href = '/pages/quiz-list.html';
       }, 500);
     }
   } catch (error) {

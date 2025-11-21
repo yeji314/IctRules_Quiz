@@ -15,6 +15,9 @@ const logoutBtn = $('#logoutBtn');
 const menuItems = document.querySelectorAll('.menu-item');
 const dashboardPage = $('#dashboardPage');
 const quizPage = $('#quizPage');
+const departmentsPage = $('#departmentsPage');
+const luckydrawPage = $('#luckydrawPage');
+const adminsPage = $('#adminsPage');
 const eventSelect = $('#eventSelect');
 const currentYearMonth = $('#currentYearMonth');
 const departmentStats = $('#departmentStats');
@@ -39,12 +42,19 @@ const cancelQuestionBtn = $('#cancelQuestionBtn');
 const excelModal = $('#excelModal');
 const excelForm = $('#excelForm');
 const cancelExcelBtn = $('#cancelExcelBtn');
+const departmentModal = $('#departmentModal');
+const departmentForm = $('#departmentForm');
+const cancelDepartmentBtn = $('#cancelDepartmentBtn');
+const adminModal = $('#adminModal');
+const adminForm = $('#adminForm');
+const cancelAdminBtn = $('#cancelAdminBtn');
 
 // 상태
 let currentPage = 'dashboard';
 let selectedEventId = null;
 let editingEventId = null;
 let editingQuestionId = null;
+let editingDepartmentId = null;
 let allEvents = [];
 
 /**
@@ -68,14 +78,38 @@ async function init() {
   createQuestionBtn.addEventListener('click', () => openQuestionModal());
   uploadExcelBtn.addEventListener('click', () => openExcelModal());
 
+  // 부서 관리 버튼
+  const createDepartmentBtn = $('#createDepartmentBtn');
+  if (createDepartmentBtn) {
+    createDepartmentBtn.addEventListener('click', () => openDepartmentModal());
+  }
+
+  // 관리자 추가 버튼
+  const addAdminBtn = $('#addAdminBtn');
+  if (addAdminBtn) {
+    addAdminBtn.addEventListener('click', () => openAdminModal());
+  }
+
   // 모달 이벤트
   cancelEventBtn.addEventListener('click', () => eventModal.close());
   cancelQuestionBtn.addEventListener('click', () => questionModal.close());
   cancelExcelBtn.addEventListener('click', () => excelModal.close());
+  if (cancelDepartmentBtn) {
+    cancelDepartmentBtn.addEventListener('click', () => departmentModal.close());
+  }
+  if (cancelAdminBtn) {
+    cancelAdminBtn.addEventListener('click', () => adminModal.close());
+  }
 
   eventForm.addEventListener('submit', handleEventSubmit);
   questionForm.addEventListener('submit', handleQuestionSubmit);
   excelForm.addEventListener('submit', handleExcelUpload);
+  if (departmentForm) {
+    departmentForm.addEventListener('submit', handleDepartmentSubmit);
+  }
+  if (adminForm) {
+    adminForm.addEventListener('submit', handleAdminSubmit);
+  }
 
   // 문제 유형 변경 시 동적 필드 렌더링
   $('#questionType').addEventListener('change', renderQuestionDataFields);
@@ -96,16 +130,39 @@ function handleMenuClick(item) {
   menuItems.forEach(m => m.classList.remove('active'));
   item.classList.add('active');
 
+  // 모든 페이지 숨기기
+  dashboardPage.classList.remove('active');
+  quizPage.classList.remove('active');
+  if (departmentsPage) departmentsPage.classList.remove('active');
+  if (luckydrawPage) luckydrawPage.classList.remove('active');
+  if (adminsPage) adminsPage.classList.remove('active');
+
   // 페이지 전환
   if (page === 'dashboard') {
     dashboardPage.classList.add('active');
-    quizPage.classList.remove('active');
     currentPage = 'dashboard';
   } else if (page === 'quiz') {
-    dashboardPage.classList.remove('active');
     quizPage.classList.add('active');
     currentPage = 'quiz';
     loadEventsList();
+  } else if (page === 'departments') {
+    if (departmentsPage) {
+      departmentsPage.classList.add('active');
+      currentPage = 'departments';
+      loadDepartments();
+    }
+  } else if (page === 'luckydraw') {
+    if (luckydrawPage) {
+      luckydrawPage.classList.add('active');
+      currentPage = 'luckydraw';
+      loadLuckyDrawStats();
+    }
+  } else if (page === 'admins') {
+    if (adminsPage) {
+      adminsPage.classList.add('active');
+      currentPage = 'admins';
+      loadAdmins();
+    }
   }
 
   playSound('click');
@@ -821,6 +878,359 @@ async function handleExcelUpload(e) {
   } catch (error) {
     console.error('엑셀 업로드 실패:', error);
     alert('업로드 실패: ' + error.message);
+    playSound('wrong');
+  }
+}
+
+/**
+ * 부서 목록 로드
+ */
+async function loadDepartments() {
+  try {
+    const tableBody = $('#departmentsTableBody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">⏳ 로딩 중...</td></tr>';
+
+    const response = await admin.listDepartments();
+    const departments = response.departments;
+
+    if (departments.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">📋 등록된 부서가 없습니다</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = '';
+    departments.forEach(dept => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${dept.name}</td>
+        <td>${dept.total_members}명</td>
+        <td>${dept.actual_users}명</td>
+        <td>${dept.description || '-'}</td>
+        <td>
+          <button class="btn btn-sm" data-action="edit" data-id="${dept.id}">수정</button>
+          <button class="btn btn-sm btn-danger" data-action="delete" data-id="${dept.id}">삭제</button>
+        </td>
+      `;
+      
+      // 이벤트 리스너 추가
+      const editBtn = row.querySelector('[data-action="edit"]');
+      const deleteBtn = row.querySelector('[data-action="delete"]');
+      
+      editBtn.addEventListener('click', () => editDepartment(dept.id, dept));
+      deleteBtn.addEventListener('click', () => deleteDepartmentConfirm(dept.id));
+      
+      tableBody.appendChild(row);
+    });
+
+  } catch (error) {
+    console.error('부서 목록 로드 실패:', error);
+    const tableBody = $('#departmentsTableBody');
+    if (tableBody) {
+      tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">❌ 로드 실패</td></tr>';
+    }
+  }
+}
+
+/**
+ * 부서 모달 열기
+ */
+function openDepartmentModal(department = null) {
+  editingDepartmentId = department ? department.id : null;
+
+  $('#departmentModalTitle').textContent = department ? '부서 수정' : '부서 추가';
+  $('#departmentName').value = department ? department.name : '';
+  $('#departmentTotalMembers').value = department ? department.total_members : '';
+  $('#departmentDescription').value = department ? (department.description || '') : '';
+
+  departmentModal.showModal();
+  playSound('click');
+}
+
+/**
+ * 부서 폼 제출
+ */
+async function handleDepartmentSubmit(e) {
+  e.preventDefault();
+
+  const data = {
+    name: $('#departmentName').value,
+    total_members: parseInt($('#departmentTotalMembers').value),
+    description: $('#departmentDescription').value
+  };
+
+  try {
+    if (editingDepartmentId) {
+      await admin.updateDepartment(editingDepartmentId, data);
+      alert('부서가 수정되었습니다');
+    } else {
+      await admin.createDepartment(data);
+      alert('부서가 추가되었습니다');
+    }
+
+    departmentModal.close();
+    await loadDepartments();
+    playSound('correct');
+
+  } catch (error) {
+    console.error('부서 저장 실패:', error);
+    alert('저장 실패: ' + error.message);
+    playSound('wrong');
+  }
+}
+
+/**
+ * 부서 수정
+ */
+async function editDepartment(id, department) {
+  try {
+    // department 객체가 이미 있으면 바로 사용
+    if (department) {
+      openDepartmentModal(department);
+    } else {
+      // 없으면 다시 조회
+      const response = await admin.listDepartments();
+      const dept = response.departments.find(d => d.id === id);
+      if (dept) {
+        openDepartmentModal(dept);
+      }
+    }
+  } catch (error) {
+    console.error('부서 조회 실패:', error);
+    alert('부서 정보를 불러오는데 실패했습니다');
+  }
+}
+
+/**
+ * 부서 삭제
+ */
+async function deleteDepartmentConfirm(id) {
+  if (!confirm('정말 삭제하시겠습니까?')) {
+    return;
+  }
+
+  try {
+    await admin.deleteDepartment(id);
+    alert('부서가 삭제되었습니다');
+    await loadDepartments();
+    playSound('correct');
+
+  } catch (error) {
+    console.error('부서 삭제 실패:', error);
+    alert('삭제 실패: ' + error.message);
+    playSound('wrong');
+  }
+}
+
+/**
+ * 럭키드로우 통계 로드
+ */
+async function loadLuckyDrawStats() {
+  try {
+    const container = $('#luckyDrawEventsList');
+    if (!container) return;
+
+    container.innerHTML = '<div class="loading-message"><p>⏳ 로딩 중...</p></div>';
+
+    const response = await admin.getLuckyDrawStatsByEvent();
+    const stats = response.stats;
+
+    if (stats.length === 0) {
+      container.innerHTML = '<div class="loading-message"><p>📊 데이터가 없습니다</p></div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    stats.forEach(eventStat => {
+      const eventCard = document.createElement('div');
+      eventCard.className = 'luckydraw-event-card';
+      
+      const progressPercent = eventStat.max_winners > 0 
+        ? Math.round((eventStat.total_winners / eventStat.max_winners) * 100)
+        : 0;
+
+      let winnersHtml = '';
+      if (eventStat.winners.length > 0) {
+        winnersHtml = `
+          <table class="pixel-table">
+            <thead>
+              <tr>
+                <th>이름</th>
+                <th>부서</th>
+                <th>사번</th>
+                <th>상품</th>
+                <th>수령</th>
+                <th>당첨일</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${eventStat.winners.map(w => `
+                <tr>
+                  <td>${w.user_name}</td>
+                  <td>${w.user_department || '-'}</td>
+                  <td>${w.user_employee_id}</td>
+                  <td>${w.prize || '-'}</td>
+                  <td>${w.is_claimed ? '✅' : '⏳'}</td>
+                  <td>${formatDate(w.won_date)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } else {
+        winnersHtml = '<p class="no-data">아직 당첨자가 없습니다</p>';
+      }
+
+      eventCard.innerHTML = `
+        <div class="event-header">
+          <h3>${eventStat.event_title} (${eventStat.year_month})</h3>
+          <div class="event-stats">
+            <span class="stat-badge">최대: ${eventStat.max_winners}명</span>
+            <span class="stat-badge">당첨: ${eventStat.total_winners}명</span>
+            <span class="stat-badge success">수령: ${eventStat.claimed_count}명</span>
+            <span class="stat-badge warning">대기: ${eventStat.pending_count}명</span>
+            <span class="stat-badge info">남은 기회: ${eventStat.remaining_slots}명</span>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${progressPercent}%"></div>
+          <span class="progress-text">${progressPercent}% (${eventStat.total_winners}/${eventStat.max_winners})</span>
+        </div>
+        <div class="winners-list">
+          ${winnersHtml}
+        </div>
+      `;
+
+      container.appendChild(eventCard);
+    });
+
+  } catch (error) {
+    console.error('럭키드로우 통계 로드 실패:', error);
+    const container = $('#luckyDrawEventsList');
+    if (container) {
+      container.innerHTML = '<div class="loading-message"><p>❌ 로드 실패</p></div>';
+    }
+  }
+}
+
+/**
+ * 관리자 목록 로드
+ */
+async function loadAdmins() {
+  try {
+    const tableBody = $('#adminsTableBody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">⏳ 로딩 중...</td></tr>';
+
+    const response = await admin.listAdminEmployees();
+    const admins = response.admins;
+
+    if (admins.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">📋 등록된 관리자가 없습니다</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = '';
+    admins.forEach(adm => {
+      const row = document.createElement('tr');
+      const isPrimary = adm.is_primary;
+      row.innerHTML = `
+        <td>${adm.employee_id}${isPrimary ? ' <span style="color: #FFD700;">★</span>' : ''}</td>
+        <td>${adm.name || '-'}</td>
+        <td>${adm.added_by || '-'}</td>
+        <td>${formatDate(adm.created_at)}</td>
+        <td>
+          ${isPrimary
+            ? '<span style="color: #999;">기본 관리자</span>'
+            : `<button class="btn btn-sm btn-danger" data-action="delete" data-id="${adm.id}">삭제</button>`}
+        </td>
+      `;
+
+      // 삭제 버튼 이벤트 리스너
+      if (!isPrimary) {
+        const deleteBtn = row.querySelector('[data-action="delete"]');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', () => deleteAdminConfirm(adm.id, adm.employee_id));
+        }
+      }
+
+      tableBody.appendChild(row);
+    });
+
+  } catch (error) {
+    console.error('관리자 목록 로드 실패:', error);
+    const tableBody = $('#adminsTableBody');
+    if (tableBody) {
+      tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">❌ 로드 실패</td></tr>';
+    }
+  }
+}
+
+/**
+ * 관리자 모달 열기
+ */
+function openAdminModal() {
+  $('#adminEmployeeId').value = '';
+  // adminName is used for logged-in admin name display, use different selector
+  const adminNameInput = adminModal.querySelector('#adminName');
+  if (adminNameInput) {
+    adminNameInput.value = '';
+  }
+
+  adminModal.showModal();
+  playSound('click');
+}
+
+/**
+ * 관리자 추가 폼 제출
+ */
+async function handleAdminSubmit(e) {
+  e.preventDefault();
+
+  const data = {
+    employee_id: $('#adminEmployeeId').value.trim(),
+    name: adminModal.querySelector('#adminName')?.value.trim() || ''
+  };
+
+  if (!data.employee_id) {
+    alert('행번을 입력해주세요');
+    return;
+  }
+
+  try {
+    await admin.addAdminEmployee(data);
+    alert('관리자가 추가되었습니다.\n해당 행번으로 다시 로그인하면 관리자 권한이 부여됩니다.');
+
+    adminModal.close();
+    await loadAdmins();
+    playSound('correct');
+
+  } catch (error) {
+    console.error('관리자 추가 실패:', error);
+    alert('추가 실패: ' + error.message);
+    playSound('wrong');
+  }
+}
+
+/**
+ * 관리자 삭제
+ */
+async function deleteAdminConfirm(id, employeeId) {
+  if (!confirm(`관리자 "${employeeId}"를 삭제하시겠습니까?\n삭제 후 해당 행번은 다시 로그인해야 일반 사용자로 변경됩니다.`)) {
+    return;
+  }
+
+  try {
+    await admin.deleteAdminEmployee(id);
+    alert('관리자가 삭제되었습니다.');
+    await loadAdmins();
+    playSound('correct');
+
+  } catch (error) {
+    console.error('관리자 삭제 실패:', error);
+    alert('삭제 실패: ' + error.message);
     playSound('wrong');
   }
 }

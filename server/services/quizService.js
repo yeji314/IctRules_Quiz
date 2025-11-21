@@ -3,7 +3,7 @@ const db = require('../models');
 
 class QuizService {
   /**
-   * 랜덤으로 5개 문제 선택 (LuckyDraw 조건 포함)
+   * 랜덤으로 5개 문제 선택 (5가지 유형 각 1개 + LuckyDraw 조건 포함)
    */
   async getRandomQuestions(sessionId, eventId, excludeQuestionIds = []) {
     // 현재 세션 정보 가져오기 (user_id 필요)
@@ -45,6 +45,26 @@ class QuizService {
       ]
     }) > 0;
 
+    // 이미 당첨된 사용자인지 확인 (해당 이벤트)
+    const hasWonPrize = await db.LuckyDraw.count({
+      where: {
+        user_id: currentSession.user_id,
+        event_id: eventId
+      }
+    }) > 0;
+
+    // 이벤트의 최대 당첨자 수 도달 여부 확인
+    const event = await db.QuizEvent.findByPk(eventId);
+    if (!event) {
+      throw new Error('이벤트를 찾을 수 없습니다');
+    }
+
+    const currentWinnerCount = await db.LuckyDraw.count({
+      where: { event_id: eventId }
+    });
+
+    const maxWinnersReached = currentWinnerCount >= event.max_winners;
+
     // 남은 문제 가져오기
     const allQuestions = await db.Question.findAll({
       where: {
@@ -53,56 +73,107 @@ class QuizService {
       }
     });
 
-    // 일반 문제와 LuckyDraw 분리
-    let normalQuestions = allQuestions.filter(q => q.category === 'normal');
-    let luckyQuestions = allQuestions.filter(q => q.category === 'luckydraw');
+    // 5가지 유형 정의
+    const questionTypes = ['dragdrop', 'typing', 'fillblank', 'ox', 'finderror'];
+    
+    // 유형별, 카테고리별로 문제 분류
+    const questionsByType = {};
+    questionTypes.forEach(type => {
+      questionsByType[type] = {
+        normal: allQuestions.filter(q => q.question_type === type && q.category === 'normal'),
+        luckydraw: allQuestions.filter(q => q.question_type === type && q.category === 'luckydraw')
+      };
+    });
 
-    // 디버깅 로그
     console.log(`[QuizService] 문제 선택 정보:
       - 제외할 문제 ID: [${excludeQuestionIds.join(', ')}]
       - 전체 남은 문제: ${allQuestions.length}개
-      - 일반 문제: ${normalQuestions.length}개
-      - 럭키드로우 문제: ${luckyQuestions.length}개
       - 첫 시도 정답 수: ${firstCorrectCount}
-      - 럭키드로우 본 적 있음: ${hasSeenLuckyDraw}`);
-
-    let selectedQuestions = [];
+      - 럭키드로우 본 적 있음: ${hasSeenLuckyDraw}
+      - 이미 당첨됨: ${hasWonPrize}
+      - 이벤트 당첨자 수: ${currentWinnerCount}/${event.max_winners}
+      - 최대 당첨자 도달: ${maxWinnersReached}`);
 
     // LuckyDraw 출제 조건 체크
-    const canShowLuckyDraw = firstCorrectCount >= 3;
+    const canShowLuckyDraw = firstCorrectCount >= 3 && !hasWonPrize && !maxWinnersReached;
 
-    if (!canShowLuckyDraw) {
-      // 조건 미충족: 일반 문제만 출제
-      selectedQuestions = this.shuffleArray(normalQuestions).slice(0, 5);
-    } else if (!hasSeenLuckyDraw) {
-      // 첫 LuckyDraw: 일반 4개 + LuckyDraw 1개
-      const selectedNormal = this.shuffleArray(normalQuestions).slice(0, 4);
-      const selectedLucky = this.shuffleArray(luckyQuestions).slice(0, 1);
+    // 1단계: 5가지 유형별로 1개씩 선택 (일단 normal 우선)
+    const selectedQuestions = [];
+    const selectedTypes = [];
 
-      // 럭키드로우를 랜덤한 위치에 삽입 (처음이나 끝이 아닌 중간 위치 선호)
-      const luckyInsertPosition = Math.floor(Math.random() * 3) + 1; // 1, 2, 3 중 하나
-      selectedQuestions = [
-        ...selectedNormal.slice(0, luckyInsertPosition),
-        ...selectedLucky,
-        ...selectedNormal.slice(luckyInsertPosition)
-      ];
+    for (const type of questionTypes) {
+      const normalPool = questionsByType[type].normal;
+      const luckyPool = questionsByType[type].luckydraw;
 
-      console.log(`[QuizService] 첫 럭키드로우를 ${luckyInsertPosition + 1}번째 위치에 배치`);
-    } else {
-      // LuckyDraw 이후: 가중치 랜덤 (LuckyDraw 40%)
-      selectedQuestions = this.getWeightedRandomQuestions(
-        normalQuestions,
-        luckyQuestions,
-        5,
-        0.4 // LuckyDraw 비율
-      );
+      if (normalPool.length > 0) {
+        // 일반 문제에서 랜덤 선택
+        const randomIdx = Math.floor(Math.random() * normalPool.length);
+        selectedQuestions.push(normalPool[randomIdx]);
+        selectedTypes.push(type);
+      } else if (luckyPool.length > 0) {
+        // 일반 문제가 없으면 럭키드로우에서 선택
+        const randomIdx = Math.floor(Math.random() * luckyPool.length);
+        selectedQuestions.push(luckyPool[randomIdx]);
+        selectedTypes.push(type);
+      }
     }
 
-    // 연속된 럭키드로우가 있는지 최종 검증
+    // 5개가 안 되면 부족한 만큼 추가 (유형 중복 허용)
+    while (selectedQuestions.length < 5 && allQuestions.length > selectedQuestions.length) {
+      const remaining = allQuestions.filter(q => !selectedQuestions.includes(q));
+      if (remaining.length > 0) {
+        const randomIdx = Math.floor(Math.random() * remaining.length);
+        selectedQuestions.push(remaining[randomIdx]);
+      } else {
+        break;
+      }
+    }
+
+    // 2단계: LuckyDraw 조건에 따라 일부 문제를 럭키드로우로 교체
+    if (canShowLuckyDraw && selectedQuestions.length === 5) {
+      let luckyCount = 0;
+
+      if (!hasSeenLuckyDraw) {
+        // 첫 럭키드로우: 1개만
+        luckyCount = 1;
+      } else {
+        // 이후: 40% 확률로 각 문제를 럭키드로우로 교체 (연속 방지)
+        // 평균 2개 정도 럭키드로우 출현
+        for (let i = 0; i < selectedQuestions.length; i++) {
+          const currentType = selectedQuestions[i].question_type;
+          const luckyPool = questionsByType[currentType].luckydraw;
+
+          // 이전 문제가 럭키드로우가 아니고, 40% 확률, 해당 유형의 럭키드로우 문제가 있으면
+          const prevIsLucky = i > 0 && selectedQuestions[i - 1].category === 'luckydraw';
+          
+          if (!prevIsLucky && Math.random() < 0.4 && luckyPool.length > 0) {
+            const randomIdx = Math.floor(Math.random() * luckyPool.length);
+            selectedQuestions[i] = luckyPool[randomIdx];
+            luckyCount++;
+          }
+        }
+      }
+
+      // 첫 럭키드로우인 경우, 정확히 1개만 교체
+      if (!hasSeenLuckyDraw && luckyCount === 0) {
+        // 랜덤 위치 선택 (첫번째와 마지막 제외, 중간 위치 선호)
+        const luckyPosition = Math.floor(Math.random() * 3) + 1; // 1, 2, 3
+        const targetType = selectedQuestions[luckyPosition].question_type;
+        const luckyPool = questionsByType[targetType].luckydraw;
+
+        if (luckyPool.length > 0) {
+          const randomIdx = Math.floor(Math.random() * luckyPool.length);
+          selectedQuestions[luckyPosition] = luckyPool[randomIdx];
+          console.log(`[QuizService] 첫 럭키드로우를 ${luckyPosition + 1}번째 위치에 배치 (${targetType})`);
+        }
+      }
+    }
+
+    // 최종 검증: 연속된 럭키드로우 확인
     this.validateNoConsecutiveLuckyDraws(selectedQuestions);
 
     console.log(`[QuizService] 최종 선택된 문제 수: ${selectedQuestions.length}개`);
-    console.log(`[QuizService] 최종 문제 순서:`, selectedQuestions.map(q => `Q${q.id}(${q.category})`).join(' -> '));
+    console.log(`[QuizService] 최종 문제 순서:`, selectedQuestions.map(q => `${q.question_type}(${q.category})`).join(' -> '));
 
     return selectedQuestions;
   }
@@ -196,8 +267,7 @@ class QuizService {
    * 현재 세션의 진행 상황을 보고 다음 문제를 결정
    *
    * 문제 유형 분배 규칙:
-   * - 1회차(5문제)에는 5가지 유형(drag_and_drop, typing, fill_in_blank, ox, find_error)이 각각 1개씩 반드시 포함
-   * - 2회차, 3회차는 기존 로직 유지 (랜덤)
+   * - 모든 회차에서 5가지 유형(dragdrop, typing, fillblank, ox, finderror)이 각각 1개씩 반드시 포함
    *
    * 럭키드로우 출현 규칙:
    * 1. 현재 세션에서 3문제 이상 맞춰야 출현 가능
@@ -224,32 +294,24 @@ class QuizService {
       return null;
     }
 
-    // 사용자가 현재 이벤트에서 완료한 세션 수 확인 (회차 판단)
-    const completedSessionsCount = await db.QuizSession.count({
-      where: {
-        user_id: currentSession.user_id,
-        event_id: eventId,
-        status: 'completed'
-      }
+    // 5가지 유형 정의
+    const questionTypes = ['dragdrop', 'typing', 'fillblank', 'ox', 'finderror'];
+
+    // 현재 세션에서 이미 나온 문제 유형 확인
+    const answeredQuestions = await db.QuizAnswer.findAll({
+      where: { session_id: sessionId },
+      include: [{
+        model: db.Question,
+        attributes: ['question_type']
+      }]
     });
 
-    const currentRound = completedSessionsCount + 1; // 현재 진행 중인 회차
-    console.log(`[getNextQuestion] 현재 회차: ${currentRound}회차`);
+    const usedQuestionTypes = answeredQuestions.map(a => a.Question.question_type);
+    console.log(`[getNextQuestion] 이미 나온 유형: [${usedQuestionTypes.join(', ')}]`);
 
-    // 현재 세션에서 이미 나온 문제 유형 확인 (1회차에만 적용)
-    let usedQuestionTypes = [];
-    if (currentRound === 1) {
-      const answeredQuestions = await db.QuizAnswer.findAll({
-        where: { session_id: sessionId },
-        include: [{
-          model: db.Question,
-          attributes: ['question_type']
-        }]
-      });
-
-      usedQuestionTypes = answeredQuestions.map(a => a.Question.question_type);
-      console.log(`[getNextQuestion] 1회차 - 이미 나온 유형: [${usedQuestionTypes.join(', ')}]`);
-    }
+    // 아직 나오지 않은 유형 계산
+    const remainingTypes = questionTypes.filter(type => !usedQuestionTypes.includes(type));
+    console.log(`[getNextQuestion] 남은 유형: [${remainingTypes.join(', ')}]`);
 
     // 현재 세션에서 맞춘 문제 수 (answer_attempt 무관하게 정답 개수만 카운트)
     const correctCount = await db.QuizAnswer.count({
@@ -289,6 +351,19 @@ class QuizService {
 
     console.log(`[getNextQuestion] 이번 월 선물 당첨 여부: ${hasWonPrizeThisMonth}`);
 
+    // 이벤트의 최대 당첨자 수 도달 여부 확인
+    const event = await db.QuizEvent.findByPk(eventId);
+    if (!event) {
+      throw new Error('이벤트를 찾을 수 없습니다');
+    }
+
+    const currentWinnerCount = await db.LuckyDraw.count({
+      where: { event_id: eventId }
+    });
+
+    const maxWinnersReached = currentWinnerCount >= event.max_winners;
+    console.log(`[getNextQuestion] 이벤트 당첨자 수: ${currentWinnerCount}/${event.max_winners}, 최대치 도달: ${maxWinnersReached}`);
+
     // 현재 세션에서 직전 문제가 럭키드로우였는지 확인
     const lastAnswer = await db.QuizAnswer.findOne({
       where: { session_id: sessionId },
@@ -311,15 +386,10 @@ class QuizService {
       }
     });
 
-    // 1회차: 아직 나오지 않은 유형만 필터링
-    if (currentRound === 1 && usedQuestionTypes.length > 0) {
-      const allTypes = ['drag_and_drop', 'typing', 'fill_in_blank', 'ox', 'find_error'];
-      const remainingTypes = allTypes.filter(type => !usedQuestionTypes.includes(type));
-
-      if (remainingTypes.length > 0) {
-        allQuestions = allQuestions.filter(q => remainingTypes.includes(q.question_type));
-        console.log(`[getNextQuestion] 1회차 - 남은 유형 필터링: [${remainingTypes.join(', ')}]`);
-      }
+    // 아직 나오지 않은 유형만 필터링 (남은 유형이 있을 때만)
+    if (remainingTypes.length > 0 && remainingTypes.length < questionTypes.length) {
+      allQuestions = allQuestions.filter(q => remainingTypes.includes(q.question_type));
+      console.log(`[getNextQuestion] 남은 유형으로 필터링: [${remainingTypes.join(', ')}]`);
     }
 
     // 일반 문제와 럭키드로우 분리
@@ -329,10 +399,10 @@ class QuizService {
     console.log(`[getNextQuestion] 남은 문제: 일반 ${normalQuestions.length}개, 럭키드로우 ${luckyQuestions.length}개`);
 
     // 럭키드로우 출현 가능 여부 판단
-    // 조건: 정답 3개 이상 + 직전이 럭키드로우 아님 + 이번 월에 당첨 안됨 + 럭키드로우 문제 있음
-    const canShowLuckyDraw = correctCount >= 3 && !lastWasLuckyDraw && !hasWonPrizeThisMonth && luckyQuestions.length > 0;
+    // 조건: 정답 3개 이상 + 직전이 럭키드로우 아님 + 이번 월에 당첨 안됨 + 최대 당첨자 수 미도달 + 럭키드로우 문제 있음
+    const canShowLuckyDraw = correctCount >= 3 && !lastWasLuckyDraw && !hasWonPrizeThisMonth && !maxWinnersReached && luckyQuestions.length > 0;
 
-    console.log(`[getNextQuestion] 럭키드로우 출현 가능: ${canShowLuckyDraw} (정답 ${correctCount}개 >= 3, 직전 럭키드로우: ${lastWasLuckyDraw}, 이번 월 당첨: ${hasWonPrizeThisMonth})`);
+    console.log(`[getNextQuestion] 럭키드로우 출현 가능: ${canShowLuckyDraw} (정답 ${correctCount}개 >= 3, 직전 럭키드로우: ${lastWasLuckyDraw}, 이번 월 당첨: ${hasWonPrizeThisMonth}, 최대 당첨자 도달: ${maxWinnersReached})`);
 
     let selectedQuestion = null;
 
@@ -344,7 +414,7 @@ class QuizService {
         // 럭키드로우 선택
         const idx = Math.floor(Math.random() * luckyQuestions.length);
         selectedQuestion = luckyQuestions[idx];
-        console.log(`[getNextQuestion] ✨ 럭키드로우 문제 선택: Q${selectedQuestion.id}`);
+        console.log(`[getNextQuestion] ✨ 럭키드로우 문제 선택: Q${selectedQuestion.id} (${selectedQuestion.question_type})`);
       } else if (normalQuestions.length > 0) {
         // 일반 문제 선택
         const idx = Math.floor(Math.random() * normalQuestions.length);

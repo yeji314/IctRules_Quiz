@@ -290,9 +290,65 @@ export const admin = {
   },
 
   /**
+   * 퀴즈별 LuckyDraw 현황 조회
+   */
+  async getLuckyDrawStatsByEvent() {
+    return get('/admin/luckydraw/stats-by-event');
+  },
+
+  /**
    * 상품 수령 처리
    */
   async claimPrize(id) {
     return put(`/admin/luckydraw/${id}/claim`);
+  },
+
+  /**
+   * 부서 목록 조회
+   */
+  async listDepartments() {
+    return get('/admin/departments');
+  },
+
+  /**
+   * 부서 생성
+   */
+  async createDepartment(data) {
+    return post('/admin/departments', data);
+  },
+
+  /**
+   * 부서 수정
+   */
+  async updateDepartment(id, data) {
+    return put(`/admin/departments/${id}`, data);
+  },
+
+  /**
+   * 부서 삭제
+   */
+  async deleteDepartment(id) {
+    return del(`/admin/departments/${id}`);
+  },
+
+  /**
+   * 관리자 행번 목록 조회
+   */
+  async listAdminEmployees() {
+    return get('/admin/admin-employees');
+  },
+
+  /**
+   * 관리자 행번 추가
+   */
+  async addAdminEmployee(data) {
+    return post('/admin/admin-employees', data);
+  },
+
+  /**
+   * 관리자 행번 삭제
+   */
+  async deleteAdminEmployee(id) {
+    return del(`/admin/admin-employees/${id}`);
   }
 };

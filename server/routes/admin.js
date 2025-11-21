@@ -122,10 +122,46 @@ router.post('/luckydraw/draw', adminController.drawWinners);
 router.get('/luckydraw/winners', adminController.getWinners);
 
 /**
+ * GET /api/admin/luckydraw/stats-by-event
+ * 퀴즈별 LuckyDraw 현황 조회
+ */
+router.get('/luckydraw/stats-by-event', adminController.getLuckyDrawStatsByEvent);
+
+/**
  * PUT /api/admin/luckydraw/:id/claim
  * 상품 수령 처리
  */
 router.put('/luckydraw/:id/claim', adminController.claimPrize);
+
+/**
+ * ==========================================
+ * 부서 관리
+ * ==========================================
+ */
+
+/**
+ * GET /api/admin/departments
+ * 부서 목록 조회
+ */
+router.get('/departments', adminController.listDepartments);
+
+/**
+ * POST /api/admin/departments
+ * 부서 생성
+ */
+router.post('/departments', adminController.createDepartment);
+
+/**
+ * PUT /api/admin/departments/:id
+ * 부서 수정
+ */
+router.put('/departments/:id', adminController.updateDepartment);
+
+/**
+ * DELETE /api/admin/departments/:id
+ * 부서 삭제
+ */
+router.delete('/departments/:id', adminController.deleteDepartment);
 
 /**
  * ==========================================
@@ -156,5 +192,29 @@ router.put('/sso/settings/:key', adminController.updateSsoSetting);
  * SSO 시스템 상태 확인
  */
 router.get('/sso/status', adminController.getSsoStatus);
+
+/**
+ * ==========================================
+ * 관리자 행번 관리
+ * ==========================================
+ */
+
+/**
+ * GET /api/admin/admin-employees
+ * 관리자 행번 목록 조회
+ */
+router.get('/admin-employees', adminController.listAdminEmployees);
+
+/**
+ * POST /api/admin/admin-employees
+ * 관리자 행번 추가
+ */
+router.post('/admin-employees', adminController.addAdminEmployee);
+
+/**
+ * DELETE /api/admin/admin-employees/:id
+ * 관리자 행번 삭제
+ */
+router.delete('/admin-employees/:id', adminController.deleteAdminEmployee);
 
 module.exports = router;

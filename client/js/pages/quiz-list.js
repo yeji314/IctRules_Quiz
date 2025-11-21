@@ -16,6 +16,7 @@ const loadingState = $('#loadingState');
 const quizList = $('#quizList');
 const errorState = $('#errorState');
 const retryButton = $('#retryButton');
+const adminGearBtn = $('#adminGearBtn');
 
 /**
  * 초기화
@@ -25,6 +26,13 @@ async function init() {
   const user = getUser();
   if (user) {
     userNameDisplay.textContent = `${user.name}님` || 'User';
+
+    // 관리자 버튼 표시 여부 확인 (행번 19200617)
+    if (user.employee_id === '19200617') {
+      adminGearBtn.style.display = 'block';
+      adminGearBtn.addEventListener('mousedown', () => playSound('click'));
+      adminGearBtn.addEventListener('click', handleAdminClick);
+    }
   }
 
   // 이벤트 리스너
@@ -219,6 +227,14 @@ function handleLogout() {
     playSound('click');
     authLogout();
   }
+}
+
+/**
+ * 관리자 대시보드로 이동
+ */
+function handleAdminClick() {
+  playSound('coin');
+  window.location.href = '/pages/admin/dashboard.html';
 }
 
 // 초기화 실행

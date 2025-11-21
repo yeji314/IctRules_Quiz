@@ -677,15 +677,9 @@ const getDepartmentStats = async (req, res) => {
       whereClause.event_id = event_id;
     }
 
-    // 부서별 참여 통계
-    const departments = await db.User.findAll({
-      attributes: [
-        'department',
-        [db.sequelize.fn('COUNT', db.sequelize.fn('DISTINCT', db.sequelize.col('User.id'))), 'total_users']
-      ],
-      where: { role: 'user' },
-      group: ['department'],
-      raw: true
+    // Department 테이블에서 부서 목록 가져오기
+    const departments = await db.Department.findAll({
+      order: [['name', 'ASC']]
     });
 
     const departmentStats = await Promise.all(departments.map(async (dept) => {
@@ -696,7 +690,7 @@ const getDepartmentStats = async (req, res) => {
         where: whereClause,
         include: [{
           model: db.User,
-          where: { department: dept.department },
+          where: { department: dept.name, role: 'user' },
           attributes: []
         }]
       });
@@ -706,27 +700,27 @@ const getDepartmentStats = async (req, res) => {
         where: { ...whereClause, status: 'completed' },
         include: [{
           model: db.User,
-          where: { department: dept.department },
+          where: { department: dept.name, role: 'user' },
           attributes: []
         }]
       });
 
-      // 참여율
-      const participationRate = dept.total_users > 0
-        ? Math.round((participatedUsers / dept.total_users) * 100)
+      // 참여율 (Department 테이블의 total_members 사용)
+      const participationRate = dept.total_members > 0
+        ? Math.round((participatedUsers / dept.total_members) * 100)
         : 0;
 
       return {
-        department: dept.department,
-        totalUsers: parseInt(dept.total_users),
-        participatedUsers,
+        department: dept.name,
+        total: dept.total_members,
+        participated: participatedUsers,
         completedSessions,
-        participationRate
+        participation_rate: participationRate
       };
     }));
 
     // 참여율 순으로 정렬
-    departmentStats.sort((a, b) => b.participationRate - a.participationRate);
+    departmentStats.sort((a, b) => b.participation_rate - a.participation_rate);
 
     res.json({
       success: true,
@@ -1101,6 +1095,80 @@ const getWinners = async (req, res) => {
 };
 
 /**
+ * 퀴즈별 LuckyDraw 현황 조회
+ * GET /api/admin/luckydraw/stats-by-event
+ */
+const getLuckyDrawStatsByEvent = async (req, res) => {
+  try {
+    const events = await db.QuizEvent.findAll({
+      order: [['year_month', 'DESC']]
+    });
+
+    const stats = await Promise.all(events.map(async (event) => {
+      // 해당 이벤트의 총 당첨자 수
+      const totalWinners = await db.LuckyDraw.count({
+        where: { event_id: event.id }
+      });
+
+      // 수령 완료 수
+      const claimedCount = await db.LuckyDraw.count({
+        where: { event_id: event.id, is_claimed: true }
+      });
+
+      // 수령 대기 수
+      const pendingCount = totalWinners - claimedCount;
+
+      // 최대 당첨자 수
+      const maxWinners = event.max_winners || 10;
+
+      // 남은 당첨 기회
+      const remainingSlots = Math.max(0, maxWinners - totalWinners);
+
+      // 당첨자 목록
+      const winners = await db.LuckyDraw.findAll({
+        where: { event_id: event.id },
+        include: [{
+          model: db.User,
+          attributes: ['id', 'name', 'department', 'employee_id']
+        }],
+        order: [['created_at', 'DESC']]
+      });
+
+      return {
+        event_id: event.id,
+        event_title: event.title,
+        year_month: event.year_month,
+        max_winners: maxWinners,
+        total_winners: totalWinners,
+        claimed_count: claimedCount,
+        pending_count: pendingCount,
+        remaining_slots: remainingSlots,
+        winners: winners.map(w => ({
+          id: w.id,
+          user_name: w.User.name,
+          user_department: w.User.department,
+          user_employee_id: w.User.employee_id,
+          prize: w.prize,
+          is_claimed: w.is_claimed,
+          won_date: w.created_at
+        }))
+      };
+    }));
+
+    res.json({
+      success: true,
+      stats
+    });
+
+  } catch (error) {
+    console.error('퀴즈별 LuckyDraw 현황 조회 에러:', error);
+    res.status(500).json({
+      error: '퀴즈별 LuckyDraw 현황 조회에 실패했습니다'
+    });
+  }
+};
+
+/**
  * LuckyDraw 수령 처리
  * PUT /api/admin/luckydraw/:id/claim
  */
@@ -1133,6 +1201,180 @@ const claimPrize = async (req, res) => {
     console.error('상품 수령 처리 에러:', error);
     res.status(500).json({
       error: '상품 수령 처리에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * ==========================================
+ * 부서 관리
+ * ==========================================
+ */
+
+/**
+ * 부서 목록 조회
+ * GET /api/admin/departments
+ */
+const listDepartments = async (req, res) => {
+  try {
+    const departments = await db.Department.findAll({
+      order: [['name', 'ASC']]
+    });
+
+    // 각 부서별 실제 참여자 수 추가
+    const departmentsWithStats = await Promise.all(departments.map(async (dept) => {
+      const actualUsers = await db.User.count({
+        where: { department: dept.name, role: 'user' }
+      });
+
+      return {
+        ...dept.toJSON(),
+        actual_users: actualUsers
+      };
+    }));
+
+    res.json({
+      success: true,
+      departments: departmentsWithStats
+    });
+
+  } catch (error) {
+    console.error('부서 목록 조회 에러:', error);
+    res.status(500).json({
+      error: '부서 목록 조회에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * 부서 생성
+ * POST /api/admin/departments
+ */
+const createDepartment = async (req, res) => {
+  try {
+    const { name, total_members, description } = req.body;
+
+    if (!name || !total_members) {
+      return res.status(400).json({
+        error: '부서명과 총 인원이 필요합니다'
+      });
+    }
+
+    // 중복 확인
+    const existing = await db.Department.findOne({
+      where: { name }
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        error: '이미 존재하는 부서명입니다'
+      });
+    }
+
+    const department = await db.Department.create({
+      name,
+      total_members,
+      description
+    });
+
+    res.status(201).json({
+      success: true,
+      department
+    });
+
+  } catch (error) {
+    console.error('부서 생성 에러:', error);
+    res.status(500).json({
+      error: '부서 생성에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * 부서 수정
+ * PUT /api/admin/departments/:id
+ */
+const updateDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, total_members, description } = req.body;
+
+    const department = await db.Department.findByPk(id);
+    if (!department) {
+      return res.status(404).json({
+        error: '부서를 찾을 수 없습니다'
+      });
+    }
+
+    // 이름이 변경되는 경우 중복 확인
+    if (name && name !== department.name) {
+      const existing = await db.Department.findOne({
+        where: { name, id: { [Op.ne]: id } }
+      });
+
+      if (existing) {
+        return res.status(400).json({
+          error: '이미 존재하는 부서명입니다'
+        });
+      }
+    }
+
+    await department.update({
+      name: name || department.name,
+      total_members: total_members !== undefined ? total_members : department.total_members,
+      description: description !== undefined ? description : department.description
+    });
+
+    res.json({
+      success: true,
+      department
+    });
+
+  } catch (error) {
+    console.error('부서 수정 에러:', error);
+    res.status(500).json({
+      error: '부서 수정에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * 부서 삭제
+ * DELETE /api/admin/departments/:id
+ */
+const deleteDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const department = await db.Department.findByPk(id);
+    if (!department) {
+      return res.status(404).json({
+        error: '부서를 찾을 수 없습니다'
+      });
+    }
+
+    // 해당 부서에 속한 사용자가 있는지 확인
+    const userCount = await db.User.count({
+      where: { department: department.name }
+    });
+
+    if (userCount > 0) {
+      return res.status(400).json({
+        error: '해당 부서에 속한 사용자가 있어 삭제할 수 없습니다'
+      });
+    }
+
+    await department.destroy();
+
+    res.json({
+      success: true,
+      message: '부서가 삭제되었습니다'
+    });
+
+  } catch (error) {
+    console.error('부서 삭제 에러:', error);
+    res.status(500).json({
+      error: '부서 삭제에 실패했습니다'
     });
   }
 };
@@ -1259,6 +1501,118 @@ const updateSsoSetting = async (req, res) => {
 };
 
 /**
+ * ==========================================
+ * 관리자 행번 관리
+ * ==========================================
+ */
+
+/**
+ * 관리자 행번 목록 조회
+ * GET /api/admin/admin-employees
+ */
+const listAdminEmployees = async (req, res) => {
+  try {
+    const admins = await db.AdminEmployee.findAll({
+      order: [['is_primary', 'DESC'], ['created_at', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      admins
+    });
+
+  } catch (error) {
+    console.error('관리자 목록 조회 에러:', error);
+    res.status(500).json({
+      error: '관리자 목록 조회에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * 관리자 행번 추가
+ * POST /api/admin/admin-employees
+ */
+const addAdminEmployee = async (req, res) => {
+  try {
+    const { employee_id, name } = req.body;
+    const added_by = req.user?.employee_id || 'unknown';
+
+    if (!employee_id) {
+      return res.status(400).json({
+        error: '행번이 필요합니다'
+      });
+    }
+
+    // 중복 확인
+    const existing = await db.AdminEmployee.findOne({
+      where: { employee_id }
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        error: '이미 등록된 관리자 행번입니다'
+      });
+    }
+
+    const admin = await db.AdminEmployee.create({
+      employee_id,
+      name: name || null,
+      added_by,
+      is_primary: false
+    });
+
+    res.status(201).json({
+      success: true,
+      admin
+    });
+
+  } catch (error) {
+    console.error('관리자 추가 에러:', error);
+    res.status(500).json({
+      error: '관리자 추가에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * 관리자 행번 삭제
+ * DELETE /api/admin/admin-employees/:id
+ */
+const deleteAdminEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const admin = await db.AdminEmployee.findByPk(id);
+    if (!admin) {
+      return res.status(404).json({
+        error: '관리자를 찾을 수 없습니다'
+      });
+    }
+
+    // 기본 관리자는 삭제 불가
+    if (admin.is_primary) {
+      return res.status(400).json({
+        error: '기본 관리자는 삭제할 수 없습니다'
+      });
+    }
+
+    await admin.destroy();
+
+    res.json({
+      success: true,
+      message: '관리자가 삭제되었습니다'
+    });
+
+  } catch (error) {
+    console.error('관리자 삭제 에러:', error);
+    res.status(500).json({
+      error: '관리자 삭제에 실패했습니다'
+    });
+  }
+};
+
+/**
  * GET /api/admin/sso/status
  * SSO 시스템 상태 확인
  */
@@ -1318,11 +1672,23 @@ module.exports = {
   // LuckyDraw
   drawWinners,
   getWinners,
+  getLuckyDrawStatsByEvent,
   claimPrize,
+
+  // 부서 관리
+  listDepartments,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
 
   // SSO 설정 관리
   getSsoSettings,
   getSsoSetting,
   updateSsoSetting,
-  getSsoStatus
+  getSsoStatus,
+
+  // 관리자 행번 관리
+  listAdminEmployees,
+  addAdminEmployee,
+  deleteAdminEmployee
 };

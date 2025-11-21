@@ -41,7 +41,7 @@ async function example2_IdPasswordAuth() {
   try {
     const user = await doSwingAuthenticate({
       type: 'idpw',
-      employeeNo: '12345678',
+      employeeNo: '19200617',
       password: 'mypassword123'
     });
 

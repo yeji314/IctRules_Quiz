@@ -44,7 +44,7 @@ const config = {
       departmentNo: '1234567',
       departmentName: 'ICT본부',
       employeeName: '테스트사용자',
-      employeeNo: '12345678',
+      employeeNo: '19200617',
       employeePositionName: '부장'
     }
   }

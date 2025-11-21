@@ -3,6 +3,27 @@ const { doSwingAuthenticate } = require('../../swing-auth');
 const db = require('../models');
 const bcrypt = require('bcryptjs');
 
+// 기본 관리자 행번 (DB 조회 실패 시 fallback)
+const DEFAULT_ADMIN_EMPLOYEE_IDS = ['19200617'];
+
+/**
+ * DB에서 관리자 행번 목록 조회
+ */
+async function getAdminEmployeeIds() {
+  try {
+    const admins = await db.AdminEmployee.findAll({
+      attributes: ['employee_id']
+    });
+    if (admins.length > 0) {
+      return admins.map(a => a.employee_id);
+    }
+    return DEFAULT_ADMIN_EMPLOYEE_IDS;
+  } catch (error) {
+    console.error('관리자 목록 조회 실패:', error.message);
+    return DEFAULT_ADMIN_EMPLOYEE_IDS;
+  }
+}
+
 /**
  * 로그인
  * POST /api/auth/login
@@ -73,6 +94,11 @@ const login = async (req, res) => {
       where: { employee_id: swingUser.employeeNo }
     });
 
+    // 관리자 여부 확인 (DB에서 조회)
+    const adminEmployeeIds = await getAdminEmployeeIds();
+    const isAdminUser = adminEmployeeIds.includes(swingUser.employeeNo);
+    const userRole = isAdminUser ? 'admin' : 'user';
+
     if (!user) {
       // 사용자 자동 생성
       user = await db.User.create({
@@ -81,7 +107,7 @@ const login = async (req, res) => {
         name: swingUser.employeeName || swingUser.employeeNo,
         department: swingUser.departmentName || swingUser.deptName || '',
         email: swingUser.companyEmail || swingUser.emailAddress || '',
-        role: 'user',
+        role: userRole,
         login_method: 'swing_sso'
       });
     } else {
@@ -89,7 +115,8 @@ const login = async (req, res) => {
       await user.update({
         name: swingUser.employeeName || user.name,
         department: swingUser.departmentName || swingUser.deptName || user.department,
-        email: swingUser.companyEmail || swingUser.emailAddress || user.email
+        email: swingUser.companyEmail || swingUser.emailAddress || user.email,
+        role: userRole
       });
     }
 
@@ -97,7 +124,7 @@ const login = async (req, res) => {
     const token = generateToken({
       id: user.id,
       employee_id: user.employee_id,
-      role: user.role
+      role: userRole
     });
 
     // 응답
@@ -110,7 +137,7 @@ const login = async (req, res) => {
         name: user.name,
         department: user.department,
         email: user.email,
-        role: user.role
+        role: userRole
       },
       login_method: 'swing_sso'
     });
@@ -201,6 +228,11 @@ const swingSsoTokenLogin = async (req, res) => {
       where: { employee_id: swingUser.employeeNo }
     });
 
+    // 관리자 여부 확인 (DB에서 조회)
+    const adminEmployeeIds = await getAdminEmployeeIds();
+    const isAdminUser = adminEmployeeIds.includes(swingUser.employeeNo);
+    const userRole = isAdminUser ? 'admin' : 'user';
+
     if (!user) {
       // 사용자 자동 생성
       user = await db.User.create({
@@ -209,7 +241,7 @@ const swingSsoTokenLogin = async (req, res) => {
         name: swingUser.employeeName || swingUser.employeeNo,
         department: swingUser.departmentName || swingUser.deptName || '',
         email: swingUser.companyEmail || swingUser.emailAddress || '',
-        role: 'user',
+        role: userRole,
         login_method: 'swing_sso'
       });
     } else {
@@ -217,7 +249,8 @@ const swingSsoTokenLogin = async (req, res) => {
       await user.update({
         name: swingUser.employeeName || user.name,
         department: swingUser.departmentName || swingUser.deptName || user.department,
-        email: swingUser.companyEmail || swingUser.emailAddress || user.email
+        email: swingUser.companyEmail || swingUser.emailAddress || user.email,
+        role: userRole
       });
     }
 
@@ -225,7 +258,7 @@ const swingSsoTokenLogin = async (req, res) => {
     const token = generateToken({
       id: user.id,
       employee_id: user.employee_id,
-      role: user.role
+      role: userRole
     });
 
     // 응답
@@ -238,7 +271,7 @@ const swingSsoTokenLogin = async (req, res) => {
         name: user.name,
         department: user.department,
         email: user.email,
-        role: user.role
+        role: userRole
       },
       login_method: 'swing_sso'
     });
@@ -278,6 +311,11 @@ const swingIdPasswordLogin = async (req, res) => {
       where: { employee_id: swingUser.employeeNo }
     });
 
+    // 관리자 여부 확인 (DB에서 조회)
+    const adminEmployeeIds = await getAdminEmployeeIds();
+    const isAdminUser = adminEmployeeIds.includes(swingUser.employeeNo);
+    const userRole = isAdminUser ? 'admin' : 'user';
+
     if (!user) {
       // 사용자 자동 생성
       user = await db.User.create({
@@ -286,7 +324,7 @@ const swingIdPasswordLogin = async (req, res) => {
         name: swingUser.employeeName || swingUser.employeeNo,
         department: swingUser.departmentName || swingUser.deptName || '',
         email: swingUser.companyEmail || swingUser.emailAddress || '',
-        role: 'user',
+        role: userRole,
         login_method: 'swing_sso'
       });
     } else {
@@ -294,7 +332,8 @@ const swingIdPasswordLogin = async (req, res) => {
       await user.update({
         name: swingUser.employeeName || user.name,
         department: swingUser.departmentName || swingUser.deptName || user.department,
-        email: swingUser.companyEmail || swingUser.emailAddress || user.email
+        email: swingUser.companyEmail || swingUser.emailAddress || user.email,
+        role: userRole
       });
     }
 
@@ -302,7 +341,7 @@ const swingIdPasswordLogin = async (req, res) => {
     const token = generateToken({
       id: user.id,
       employee_id: user.employee_id,
-      role: user.role
+      role: userRole
     });
 
     // 응답
@@ -315,7 +354,7 @@ const swingIdPasswordLogin = async (req, res) => {
         name: user.name,
         department: user.department,
         email: user.email,
-        role: user.role
+        role: userRole
       },
       login_method: 'swing_sso'
     });
