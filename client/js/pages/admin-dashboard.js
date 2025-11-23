@@ -344,12 +344,16 @@ function createEventCard(event) {
   const statusClass = event.is_active ? 'active' : 'inactive';
   const statusText = event.is_active ? '활성' : '비활성';
 
+  // Sequelize underscored: true 옵션으로 인해 camelCase 또는 snake_case 모두 처리
+  const startDate = event.start_date || event.startDate;
+  const endDate = event.end_date || event.endDate;
+
   card.innerHTML = `
     <div class="event-info">
       <div class="event-title">${event.title}</div>
       <div class="event-meta">
         <span>${event.year_month}</span>
-        <span>${formatDate(event.start_date)} ~ ${formatDate(event.end_date)}</span>
+        <span>${formatDate(startDate)} ~ ${formatDate(endDate)}</span>
         <span>문제 ${event.stats?.totalQuestions || 0}개</span>
         <span>참여자 ${event.stats?.participants || 0}명</span>
       </div>
@@ -490,10 +494,26 @@ function openEventModal(event = null) {
   $('#eventModalTitle').textContent = event ? '이벤트 수정' : '이벤트 생성';
   $('#eventTitle').value = event ? event.title : '';
   $('#eventYearMonth').value = event ? event.year_month : '';
-  $('#eventStartDate').value = event ? event.start_date : '';
-  $('#eventEndDate').value = event ? event.end_date : '';
-  $('#eventMaxWinners').value = event ? (event.max_winners || 10) : 10;
-  $('#eventIsActive').checked = event ? event.is_active : true;
+  
+  // Sequelize underscored: true 옵션으로 인해 camelCase 또는 snake_case 모두 처리
+  const startDate = event ? (event.start_date || event.startDate) : '';
+  const endDate = event ? (event.end_date || event.endDate) : '';
+  const maxWinners = event ? (event.max_winners || event.maxWinners || 10) : 10;
+  const isActive = event ? (event.is_active !== undefined ? event.is_active : event.isActive) : true;
+  
+  // Date 객체를 YYYY-MM-DD 형식으로 변환
+  $('#eventStartDate').value = startDate ? formatDateForInput(startDate) : '';
+  $('#eventEndDate').value = endDate ? formatDateForInput(endDate) : '';
+  $('#eventMaxWinners').value = maxWinners;
+  $('#eventIsActive').checked = isActive !== undefined ? isActive : true;
+
+  console.log('[openEventModal] 이벤트 데이터:', {
+    event,
+    startDate,
+    endDate,
+    formattedStartDate: $('#eventStartDate').value,
+    formattedEndDate: $('#eventEndDate').value
+  });
 
   eventModal.showModal();
   playSound('click');
@@ -1288,6 +1308,34 @@ function handleLogout() {
     playSound('click');
     authLogout();
   }
+}
+
+/**
+ * 날짜를 input[type="date"] 형식으로 변환 (YYYY-MM-DD)
+ */
+function formatDateForInput(dateValue) {
+  if (!dateValue) return '';
+  
+  let date;
+  if (dateValue instanceof Date) {
+    date = dateValue;
+  } else if (typeof dateValue === 'string') {
+    date = new Date(dateValue);
+  } else {
+    return '';
+  }
+  
+  // Invalid Date 체크
+  if (isNaN(date.getTime())) {
+    return '';
+  }
+  
+  // YYYY-MM-DD 형식으로 변환
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
 }
 
 // 초기화 실행

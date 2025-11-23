@@ -171,6 +171,9 @@ function loadQuestion() {
     console.log('[Quiz] ✅ 일반 문제 - 안내 말풍선');
   }
 
+  // 말풍선 크기 즉시 조정 (새 문제 로드 시)
+  adjustSpeechBubbleSize();
+
   // NEXT 버튼 초기화 (숨김 상태로 시작)
   nextQuestionBtn.classList.add('hidden');
 
@@ -248,7 +251,9 @@ function renderDragDrop(question) {
 
   // 자석 효과를 위한 변수
   let magnetThreshold = 100; // 자석 효과가 시작되는 거리 (픽셀)
+  let hoverThreshold = 80; // 🔥 마우스 근접 시 흔들림 효과 거리 (픽셀)
   let currentDraggingItem = null;
+  let currentDraggingElement = null;
 
   targetEl.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -310,24 +315,62 @@ function renderDragDrop(question) {
     itemEl.draggable = true;
     itemEl.dataset.value = item;
 
+    // 🔥 정답 패널에만 마우스 근접 감지 추가
+    if (item === correct_answer) {
+      console.log('[DragDrop] 정답 패널 설정:', item);
+      
+      // 마우스 움직임 감지 (전역)
+      const handleMouseMove = (e) => {
+        const rect = itemEl.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        const distance = Math.sqrt(
+          Math.pow(e.clientX - centerX, 2) + 
+          Math.pow(e.clientY - centerY, 2)
+        );
+        
+        // 🔥 마우스가 가까우면 흔들림 효과
+        if (distance < hoverThreshold) {
+          itemEl.classList.add('hover-shake');
+          // console.log('[DragDrop] 마우스 근접 - 거리:', Math.round(distance));
+        } else {
+          itemEl.classList.remove('hover-shake');
+        }
+      };
+      
+      // 컨테이너에 마우스 이벤트 추가
+      container.addEventListener('mousemove', handleMouseMove);
+      
+      // 정리 함수 저장 (나중에 제거용)
+      itemEl._mouseMoveHandler = handleMouseMove;
+    }
+
     // 드래그 이벤트
     itemEl.addEventListener('dragstart', (e) => {
       itemEl.classList.add('dragging');
+      itemEl.classList.remove('hover-shake'); // 🔥 드래그 시작 시 hover 효과 제거
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', item);
       currentDraggingItem = item;
+      currentDraggingElement = itemEl;
 
       // 정답 아이템이면 힌트 효과
       if (item === correct_answer) {
         itemEl.classList.add('correct-hint');
+        console.log('[DragDrop] 정답 패널 드래그 시작:', item);
       }
     });
 
     itemEl.addEventListener('dragend', () => {
       itemEl.classList.remove('dragging');
       itemEl.classList.remove('correct-hint');
+      itemEl.classList.remove('hover-shake'); // 🔥 드래그 종료 시 hover 효과 제거
       currentDraggingItem = null;
+      currentDraggingElement = null;
       targetEl.classList.remove('magnetic-pull');
+      
+      console.log('[DragDrop] 드래그 종료');
     });
 
     itemsContainer.appendChild(itemEl);
@@ -447,6 +490,11 @@ function renderTyping(question) {
 
     const progress = Math.min(100, Math.floor((currentAnswer.length / correct_answer.length) * 100));
     progressBar.style.width = progress + '%';
+
+    // 이미 정답을 맞춘 경우 버튼 상태 변경 금지
+    if (answersArea.dataset.isCorrect === 'true') {
+      return;
+    }
 
     // 입력 중이면 제출 버튼 표시
     if (currentAnswer.trim().length > 0) {
@@ -604,7 +652,7 @@ function renderOX(question) {
     // 정답 선택 시: "정답입니다!"
     // 오답 선택 시: "흠..."
     if (option === correctAnswer) {
-      typeText('정답입니다!', 80);
+      typeText('좋은 생각이에요', 80);
     } else {
       typeText('흠...', 120);
     }
@@ -688,6 +736,11 @@ function renderOX(question) {
  */
 async function handleSubmit() {
   if (!currentAnswer) {
+    return;
+  }
+
+  // 이미 정답을 맞춘 경우 재제출 방지
+  if (answersArea.dataset.isCorrect === 'true') {
     return;
   }
 
@@ -1132,11 +1185,144 @@ function typeWriterEffect(element, text, speed = 50) {
         if (element.contains(cursor)) {
           element.removeChild(cursor);
         }
+        // 타이핑 완료 후 말풍선 크기 조정
+        adjustSpeechBubbleSize();
       }, 500);
     }
   }
 
   type();
+}
+
+/**
+ * 말풍선 크기를 텍스트 내용에 맞게 동적으로 조정
+ * 픽셀 아트 테두리를 정확하게 유지
+ */
+function adjustSpeechBubbleSize() {
+  const bubble = document.querySelector('.speech-bubble');
+  const textElement = document.getElementById('explanationText');
+  const svgElement = bubble?.querySelector('.speech-bubble-svg');
+  
+  if (!bubble || !textElement || !svgElement) return;
+
+  // 🔥 완전히 초기화: SVG 크기를 최소로 리셋
+  svgElement.setAttribute('height', '60');
+  svgElement.setAttribute('viewBox', '0 0 320 60');
+  
+  // 🔥 텍스트 엘리먼트 초기화
+  textElement.style.height = 'auto';
+  textElement.style.maxHeight = 'none';
+  textElement.style.overflow = 'visible';
+  
+  // 🔥 강제 리플로우로 브라우저에게 레이아웃 재계산 요청
+  void textElement.offsetHeight;
+  
+  // 실제 텍스트 높이 측정 (약간의 딜레이로 정확한 측정)
+  setTimeout(() => {
+    // 현재 텍스트의 실제 높이 측정
+    const textHeight = textElement.scrollHeight;
+    
+    console.log('[adjustSpeechBubbleSize] 측정된 textHeight:', textHeight);
+    
+    // 최소 높이 설정 (기존의 절반)
+    const minTextHeight = 20; // 40px → 20px로 축소
+    const topPadding = 12; // 패딩 더 축소
+    const bottomPadding = 12; // 패딩 더 축소
+    
+    // 실제 필요한 텍스트 영역 높이 (최소값 보장)
+    const actualTextHeight = Math.max(minTextHeight, textHeight);
+    
+    // 메인 사각형 높이 = 텍스트 높이 + 최소 여백
+    const contentHeight = actualTextHeight + topPadding + bottomPadding;
+    
+    // 전체 SVG 높이 = 상단(10) + 컨텐츠 + 하단(10) + 꼬리(24)
+    const svgHeight = 10 + contentHeight + 10 + 24;
+    const svgWidth = 320;
+    
+    console.log('[adjustSpeechBubbleSize] 계산된 svgHeight:', svgHeight, '(contentHeight:', contentHeight, ')');
+    
+    // SVG viewBox와 height 설정
+    svgElement.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+    svgElement.setAttribute('height', svgHeight);
+    svgElement.setAttribute('width', svgWidth);
+    
+    // 기존 모든 rect 제거하고 새로 그리기
+    svgElement.innerHTML = '';
+    
+    // 메인 사각형 본체
+    const mainRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    mainRect.setAttribute('x', '20');
+    mainRect.setAttribute('y', '10');
+    mainRect.setAttribute('width', '280');
+    mainRect.setAttribute('height', contentHeight);
+    mainRect.setAttribute('fill', '#FFF');
+    mainRect.setAttribute('stroke', 'none');
+    svgElement.appendChild(mainRect);
+    
+    // 픽셀 테두리 - 상단
+    addRect(svgElement, 24, 6, 272, 4, '#000');
+    
+    // 픽셀 테두리 - 좌측 상단 모서리
+    addRect(svgElement, 20, 10, 4, 4, '#000');
+    addRect(svgElement, 16, 14, 4, 4, '#000');
+    addRect(svgElement, 12, 18, 4, contentHeight - 14, '#000');
+    
+    // 좌측 하단 모서리
+    const leftBottomY = 10 + contentHeight;
+    addRect(svgElement, 16, leftBottomY - 4, 4, 4, '#000');
+    addRect(svgElement, 20, leftBottomY, 4, 4, '#000');
+    
+    // 하단 테두리 (꼬리 왼쪽 부분)
+    const bottomY = leftBottomY + 4;
+    addRect(svgElement, 24, bottomY, 96, 4, '#000');
+    
+    // 픽셀 테두리 - 우측 상단 모서리
+    addRect(svgElement, 296, 10, 4, 4, '#000');
+    addRect(svgElement, 300, 14, 4, 4, '#000');
+    addRect(svgElement, 304, 18, 4, contentHeight - 14, '#000');
+    
+    // 우측 하단 모서리
+    addRect(svgElement, 300, leftBottomY, 4, 4, '#000');
+    addRect(svgElement, 304, leftBottomY - 4, 4, 4, '#000');
+    
+    // 하단 테두리 (꼬리 오른쪽 부분)
+    addRect(svgElement, 120, bottomY, 180, 4, '#000');
+    
+    // 꼬리 부분 그리기
+    const tailY = bottomY;
+    
+    // 꼬리 - 레벨 1 (최상단)
+    addRect(svgElement, 24, tailY, 24, 4, '#FFF'); // 흰색 배경
+    addRect(svgElement, 20, tailY + 4, 4, 8, '#000');
+    addRect(svgElement, 24, tailY + 4, 16, 8, '#FFF');
+    addRect(svgElement, 40, tailY + 4, 4, 4, '#000');
+    
+    // 꼬리 - 레벨 2
+    addRect(svgElement, 16, tailY + 12, 4, 4, '#000');
+    addRect(svgElement, 20, tailY + 12, 12, 4, '#FFF');
+    addRect(svgElement, 32, tailY + 12, 4, 4, '#000');
+    
+    // 꼬리 - 레벨 3
+    addRect(svgElement, 12, tailY + 16, 4, 4, '#000');
+    addRect(svgElement, 16, tailY + 16, 8, 4, '#FFF');
+    addRect(svgElement, 24, tailY + 16, 4, 4, '#000');
+    
+    // 꼬리 - 레벨 4 (최하단)
+    addRect(svgElement, 8, tailY + 20, 16, 4, '#000');
+  }, 100); // 100ms 딜레이로 충분한 시간 확보
+}
+
+/**
+ * SVG rect 요소를 추가하는 헬퍼 함수
+ */
+function addRect(svg, x, y, width, height, fill) {
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x);
+  rect.setAttribute('y', y);
+  rect.setAttribute('width', width);
+  rect.setAttribute('height', height);
+  rect.setAttribute('fill', fill);
+  svg.appendChild(rect);
 }
 
 /**

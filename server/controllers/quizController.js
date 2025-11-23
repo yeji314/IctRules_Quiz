@@ -48,6 +48,17 @@ const startQuizSession = async (req, res) => {
       });
     }
 
+    // 이벤트 만료 확인 (end_date의 마지막 시간까지 유효)
+    const now = new Date();
+    const endDate = new Date(event.end_date);
+    endDate.setHours(23, 59, 59, 999); // 해당 날짜의 끝으로 설정
+    
+    if (now > endDate) {
+      return res.status(400).json({
+        error: '만료된 이벤트입니다'
+      });
+    }
+
     // 완료한 세션 수 확인
     const completedCount = await db.QuizSession.count({
       where: {

@@ -431,7 +431,11 @@ class QuizService {
       let buttonText, buttonEnabled;
       let status;
       const now = new Date();
-      const isExpired = now > new Date(event.end_date);
+      
+      // 종료일 비교: end_date의 마지막 시간(23:59:59)까지 유효
+      const endDate = new Date(event.end_date);
+      endDate.setHours(23, 59, 59, 999); // 해당 날짜의 끝으로 설정
+      const isExpired = now > endDate;
 
       if (isExpired) {
         status = 'completed';

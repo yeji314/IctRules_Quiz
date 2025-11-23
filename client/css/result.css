@@ -193,6 +193,75 @@ body {
   .character-sprite {
     font-size: 80px;
   }
+
+  .result-container {
+    padding: 60px 20px;
+  }
+
+  .result-title {
+    font-size: 32px;
+    margin-bottom: 40px;
+  }
+
+  .score-container {
+    padding: 30px 20px;
+  }
+
+  .result-stat {
+    padding: 15px;
+  }
+
+  .stat-label {
+    font-size: 14px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .result-container {
+    padding: 40px 15px;
+  }
+
+  .result-title {
+    font-size: 24px;
+    margin-bottom: 30px;
+  }
+
+  .score-value {
+    font-size: 36px;
+  }
+
+  .score-label {
+    font-size: 14px;
+  }
+
+  .character-sprite {
+    font-size: 60px;
+  }
+
+  .result-stat {
+    padding: 12px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .result-actions {
+    gap: 12px;
+  }
+
+  .result-actions button {
+    font-size: 14px;
+    padding: 12px 20px;
+  }
 }
 
 /* 폭죽 파티클 애니메이션 */

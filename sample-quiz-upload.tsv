@@ -1,0 +1,12 @@
+question_type	category	question_text	question_data	explanation
+drag_and_drop	normal	다음 보안 용어를 올바르게 연결하세요	{"pairs":[{"left":"VPN","right":"가상사설망"},{"left":"DLP","right":"데이터유출방지"},{"left":"MFA","right":"다중인증"}]}	VPN은 가상사설망(Virtual Private Network)의 약자입니다
+typing	normal	정보보호 최고책임자의 영문 약어를 입력하세요	{"correct_answer":"CISO"}	CISO는 Chief Information Security Officer의 약자입니다
+fill_in_blank	normal	개인정보는 수집 목적 달성 후 언제 파기해야 합니까?	{"options":["30일 이내","60일 이내","90일 이내","즉시"],"correct_answer":"즉시"}	개인정보는 목적 달성 즉시 파기가 원칙입니다
+ox	normal	사내 메일을 개인 메일로 전달해도 된다	{"correct_answer":"X"}	사내 정보는 개인 메일로 전달할 수 없습니다
+best_action	normal	노트북을 분실했을 때 가장 먼저 해야 할 일은?	{"options":["경찰 신고","보안팀 신고","비밀번호 변경","재구매 요청"],"correct_answer":"보안팀 신고"}	노트북 분실 시 즉시 보안팀에 신고해야 합니다
+drag_and_drop	normal	다음 약어와 풀이를 연결하세요	{"pairs":[{"left":"ISMS","right":"정보보호관리체계"},{"left":"PIMS","right":"개인정보보호관리체계"}]}	ISMS는 정보보호, PIMS는 개인정보보호 관리체계입니다
+typing	normal	랜섬웨어의 한글 명칭을 입력하세요	{"correct_answer":"몸값요구형악성코드"}	랜섬웨어는 데이터를 암호화하고 금전을 요구하는 악성코드입니다
+fill_in_blank	normal	비밀번호는 최소 ___자리 이상 설정해야 합니다	{"options":["6자리","8자리","10자리","12자리"],"correct_answer":"8자리"}	안전한 비밀번호는 최소 8자리 이상 권장됩니다
+ox	normal	공용 PC에서 자동 로그인을 사용해도 안전하다	{"correct_answer":"X"}	공용 PC에서는 자동 로그인을 사용하면 안 됩니다
+best_action	normal	의심스러운 메일을 받았을 때 가장 적절한 행동은?	{"options":["즉시 삭제","첨부파일 열어보기","보안팀에 신고","회신하기"],"correct_answer":"보안팀에 신고"}	의심 메일은 보안팀에 신고하는 것이 가장 안전합니다
+
