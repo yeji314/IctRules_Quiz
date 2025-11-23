@@ -23,10 +23,10 @@ body {
 
 .title-text {
   display: flex;
-  gap: 20px;
+  flex-direction: column;
+  gap: 10px;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
 }
 
 .title-ict {
@@ -34,6 +34,7 @@ body {
   font-size: clamp(36px, 6vw, 82px);
   color: #becee2;
   letter-spacing: 4px;
+  white-space: nowrap;
   text-shadow:
     -6px -6px 0 #000,
     6px -6px 0 #000,
@@ -50,6 +51,7 @@ body {
   font-size: clamp(36px, 6vw, 82px);
   color: #d1d871;
   letter-spacing: 4px;
+  white-space: nowrap;
   text-shadow:
     -6px -6px 0 #000,
     6px -6px 0 #000,
@@ -205,7 +207,7 @@ body {
 /* 캐릭터 이미지 - 4배 크기 */
 .character-img {
   height: auto;
-  width: 10%;; /* 원하는 크기 지정 */
+  width: 15%; /* 원하는 크기 지정 */
   display: block;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
@@ -238,6 +240,32 @@ body {
   font-size: 12px;
   color: #000000;
   line-height: 1.7;
+}
+
+/* 빛나는 텍스트 효과 */
+.glow-text {
+  font-weight: bold;
+  color: #ff6b35;
+  text-shadow: 
+    0 0 10px rgba(255, 107, 53, 0.8),
+    0 0 20px rgba(255, 107, 53, 0.6),
+    0 0 30px rgba(255, 107, 53, 0.4);
+  animation: glow-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    text-shadow: 
+      0 0 10px rgba(255, 107, 53, 0.8),
+      0 0 20px rgba(255, 107, 53, 0.6),
+      0 0 30px rgba(255, 107, 53, 0.4);
+  }
+  50% {
+    text-shadow: 
+      0 0 15px rgba(255, 107, 53, 1),
+      0 0 30px rgba(255, 107, 53, 0.8),
+      0 0 45px rgba(255, 107, 53, 0.6);
+  }
 }
 
 /* 나무판자 퀴즈 목록 - 3x4 그리드 */
@@ -666,7 +694,7 @@ body {
   position: fixed;
   bottom: 190px;
   left: 0;
-  width: 220px;
+  width: 15%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -705,7 +733,7 @@ body {
 }
 
 .sol2-gif {
-  width: 160px;
+  width: 15%;
   height: auto;
   display: block;
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.25));
@@ -755,7 +783,7 @@ body > .tree-lineup .speech-bubble {
   }
 
   .sol2-gif {
-    width: 140px;
+    width: 15%;
   }
 }
 
@@ -771,6 +799,6 @@ body > .tree-lineup .speech-bubble {
   }
 
   .sol2-gif {
-    width: 110px;
+    width: 15%;
   }
 }

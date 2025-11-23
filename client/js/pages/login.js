@@ -17,13 +17,29 @@ const errorMessage = $('#errorMessage');
  * 초기화
  */
 function init() {
-  // 이미 로그인된 경우 퀴즈 목록으로 리다이렉트
+  // 1. URL 파라미터 확인 (SSO 인증 처리)
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Swing SSO 토큰이 있는 경우 자동 로그인
+  const ssoToken = urlParams.get('gw_sso_auth_code');
+  if (ssoToken) {
+    handleSsoLogin(ssoToken);
+    return;
+  }
+
+  // SSO 에러 메시지 표시
+  const errorParam = urlParams.get('error');
+  if (errorParam) {
+    showError(decodeURIComponent(errorParam));
+  }
+
+  // 2. 이미 로그인된 경우 퀴즈 목록으로 리다이렉트
   if (isLoggedIn()) {
     window.location.href = '/pages/quiz-list.html';
     return;
   }
 
-  // 이벤트 리스너 등록
+  // 3. 이벤트 리스너 등록
   loginForm.addEventListener('submit', handleLogin);
 
   // 엔터키로 로그인
@@ -39,6 +55,66 @@ function init() {
 
   // 클릭 효과음
   loginButton.addEventListener('mousedown', () => playSound('click'));
+}
+
+/**
+ * Swing SSO 토큰으로 자동 로그인
+ */
+async function handleSsoLogin(ssoToken) {
+  try {
+    console.log('[SSO] Swing SSO 토큰 인증 시작');
+    
+    // 로딩 상태 표시
+    setLoading(true);
+    showSuccess('SSO 로그인 처리 중...');
+    
+    // 기존 API 호출
+    const response = await fetch('/api/auth/swing/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ sso_token: ssoToken })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      console.log('[SSO] 서버 응답:', data);
+      console.log('[SSO] 받은 토큰:', data.token);
+      
+      // 토큰과 사용자 정보 저장
+      setToken(data.token);
+      setUser(data.user);
+      
+      // 저장 확인
+      console.log('[SSO] 저장된 토큰:', localStorage.getItem('token'));
+      console.log('[SSO] 저장된 사용자:', localStorage.getItem('user'));
+      
+      // 성공 메시지 표시
+      showSuccess(`환영합니다, ${data.user.name}님! (SSO 로그인)`);
+      playSound('correct');
+      
+      // URL에서 SSO 토큰 제거 (보안)
+      window.history.replaceState({}, document.title, '/pages/index.html');
+      
+      // 퀴즈 목록으로 이동
+      setTimeout(() => {
+        window.location.href = '/pages/quiz-list.html';
+      }, 800);
+    } else {
+      throw new Error(data.error || 'SSO 인증에 실패했습니다');
+    }
+    
+  } catch (error) {
+    console.error('[SSO] 인증 실패:', error);
+    showError(error.message || 'SSO 로그인에 실패했습니다');
+    playSound('wrong');
+    setLoading(false);
+    
+    // URL 정리
+    window.history.replaceState({}, document.title, '/pages/index.html');
+  }
 }
 
 /**

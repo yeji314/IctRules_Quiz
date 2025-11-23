@@ -27,8 +27,8 @@ async function init() {
   if (user) {
     userNameDisplay.textContent = `${user.name}님` || 'User';
 
-    // 관리자 버튼 표시 여부 확인 (행번 19200617)
-    if (user.employee_id === '19200617') {
+    // 관리자 버튼 표시 여부 확인 (role 기반)
+    if (user.role === 'admin') {
       adminGearBtn.style.display = 'block';
       adminGearBtn.addEventListener('mousedown', () => playSound('click'));
       adminGearBtn.addEventListener('click', handleAdminClick);

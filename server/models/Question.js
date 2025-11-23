@@ -16,9 +16,9 @@ module.exports = (sequelize) => {
       }
     },
     question_type: {
-      type: DataTypes.ENUM('drag_and_drop', 'typing', 'fill_in_blank', 'ox', 'find_error'),
+      type: DataTypes.ENUM('drag_and_drop', 'typing', 'fill_in_blank', 'ox', 'best_action'),
       allowNull: false,
-      comment: '문제 유형'
+      comment: '문제 유형: drag_and_drop(4지선다), typing, fill_in_blank(4지선다), ox, best_action(상황형 4지선다)'
     },
     category: {
       type: DataTypes.ENUM('normal', 'luckydraw'),

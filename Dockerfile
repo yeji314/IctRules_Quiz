@@ -8,6 +8,7 @@ WORKDIR /app
 # 패키지 파일 복사
 COPY server/package*.json ./server/
 COPY client/package*.json ./client/ 2>/dev/null || :
+COPY swing-auth/package*.json ./swing-auth/
 
 # 서버 의존성 설치
 WORKDIR /app/server
@@ -17,6 +18,10 @@ RUN npm ci --only=production && npm cache clean --force
 WORKDIR /app/client
 RUN npm ci --only=production 2>/dev/null || echo "No client dependencies" \
     && npm cache clean --force 2>/dev/null || true
+
+# Swing Auth 의존성 설치
+WORKDIR /app/swing-auth
+RUN npm ci --only=production && npm cache clean --force
 
 # Stage 2: Production stage
 FROM node:18-alpine AS production
@@ -36,11 +41,13 @@ WORKDIR /app
 # builder 스테이지에서 node_modules 복사
 COPY --from=builder --chown=nodejs:nodejs /app/server/node_modules ./server/node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/client/node_modules ./client/node_modules 2>/dev/null || :
+COPY --from=builder --chown=nodejs:nodejs /app/swing-auth/node_modules ./swing-auth/node_modules
 
 # 애플리케이션 소스 코드 복사
 COPY --chown=nodejs:nodejs server ./server
 COPY --chown=nodejs:nodejs client ./client
 COPY --chown=nodejs:nodejs images ./images
+COPY --chown=nodejs:nodejs swing-auth ./swing-auth
 
 # 데이터베이스 디렉토리 생성 및 권한 설정
 RUN mkdir -p /app/database && \

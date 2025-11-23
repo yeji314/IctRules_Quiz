@@ -154,9 +154,9 @@ function loadQuestion() {
 
   // LuckyDraw 문제인지 확인하고 말풍선 표시
   console.log('[Quiz loadQuestion] luckydraw_eligible:', currentSession.luckydraw_eligible);
-  console.log('[Quiz loadQuestion] question category:', question.category);
+  console.log('[Quiz loadQuestion] is_lucky_draw:', question.is_lucky_draw);
 
-  if (question.category === 'luckydraw') {
+  if (question.is_lucky_draw) {
     explanationText.textContent = '이번문제는 luckydraw문제입니다. 맞추면 선물 획득 기회가 있어요!';
     explanationBubble.classList.add('luckydraw-hint');
     console.log('[Quiz] ✅ LuckyDraw 말풍선 표시됨!');
@@ -196,17 +196,16 @@ function renderQuestion(question) {
       break;
     case 'fillblank':
     case 'fill_in_blank':
-      setAnswersType('type-fillblank');
-      renderFillBlank(question);
+      setAnswersType('type-multiple-choice');
+      renderMultipleChoice(question, 'fill_in_blank');
       break;
     case 'ox':
       setAnswersType('type-ox');
       renderOX(question);
       break;
-    case 'finderror':
-    case 'find_error':
-      setAnswersType('type-finderror');
-      renderFindError(question);
+    case 'best_action':
+      setAnswersType('type-multiple-choice');
+      renderMultipleChoice(question, 'best_action');
       break;
     default:
       answersArea.innerHTML = '<p>지원하지 않는 문제 타입입니다.</p>';
@@ -215,15 +214,14 @@ function renderQuestion(question) {
 
 /**
  * answers 영역 타입 클래스 관리 (레이아웃 전용)
- * @param {string|null} typeClass - 'type-dragdrop' | 'type-typing' | 'type-fillblank' | 'type-ox' | 'type-finderror'
+ * @param {string|null} typeClass - 'type-dragdrop' | 'type-multiple-choice' | 'type-typing' | 'type-ox'
  */
 function setAnswersType(typeClass) {
   const typeClasses = [
     'type-dragdrop',
+    'type-multiple-choice',
     'type-typing',
-    'type-fillblank',
     'type-ox',
-    'type-finderror',
   ];
 
   typeClasses.forEach((cls) => answersArea.classList.remove(cls));
@@ -234,10 +232,10 @@ function setAnswersType(typeClass) {
 }
 
 /**
- * 1. Drag & Drop 렌더링
+ * 1. Drag & Drop 렌더링 (자석 효과 포함)
  */
 function renderDragDrop(question) {
-  const { items, target_label, options } = question.question_data;
+  const { items, target_label, options, correct_answer } = question.question_data;
   const dragItems = items || options;
 
   const container = document.createElement('div');
@@ -248,18 +246,43 @@ function renderDragDrop(question) {
   targetEl.className = 'dragdrop-target';
   targetEl.textContent = target_label || '여기에 드래그하세요';
 
+  // 자석 효과를 위한 변수
+  let magnetThreshold = 100; // 자석 효과가 시작되는 거리 (픽셀)
+  let currentDraggingItem = null;
+
   targetEl.addEventListener('dragover', (e) => {
     e.preventDefault();
     targetEl.classList.add('drag-over');
+
+    // 자석 효과: 정답 아이템이 타겟에 가까우면 강조 표시
+    if (currentDraggingItem && currentDraggingItem === correct_answer) {
+      const rect = targetEl.getBoundingClientRect();
+      const x = e.clientX;
+      const y = e.clientY;
+
+      // 타겟 영역과의 거리 계산
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+
+      // 거리에 따라 자석 효과 강도 조절
+      if (distance < magnetThreshold) {
+        targetEl.classList.add('magnetic-pull');
+      } else {
+        targetEl.classList.remove('magnetic-pull');
+      }
+    }
   });
 
   targetEl.addEventListener('dragleave', () => {
     targetEl.classList.remove('drag-over');
+    targetEl.classList.remove('magnetic-pull');
   });
 
   targetEl.addEventListener('drop', (e) => {
     e.preventDefault();
     targetEl.classList.remove('drag-over');
+    targetEl.classList.remove('magnetic-pull');
 
     const value = e.dataTransfer.getData('text/plain');
     currentAnswer = value;
@@ -292,10 +315,19 @@ function renderDragDrop(question) {
       itemEl.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', item);
+      currentDraggingItem = item;
+
+      // 정답 아이템이면 힌트 효과
+      if (item === correct_answer) {
+        itemEl.classList.add('correct-hint');
+      }
     });
 
     itemEl.addEventListener('dragend', () => {
       itemEl.classList.remove('dragging');
+      itemEl.classList.remove('correct-hint');
+      currentDraggingItem = null;
+      targetEl.classList.remove('magnetic-pull');
     });
 
     itemsContainer.appendChild(itemEl);
@@ -303,6 +335,61 @@ function renderDragDrop(question) {
 
   container.appendChild(targetEl);
   container.appendChild(itemsContainer);
+  answersArea.appendChild(container);
+}
+
+/**
+ * 통합 4지선다 렌더링 (fill_in_blank, best_action)
+ */
+function renderMultipleChoice(question, type) {
+  const { options } = question.question_data;
+
+  const container = document.createElement('div');
+  container.className = 'multiple-choice-container';
+
+  // 선택지 레이블 (A, B, C, D)
+  const labels = ['A', 'B', 'C', 'D'];
+
+  options.forEach((option, index) => {
+    const optionEl = document.createElement('button');
+    optionEl.className = 'multiple-choice-option';
+    optionEl.dataset.value = option;
+    optionEl.type = 'button';
+    optionEl.tabIndex = 0;
+
+    // 레이블 추가
+    const labelEl = document.createElement('span');
+    labelEl.className = 'option-label';
+    labelEl.textContent = labels[index];
+
+    // 텍스트 추가
+    const textEl = document.createElement('span');
+    textEl.className = 'option-text';
+    textEl.textContent = option;
+
+    optionEl.appendChild(labelEl);
+    optionEl.appendChild(textEl);
+
+    optionEl.addEventListener('click', () => {
+      if (optionEl.disabled) return;
+
+      // 기존 선택 해제
+      container.querySelectorAll('.multiple-choice-option').forEach(el => {
+        el.classList.remove('selected');
+      });
+
+      // 새 선택
+      optionEl.classList.add('selected');
+      currentAnswer = option;
+      playSound('click');
+
+      // 자동 제출
+      setTimeout(() => handleSubmit(), 300);
+    });
+
+    container.appendChild(optionEl);
+  });
+
   answersArea.appendChild(container);
 }
 
@@ -582,66 +669,19 @@ function renderOX(question) {
 }
 
 /**
- * 5. Find Error 렌더링
+ * 5. Best Action (상황형 4지선다)
+ * 
+ * 이 유형은 renderMultipleChoice()를 사용하여 처리됩니다.
+ * 
+ * 형식:
+ * - 짧은 상황 제시
+ * - 4개의 선택지 (A/B/C/D)
+ * - 내규상 가장 적절한 행동 1개 선택
+ * 
+ * 예시: "외부 공유 요청을 받았다. 내규에 맞는 1차 조치는?"
  */
-function renderFindError(question) {
-  const { underlined_words } = question.question_data;
 
-  const container = document.createElement('div');
-  container.className = 'finderror-container';
-
-  const textEl = document.createElement('div');
-  textEl.className = 'finderror-text';
-
-  // 문제 텍스트를 파싱하여 밑줄 단어를 찾아 span으로 감싸기
-  let displayText = question.question_text;
-  
-  // 각 밑줄 단어를 순서대로 찾아서 span으로 감싸기
-  underlined_words.forEach((word, index) => {
-    // 첫 번째 일치하는 단어만 교체 (이미 교체된 것은 건너뜀)
-    const placeholder = `__FINDERROR_${index}__`;
-    displayText = displayText.replace(word, placeholder);
-  });
-
-  // placeholder를 실제 HTML로 교체
-  underlined_words.forEach((word, index) => {
-    const placeholder = `__FINDERROR_${index}__`;
-    displayText = displayText.replace(
-      placeholder, 
-      `<span class="finderror-word" data-value="${word}">${word}</span>`
-    );
-  });
-
-  textEl.innerHTML = displayText;
-
-  // 클릭 이벤트 추가
-  textEl.querySelectorAll('.finderror-word').forEach((wordEl) => {
-    wordEl.addEventListener('click', () => {
-      if (wordEl.classList.contains('disabled')) return;
-
-      // 기존 선택 해제
-      textEl.querySelectorAll('.finderror-word').forEach(el => {
-        el.classList.remove('selected');
-      });
-
-      // 새 선택
-      wordEl.classList.add('selected');
-      currentAnswer = wordEl.dataset.value;
-      playSound('click');
-
-      // 자동 제출
-      setTimeout(() => handleSubmit(), 300);
-    });
-  });
-
-  const hintEl = document.createElement('div');
-  hintEl.className = 'finderror-hint';
-  hintEl.textContent = '(밑줄 친 단어를 클릭하세요)';
-
-  container.appendChild(textEl);
-  container.appendChild(hintEl);
-  answersArea.appendChild(container);
-}
+// renderFindError 함수는 더 이상 사용되지 않음 (best_action으로 대체)
 
 /**
  * 답변 제출
@@ -661,6 +701,12 @@ async function handleSubmit() {
     const question = currentSession.question;
     const timeTaken = Math.floor((Date.now() - startTime) / 1000);
 
+    console.log('[handleSubmit] 제출 정보:', {
+      questionId: question.id,
+      isLuckyDraw: question.is_lucky_draw,
+      currentAnswer: currentAnswer
+    });
+
     const response = await quizApi.submitAnswer(
       currentSession.sessionId,
       question.id,
@@ -670,6 +716,17 @@ async function handleSubmit() {
     );
 
     if (response.success) {
+      console.log('[handleSubmit] 서버 응답:', {
+        isCorrect: response.result.is_correct,
+        attempt: response.result.attempt,
+        luckyDrawResult: response.luckydraw_result,
+        has_luckydraw_result: !!response.luckydraw_result
+      });
+      
+      if (response.luckydraw_result) {
+        console.log('[handleSubmit] 🎰 럭키드로우 결과:', response.luckydraw_result);
+      }
+
       // 다음 문제 저장
       currentSession.nextQuestion = response.next_question || null;
       currentSession.session_complete = response.session_complete || false;
@@ -834,13 +891,22 @@ function highlightCorrectAnswer() {
 
   switch (question.question_type) {
     case 'fill_in_blank':
-    case 'fillblank':
-      answersArea.querySelectorAll('.fillblank-option').forEach(el => {
+    case 'best_action':
+      answersArea.querySelectorAll('.multiple-choice-option').forEach(el => {
         if (el.dataset.value === currentAnswer) {
           el.classList.add('correct');
         }
         el.disabled = true;
       });
+      break;
+
+    case 'drag_and_drop':
+    case 'dragdrop':
+      const target = answersArea.querySelector('.dragdrop-target');
+      if (target) {
+        target.style.borderColor = '#4aa52e';
+        target.style.background = 'rgba(146, 204, 65, 0.3)';
+      }
       break;
 
     case 'ox':
@@ -852,23 +918,18 @@ function highlightCorrectAnswer() {
       });
       break;
 
-    case 'find_error':
-    case 'finderror':
-      answersArea.querySelectorAll('.finderror-word').forEach(el => {
+    case 'typing':
+      // 타이핑은 별도 처리 불필요
+      break;
+
+    default:
+      // 기타 유형은 선택된 요소에 correct 클래스 추가
+      answersArea.querySelectorAll('.selected').forEach(el => {
         if (el.dataset.value === currentAnswer) {
           el.classList.add('correct');
         }
         el.classList.add('disabled');
       });
-      break;
-
-    case 'drag_and_drop':
-    case 'dragdrop':
-      const target = answersArea.querySelector('.dragdrop-target');
-      if (target) {
-        target.style.borderColor = '#4aa52e';
-        target.style.background = 'rgba(146, 204, 65, 0.3)';
-      }
       break;
   }
 }
@@ -881,25 +942,8 @@ function highlightIncorrectAnswer() {
 
   switch (question.question_type) {
     case 'fill_in_blank':
-    case 'fillblank':
-      answersArea.querySelectorAll('.fillblank-option').forEach(el => {
-        if (el.dataset.value === currentAnswer) {
-          el.classList.add('incorrect');
-        }
-      });
-      break;
-
-    case 'ox':
-      answersArea.querySelectorAll('.ox-button').forEach(el => {
-        if (el.dataset.value === currentAnswer) {
-          el.classList.add('incorrect');
-        }
-      });
-      break;
-
-    case 'find_error':
-    case 'finderror':
-      answersArea.querySelectorAll('.finderror-word').forEach(el => {
+    case 'best_action':
+      answersArea.querySelectorAll('.multiple-choice-option').forEach(el => {
         if (el.dataset.value === currentAnswer) {
           el.classList.add('incorrect');
         }
@@ -914,7 +958,16 @@ function highlightIncorrectAnswer() {
         target.style.background = 'rgba(252, 40, 71, 0.3)';
         // 드롭된 항목 제거 (다시 선택 가능하도록)
         target.innerHTML = '';
+        target.textContent = '여기에 드래그하세요';
       }
+      break;
+
+    case 'ox':
+      answersArea.querySelectorAll('.ox-button').forEach(el => {
+        if (el.dataset.value === currentAnswer) {
+          el.classList.add('incorrect');
+        }
+      });
       break;
 
     case 'typing':
@@ -960,7 +1013,7 @@ function handleNext() {
   // 다음 문제로 이동
   currentSession.question = currentSession.nextQuestion;
   currentSession.nextQuestion = null;
-  currentQuestionIndex = currentSession.current_question_number;
+  currentQuestionIndex++; // 다음 문제 번호로 증가
 
   // 세션 업데이트
   sessionStorage.setItem('currentSession', JSON.stringify(currentSession));
@@ -1161,56 +1214,55 @@ function showLuckyDrawAnimation(result, questionIndex) {
   const overlay = document.createElement('div');
   overlay.className = 'luckydraw-envelope-overlay';
 
-  // 우편 봉투 이모지 생성
-  const envelope = document.createElement('div');
-  envelope.className = 'luckydraw-envelope';
-  envelope.textContent = '📬';
+  // 편지함 컨테이너 생성
+  const envelopeContainer = document.createElement('div');
+  envelopeContainer.className = 'luckydraw-envelope';
 
-  overlay.appendChild(envelope);
+  // 우체통 이모지
+  const mailbox = document.createElement('div');
+  mailbox.className = 'luckydraw-mailbox';
+  mailbox.textContent = '📬';
+
+  // 편지 이모지
+  const letter = document.createElement('div');
+  letter.className = 'luckydraw-letter';
+  letter.textContent = '✉️';
+
+  envelopeContainer.appendChild(mailbox);
+  envelopeContainer.appendChild(letter);
+  overlay.appendChild(envelopeContainer);
   document.body.appendChild(overlay);
 
-  // 1.5초 후 봉투를 결과 카드로 교체
+  // 1.5초 후 편지함을 결과 카드로 교체
   setTimeout(() => {
-    envelope.remove();
+    envelopeContainer.remove();
 
     // 결과 카드 생성
     const resultCard = document.createElement('div');
     resultCard.className = 'luckydraw-result-card';
 
-    // 당첨 여부에 따른 아이콘과 메시지
-    let icon, title, message, titleClass;
+    // 당첨 여부에 따른 이미지와 메시지
+    let gifSrc, message;
 
     if (result.won) {
       // 당첨!
-      icon = '🎉';
-      title = '선물에 당첨되었습니다';
-      message = `<strong>${result.prize}</strong>에 당첨되셨습니다!<br>관리자에게 문의하여 상품을 받아가세요.`;
-      titleClass = 'won';
+      gifSrc = '../images/Luckydrawsuccess.gif';
+      message = '축하합니다! 행운의 주인공! 선물을 획득했어요';
 
       // 당첨 시 폭죽 효과
       playSound('correct');
       createConfetti(overlay);
     } else {
       // 미당첨
-      icon = '😢';
-      title = '아쉽게도 이번에는 선물 당첨을 획득하지 못했습니다';
-
-      // 이유별 메시지
-      if (result.reason === 'max_winners_reached') {
-        message = '이번 회차의 당첨자가 모두 마감되었습니다.<br>문제를 많이 풀면 선물 획득 확률이 높아집니다!';
-      } else if (result.reason === 'already_won') {
-        message = '이미 당첨되셨습니다!<br>한 번만 당첨 가능합니다.';
-      } else {
-        message = '문제를 많이 풀면 선물 획득 확률이 높아집니다!';
-      }
-
-      titleClass = 'lost';
+      gifSrc = '../images/Luckydrawfail.gif';
+      message = '아쉽게도 선물 획득을 못했네요..하지만 문제를 계속 풀면 당첨 확률이 높아진다는 꿀Tip을 드려요';
       playSound('coin');
     }
 
     resultCard.innerHTML = `
-      <div class="luckydraw-result-icon">${icon}</div>
-      <div class="luckydraw-result-title ${titleClass}">${title}</div>
+      <div class="luckydraw-result-icon">
+        <img src="${gifSrc}" alt="Lucky Draw Result" />
+      </div>
       <div class="luckydraw-result-message">${message}</div>
       <button class="luckydraw-close-btn">확인</button>
     `;

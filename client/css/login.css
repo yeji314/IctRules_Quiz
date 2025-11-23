@@ -38,9 +38,9 @@ body {
 
 /* Player 1 뱃지 */
 .player-badge {
-  position: absolute;
-  top: 20px;
-  left: 30px;
+  position: fixed;
+  top: 30px;
+  right: 40px;
   font-family: var(--font-pixel);
   font-size: 14px;
   color: #000000;
@@ -435,7 +435,7 @@ body {
   position: fixed;
   bottom: 120px;
   left: 0;
-  width: 240px;
+  width: 15%;
   height: auto;
   z-index: 20;
   image-rendering: pixelated;
@@ -476,7 +476,7 @@ body {
   }
 
   .sol-character {
-    width: 210px;
+    width: 15%;
   }
 
   .balloon {
@@ -531,8 +531,8 @@ body {
 /* 반응형 - 모바일 */
 @media (max-width: 768px) {
   .player-badge {
-    top: 15px;
-    left: 15px;
+    top: 20px;
+    right: 20px;
     font-size: 10px;
   }
 
@@ -629,8 +629,8 @@ body {
 @media (max-width: 480px) {
   .player-badge {
     font-size: 8px;
-    top: 10px;
-    left: 10px;
+    top: 15px;
+    right: 15px;
   }
 
   .game-title {

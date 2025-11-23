@@ -377,3 +377,22 @@ body {
   background-repeat: repeat;
   pointer-events: none;
 }
+
+/* 결과 GIF - 정가운데 하단 (잔디 위) */
+.result-gif {
+  position: fixed;
+  bottom: 120px; /* 잔디 레이어(40px) + 흙 레이어(80px) = 120px */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  pointer-events: none;
+}
+
+.result-gif img {
+  display: block;
+  width: auto;
+  height: 200px; /* GIF 크기 조절 */
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}

@@ -80,12 +80,6 @@ async function swingSsoAuth(ssoToken) {
   const env = getCurrentEnvironment();
   const config = getConfig();
 
-  // Mock 환경에서는 가상 응답 반환
-  if (env === 'mock') {
-    log('Mock 환경: 가상 응답 데이터 반환');
-    return config.mockResponse;
-  }
-
   const { swingEndpoint, clientId, clientSecret } = config;
 
   // Swing API 요청 페이로드
@@ -101,6 +95,8 @@ async function swingSsoAuth(ssoToken) {
 
   try {
     const apiUrl = `${swingEndpoint}/cau/v1/oauth-code-simple`;
+    log('Swing SSO 인증 요청:', apiUrl);
+    
     const response = await apiCall(apiUrl, payload);
 
     // 응답 검증
@@ -125,9 +121,10 @@ async function swingIdPasswordAuth(employeeNo, password) {
   const env = getCurrentEnvironment();
   const config = getConfig();
 
-  // Mock 환경에서는 가상 응답 반환
-  if (env === 'mock') {
-    log('Mock 환경: 가상 응답 데이터 반환');
+  // Mock 환경에서는 env 파일에 정의된 mockResponse 사용
+  if (env === 'mock' && config.mockResponse) {
+    log('Mock 환경: env 파일의 mockResponse 사용');
+    log('Mock 사용자 정보:', config.mockResponse);
     return config.mockResponse;
   }
 
@@ -152,6 +149,8 @@ async function swingIdPasswordAuth(employeeNo, password) {
 
   try {
     const apiUrl = `${swingEndpoint}/cau/v1/idpw-authorize`;
+    log('Swing ID/Password 인증 요청:', apiUrl);
+    
     const response = await apiCall(apiUrl, payload);
 
     // 응답 검증

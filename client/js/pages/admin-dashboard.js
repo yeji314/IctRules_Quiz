@@ -285,8 +285,8 @@ async function loadWinners() {
       row.innerHTML = `
         <td>${winner.User?.name || '-'}</td>
         <td>${winner.User?.department || '-'}</td>
-        <td>${formatDate(winner.won_date || winner.created_at)}</td>
-        <td>${winner.prize_name || '기프티콘'}</td>
+        <td>${formatDate(winner.won_date || winner.createdAt)}</td>
+        <td>${winner.prize || '기프티콘'}</td>
         <td>${claimStatus}</td>
       `;
       winnersTableBody.appendChild(row);
@@ -447,12 +447,13 @@ function createQuestionCard(question, index) {
 
   const typeNames = {
     'dragdrop': '드래그앤드롭',
+    'drag_and_drop': '드래그앤드롭',
     'typing': '타이핑',
     'fillblank': '빈칸맞추기',
-    'ox': 'OX퀴즈',
-    'finderror': '틀린부분찾기',
     'fill_in_blank': '빈칸맞추기',
-    'find_error': '틀린부분찾기'
+    'ox': 'OX퀴즈',
+    'bestaction': '상황형4지선다',
+    'best_action': '상황형4지선다'
   };
 
   card.innerHTML = `
@@ -655,17 +656,29 @@ function renderQuestionDataFields(question = null) {
       `;
       break;
 
-    case 'finderror':
+    case 'bestaction':
+      const existingOptions = questionData?.options || ['', '', '', ''];
       container.innerHTML = `
         <div class="form-field">
-          <label>밑줄 칠 단어들 (콤마로 구분)</label>
-          <input type="text" id="underlinedWords" class="text-input" placeholder="예: 단어1, 단어2, 단어3" required value="${questionData?.underlined_words?.join(', ') || ''}">
-          <p class="note">문제 내용에서 틀린 부분으로 의심될 수 있는 단어들을 나열하세요</p>
+          <label>선택지 (4개)</label>
+          <p class="note">💡 상황에 대한 가장 적절한 행동 4가지를 입력하세요</p>
+          <input type="text" id="option1" class="text-input" placeholder="A. 첫 번째 선택지" required value="${existingOptions[0] || ''}">
+          <input type="text" id="option2" class="text-input" placeholder="B. 두 번째 선택지" required value="${existingOptions[1] || ''}" style="margin-top: 8px;">
+          <input type="text" id="option3" class="text-input" placeholder="C. 세 번째 선택지" required value="${existingOptions[2] || ''}" style="margin-top: 8px;">
+          <input type="text" id="option4" class="text-input" placeholder="D. 네 번째 선택지" required value="${existingOptions[3] || ''}" style="margin-top: 8px;">
+          <p class="note" style="margin-top: 12px;">예시: "외부 공유 요청을 받았다. 내규에 맞는 1차 조치는?"</p>
         </div>
         <div class="form-field">
-          <label>정답 (틀린 단어)</label>
-          <input type="text" id="correctAnswer" class="text-input" placeholder="실제로 틀린 단어" required value="${questionData?.correct_answer || ''}">
-          <p class="note">위 밑줄 친 단어 중 실제로 틀린 단어를 입력하세요</p>
+          <label>정답</label>
+          <div class="select-wrapper">
+            <select id="correctAnswer" required>
+              <option value="">정답 선택</option>
+              <option value="option1" ${questionData?.correct_answer === existingOptions[0] ? 'selected' : ''}>A (첫 번째)</option>
+              <option value="option2" ${questionData?.correct_answer === existingOptions[1] ? 'selected' : ''}>B (두 번째)</option>
+              <option value="option3" ${questionData?.correct_answer === existingOptions[2] ? 'selected' : ''}>C (세 번째)</option>
+              <option value="option4" ${questionData?.correct_answer === existingOptions[3] ? 'selected' : ''}>D (네 번째)</option>
+            </select>
+          </div>
         </div>
       `;
       break;
@@ -701,8 +714,8 @@ async function handleQuestionSubmit(e) {
 
       case 'fillblank':
         const fillOptions = $('#fillOptions').value.split(',').map(s => s.trim()).filter(s => s);
-        if (fillOptions.length !== 5) {
-          alert('선택지는 정확히 5개여야 합니다');
+        if (fillOptions.length !== 4 && fillOptions.length !== 5) {
+          alert('선택지는 4개 또는 5개여야 합니다');
           return;
         }
         questionData = {
@@ -711,17 +724,40 @@ async function handleQuestionSubmit(e) {
         };
         break;
 
-      case 'ox':
+      case 'bestaction':
+        const opt1 = $('#option1').value.trim();
+        const opt2 = $('#option2').value.trim();
+        const opt3 = $('#option3').value.trim();
+        const opt4 = $('#option4').value.trim();
+
+        if (!opt1 || !opt2 || !opt3 || !opt4) {
+          alert('4개의 선택지를 모두 입력해주세요');
+          return;
+        }
+
+        const bestActionOptions = [opt1, opt2, opt3, opt4];
+        const selectedAnswer = $('#correctAnswer').value;
+
+        let correctAnswerText;
+        switch (selectedAnswer) {
+          case 'option1': correctAnswerText = opt1; break;
+          case 'option2': correctAnswerText = opt2; break;
+          case 'option3': correctAnswerText = opt3; break;
+          case 'option4': correctAnswerText = opt4; break;
+          default:
+            alert('정답을 선택해주세요');
+            return;
+        }
+
         questionData = {
-          correct_answer: $('#correctAnswer').value
+          options: bestActionOptions,
+          correct_answer: correctAnswerText
         };
         break;
 
-      case 'finderror':
-        const underlinedWords = $('#underlinedWords').value.split(',').map(s => s.trim()).filter(s => s);
+      case 'ox':
         questionData = {
-          underlined_words: underlinedWords,
-          correct_answer: $('#correctAnswer').value.trim()
+          correct_answer: $('#correctAnswer').value
         };
         break;
 
@@ -734,10 +770,19 @@ async function handleQuestionSubmit(e) {
     return;
   }
 
+  // 클라이언트 → 서버 유형 변환
+  const typeMapping = {
+    'dragdrop': 'drag_and_drop',
+    'typing': 'typing',
+    'fillblank': 'fill_in_blank',
+    'ox': 'ox',
+    'bestaction': 'best_action'
+  };
+
   const data = {
     event_id: selectedEventId,
-    question_type: questionType,
-    category: 'normal', // 기본값으로 설정 (DB 호환성 유지)
+    question_type: typeMapping[questionType] || questionType,
+    category: 'normal', // 기본값으로 설정 (럭키드로우는 동적으로 결정)
     question_text: $('#questionText').value,
     question_data: questionData,
     explanation: $('#questionExplanation').value

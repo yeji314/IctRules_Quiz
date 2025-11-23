@@ -53,9 +53,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/admin', adminRoutes);
 
-// 루트 접근 시 로그인 페이지로 이동
+// 루트 접근 시 로그인 페이지로 이동 (쿼리 파라미터 유지)
 app.get('/', (req, res) => {
-  res.redirect('/pages/index.html');
+  // 쿼리 파라미터가 있으면 함께 전달
+  const queryString = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+  res.redirect('/pages/index.html' + queryString);
 });
 
 // 404 핸들러

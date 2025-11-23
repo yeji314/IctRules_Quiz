@@ -20,33 +20,33 @@ const PORT = 8055;
 const mockUsers = {
   'swing_user_001': {
     user_id: 'swing_user_001',
-    employee_id: 'swing001',
+    employee_id: '12345678',  // 테스트용 사번
     name: '홍길동',
-    department: '디지털혁신팀',
+    department: 'IT개발팀',
     position: '차장',
-    email: 'hong@company.com',
+    email: 'hong@shinhan.com',
     is_active: true,
     password_hash: crypto.createHash('sha256').update('password123').digest('hex')
   },
   'swing_user_002': {
     user_id: 'swing_user_002',
-    employee_id: 'swing002',
-    name: '김영수',
-    department: '보안팀',
+    employee_id: '87654321',  // 테스트용 사번
+    name: '김철수',
+    department: '영업팀',
     position: '과장',
-    email: 'kim@company.com',
+    email: 'kim@shinhan.com',
     is_active: true,
     password_hash: crypto.createHash('sha256').update('test1234').digest('hex')
   },
   'swing_user_003': {
     user_id: 'swing_user_003',
-    employee_id: 'swing003',
-    name: '이민정',
-    department: 'IT개발팀',
-    position: '사원',
-    email: 'lee@company.com',
+    employee_id: '19200617',  // 관리자 사번
+    name: '관리자',
+    department: '경영지원팀',
+    position: '부장',
+    email: 'admin@shinhan.com',
     is_active: true,
-    password_hash: crypto.createHash('sha256').update('qwerty').digest('hex')
+    password_hash: crypto.createHash('sha256').update('admin123').digest('hex')
   }
 };
 
@@ -57,9 +57,12 @@ const findUserByEmployeeId = (employeeId) => {
 
 // Mock SSO 토큰 저장소
 const validTokens = {
-  'mock_token_12345': 'swing_user_001',
-  'mock_token_67890': 'swing_user_002',
-  'test_token_abc': 'swing_user_003'
+  'test_token_valid_user': 'swing_user_001',    // 일반 사용자
+  'test_token_other_user': 'swing_user_002',    // 다른 사용자
+  'test_token_admin': 'swing_user_003',         // 관리자
+  'mock_token_12345': 'swing_user_001',         // 호환성
+  'mock_token_67890': 'swing_user_002',         // 호환성
+  'test_token_abc': 'swing_user_003'            // 호환성
 };
 
 /**
@@ -76,14 +79,24 @@ app.get('/swing-mock-server/health', (req, res) => {
 /**
  * OAuth Token Authentication
  * POST /swing-mock-server/cau/v1/oauth-code-simple
+ * 
+ * 페이로드 구조:
+ * {
+ *   common: { clientId, clientSecret },
+ *   data: { code }
+ * }
  */
 app.post('/swing-mock-server/cau/v1/oauth-code-simple', (req, res) => {
-  const { client_id, client_secret, oauth_code } = req.body;
+  const { common, data } = req.body;
+  
+  const clientId = common?.clientId;
+  const clientSecret = common?.clientSecret;
+  const ssoToken = data?.code;
 
-  console.log('[Mock Swing] OAuth Token Authentication:', { client_id, oauth_code });
+  console.log('[Mock Swing] OAuth Token Authentication:', { clientId, ssoToken });
 
   // Client 인증 확인
-  if (!client_id || !client_secret) {
+  if (!clientId || !clientSecret) {
     return res.status(401).json({
       errors: [{
         message: 'Invalid client credentials',
@@ -93,8 +106,8 @@ app.post('/swing-mock-server/cau/v1/oauth-code-simple', (req, res) => {
   }
 
   // Mock: 특정 client_id만 허용
-  const validClients = ['mock_client_id', 'dev_client_id', 'prod_client_id'];
-  if (!validClients.includes(client_id)) {
+  const validClients = ['mock_client_id', 'dev_client_id', 'prod_client_id', '5FACKST52XY6YDLM'];
+  if (!validClients.includes(clientId)) {
     return res.status(401).json({
       errors: [{
         message: 'Client not found',
@@ -104,46 +117,49 @@ app.post('/swing-mock-server/cau/v1/oauth-code-simple', (req, res) => {
   }
 
   // OAuth 코드 검증
-  const userId = validTokens[oauth_code];
+  const userId = validTokens[ssoToken];
   if (!userId) {
     return res.status(401).json({
-      errors: [{
-        message: 'Invalid oauth code',
-        extensions: { code: 'INVALID_TOKEN' }
-      }]
+      data: {
+        authResult: 'FAIL',
+        message: 'Invalid SSO token'
+      }
     });
   }
 
   const user = mockUsers[userId];
   if (!user) {
     return res.status(404).json({
-      errors: [{
-        message: 'User not found',
-        extensions: { code: 'NOT_FOUND' }
-      }]
+      data: {
+        authResult: 'FAIL',
+        message: 'User not found'
+      }
     });
   }
 
   // 활성 사용자 확인
   if (!user.is_active) {
     return res.status(403).json({
-      errors: [{
-        message: 'User is inactive',
-        extensions: { code: 'FORBIDDEN' }
-      }]
+      data: {
+        authResult: 'FAIL',
+        message: 'User is inactive'
+      }
     });
   }
 
-  // 성공 응답
+  // 성공 응답 (실제 Swing API 응답 구조에 맞춤)
   console.log('[Mock Swing] Authentication successful:', user.employee_id);
   res.json({
-    user_id: user.user_id,
-    employee_id: user.employee_id,
-    name: user.name,
-    department: user.department,
-    position: user.position,
-    email: user.email,
-    is_active: user.is_active
+    data: {
+      authResult: 'SUCCESS',
+      companyCode: 'SH',
+      companyEmail: user.email,
+      departmentNo: '1000',
+      departmentName: user.department,
+      employeeName: user.name,
+      employeeNo: user.employee_id,
+      employeePositionName: user.position
+    }
   });
 });
 

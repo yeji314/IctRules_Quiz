@@ -12,17 +12,10 @@ class QuizService {
       throw new Error('세션을 찾을 수 없습니다');
     }
 
-    // 해당 이벤트에서 첫 시도에 맞춘 문제 수 확인 (모든 완료된 세션 포함)
+    // 현재 세션에서 첫 시도에 맞춘 문제 수 확인 (현재 세션만)
     const firstCorrectCount = await db.QuizAnswer.count({
-      include: [{
-        model: db.QuizSession,
-        where: { 
-          user_id: currentSession.user_id,
-          event_id: eventId,
-          status: 'completed'
-        }
-      }],
       where: {
+        session_id: sessionId,
         is_correct: true,
         answer_attempt: 1 // 첫 시도에 맞춘 것만
       }
@@ -44,8 +37,15 @@ class QuizService {
       }
     }) > 0;
 
-    // 이미 당첨된 사용자인지 확인 (해당 이벤트)
-    const hasWonPrize = await db.LuckyDraw.count({
+    // 현재 세션에서 이미 당첨되었는지 확인
+    const hasWonPrizeInSession = await db.LuckyDraw.count({
+      where: {
+        session_id: sessionId
+      }
+    }) > 0;
+
+    // 전체 이벤트에서 이미 당첨된 사용자인지도 확인
+    const hasWonPrizeInEvent = await db.LuckyDraw.count({
       where: {
         user_id: currentSession.user_id,
         event_id: eventId
@@ -73,7 +73,7 @@ class QuizService {
     });
 
     // 5가지 유형 정의
-    const questionTypes = ['drag_and_drop', 'typing', 'fill_in_blank', 'ox', 'find_error'];
+    const questionTypes = ['drag_and_drop', 'typing', 'fill_in_blank', 'ox', 'best_action'];
     
     // 유형별로 문제 분류 (모든 문제가 럭키드로우 대상이 될 수 있음)
     const questionsByType = {};
@@ -86,12 +86,17 @@ class QuizService {
       - 전체 남은 문제: ${allQuestions.length}개
       - 첫 시도 정답 수: ${firstCorrectCount}
       - 럭키드로우 본 적 있음: ${hasSeenLuckyDraw}
-      - 이미 당첨됨: ${hasWonPrize}
+      - 현재 세션에서 당첨됨: ${hasWonPrizeInSession}
+      - 이벤트 전체에서 당첨됨: ${hasWonPrizeInEvent}
       - 이벤트 당첨자 수: ${currentWinnerCount}/${event.max_winners}
       - 최대 당첨자 도달: ${maxWinnersReached}`);
 
     // LuckyDraw 출제 조건 체크
-    const canShowLuckyDraw = firstCorrectCount >= 3 && !hasWonPrize && !maxWinnersReached;
+    // 1. 현재 세션에서 3문제 이상 맞춤
+    // 2. 현재 세션에서 당첨된 적 없음 (중요!)
+    // 3. 전체 이벤트에서 당첨된 적 없음
+    // 4. 최대 당첨자 수 미달
+    const canShowLuckyDraw = firstCorrectCount >= 3 && !hasWonPrizeInSession && !hasWonPrizeInEvent && !maxWinnersReached;
 
     // 1단계: 5가지 유형별로 1개씩 선택
     const selectedQuestions = [];
@@ -185,7 +190,7 @@ class QuizService {
     }
 
     // 5가지 유형 정의
-    const questionTypes = ['drag_and_drop', 'typing', 'fill_in_blank', 'ox', 'find_error'];
+    const questionTypes = ['drag_and_drop', 'typing', 'fill_in_blank', 'ox', 'best_action'];
 
     // 현재 세션에서 이미 나온 문제 유형 확인
     const answeredQuestions = await db.QuizAnswer.findAll({
@@ -203,15 +208,16 @@ class QuizService {
     const remainingTypes = questionTypes.filter(type => !usedQuestionTypes.includes(type));
     console.log(`[getNextQuestion] 남은 유형: [${remainingTypes.join(', ')}]`);
 
-    // 현재 세션에서 맞춘 문제 수 (answer_attempt 무관하게 정답 개수만 카운트)
+    // 현재 세션에서 한 번에 맞춘 문제 수 (첫 시도 정답만 카운트)
     const correctCount = await db.QuizAnswer.count({
       where: {
         session_id: sessionId,
-        is_correct: true
+        is_correct: true,
+        answer_attempt: 1  // 한 번에 맞춘 것만!
       }
     });
 
-    console.log(`[getNextQuestion] 현재 세션에서 맞춘 문제 수: ${correctCount}`);
+    console.log(`[getNextQuestion] 현재 세션에서 한 번에 맞춘 문제 수: ${correctCount}`);
 
     // 이미 푼 문제 ID 목록 (전체 이벤트 기준)
     const previousAnswers = await db.QuizAnswer.findAll({
@@ -286,9 +292,19 @@ class QuizService {
 
     console.log(`[getNextQuestion] 남은 문제: ${allQuestions.length}개`);
 
+    // 세션 내에서 이미 출제된 럭키드로우 문제 수 확인
+    const luckyDrawCount = await db.QuizAnswer.count({
+      where: {
+        session_id: sessionId,
+        is_lucky_draw: true
+      }
+    });
+    
+    const isFirstLuckyDraw = luckyDrawCount === 0;
+    console.log(`[getNextQuestion] 세션 내 럭키드로우 출제 횟수: ${luckyDrawCount}회 (첫 럭키드로우: ${isFirstLuckyDraw})`);
+
     // 럭키드로우 출현 가능 여부 판단
     // 조건: 정답 3개 이상 + 직전이 럭키드로우 아님 + 이번 월에 당첨 안됨 + 최대 당첨자 수 미도달
-    // 모든 문제가 럭키드로우 대상이 될 수 있음
     const canShowLuckyDraw = correctCount >= 3 && !lastWasLuckyDraw && !hasWonPrizeThisMonth && !maxWinnersReached && allQuestions.length > 0;
 
     console.log(`[getNextQuestion] 럭키드로우 출현 가능: ${canShowLuckyDraw} (정답 ${correctCount}개 >= 3, 직전 럭키드로우: ${lastWasLuckyDraw}, 이번 월 당첨: ${hasWonPrizeThisMonth}, 최대 당첨자 도달: ${maxWinnersReached})`);
@@ -300,10 +316,33 @@ class QuizService {
       const idx = Math.floor(Math.random() * allQuestions.length);
       selectedQuestion = allQuestions[idx];
 
-      // 럭키드로우 조건 충족 시 40% 확률로 럭키드로우 플래그 추가
-      if (canShowLuckyDraw && Math.random() < 0.4) {
-        selectedQuestion.dataValues.isLuckyDraw = true;
-        console.log(`[getNextQuestion] ✨ 럭키드로우 문제로 지정: Q${selectedQuestion.id} (${selectedQuestion.question_type})`);
+      // 럭키드로우 확률 계산
+      if (canShowLuckyDraw) {
+        let luckyDrawProbability;
+        
+        if (isFirstLuckyDraw) {
+          // 첫 번째 럭키드로우: 무조건 100%
+          luckyDrawProbability = 1.0;
+          console.log(`[getNextQuestion] 첫 럭키드로우 → 100% 확률`);
+        } else {
+          // 두 번째 이후 럭키드로우: 40% + (답변한 문제 수 * 10%)
+          const answeredCount = await db.QuizAnswer.count({
+            where: { session_id: sessionId }
+          });
+          
+          // 기본 40% + 문제당 10% 증가 (최대 90%)
+          luckyDrawProbability = Math.min(0.9, 0.4 + (answeredCount * 0.1));
+          console.log(`[getNextQuestion] 두 번째+ 럭키드로우 → ${(luckyDrawProbability * 100).toFixed(0)}% 확률 (답변 ${answeredCount}개)`);
+        }
+        
+        // 확률에 따라 럭키드로우 문제로 지정
+        const random = Math.random();
+        if (random < luckyDrawProbability) {
+          selectedQuestion.dataValues.isLuckyDraw = true;
+          console.log(`[getNextQuestion] ✨ 럭키드로우 문제로 지정: Q${selectedQuestion.id} (${selectedQuestion.question_type}) [확률: ${(luckyDrawProbability * 100).toFixed(0)}%, 랜덤: ${(random * 100).toFixed(0)}%]`);
+        } else {
+          console.log(`[getNextQuestion] 일반 문제 선택: Q${selectedQuestion.id} (${selectedQuestion.question_type}) [확률: ${(luckyDrawProbability * 100).toFixed(0)}%, 랜덤: ${(random * 100).toFixed(0)}%]`);
+        }
       } else {
         console.log(`[getNextQuestion] 일반 문제 선택: Q${selectedQuestion.id} (${selectedQuestion.question_type})`);
       }

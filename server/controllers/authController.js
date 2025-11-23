@@ -223,15 +223,29 @@ const swingSsoTokenLogin = async (req, res) => {
       ssoToken: sso_token
     });
 
+    console.log('[Swing SSO] 인증 성공:', {
+      employeeNo: swingUser.employeeNo,
+      name: swingUser.employeeName,
+      department: swingUser.departmentName
+    });
+
+    console.log('[Swing SSO] 권한 확인 통과');
+
     // 로컬 DB에서 사용자 조회 또는 생성
     let user = await db.User.findOne({
       where: { employee_id: swingUser.employeeNo }
     });
 
-    // 관리자 여부 확인 (DB에서 조회)
+    // 관리자 여부 확인 (DB에서 조회 - id/pw 방식과 동일)
     const adminEmployeeIds = await getAdminEmployeeIds();
     const isAdminUser = adminEmployeeIds.includes(swingUser.employeeNo);
     const userRole = isAdminUser ? 'admin' : 'user';
+
+    console.log('[Swing SSO] 관리자 여부 확인:', { 
+      employeeNo: swingUser.employeeNo, 
+      isAdmin: isAdminUser, 
+      role: userRole 
+    });
 
     if (!user) {
       // 사용자 자동 생성
@@ -244,14 +258,16 @@ const swingSsoTokenLogin = async (req, res) => {
         role: userRole,
         login_method: 'swing_sso'
       });
+      console.log('[Swing SSO] 신규 사용자 생성:', user.employee_id);
     } else {
-      // 기존 사용자의 정보 업데이트 (Swing에서 최신 정보 반영)
+      // 기존 사용자의 정보 업데이트 (Swing에서 최신 정보 반영 + role 업데이트)
       await user.update({
         name: swingUser.employeeName || user.name,
         department: swingUser.departmentName || swingUser.deptName || user.department,
         email: swingUser.companyEmail || swingUser.emailAddress || user.email,
-        role: userRole
+        role: userRole  // 관리자 권한도 동기화
       });
+      console.log('[Swing SSO] 사용자 정보 업데이트:', user.employee_id);
     }
 
     // JWT 토큰 생성

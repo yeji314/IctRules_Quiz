@@ -1076,8 +1076,8 @@ const getWinners = async (req, res) => {
       const winnerData = winner.toJSON();
       return {
         ...winnerData,
-        won_date: winnerData.created_at, // 당첨 날짜
-        claimed_date: winnerData.claimed_at // 수령 날짜
+        won_date: winnerData.createdAt, // 당첨 날짜 (Sequelize camelCase)
+        claimed_date: winnerData.claimedAt // 수령 날짜 (Sequelize camelCase)
       };
     });
 

@@ -279,15 +279,20 @@ const submitAnswer = async (req, res) => {
 
     // ✅ LuckyDraw 추첨 로직
     // 조건: LuckyDraw 문제 + 정답 + 첫 시도
-    const isLuckyDrawQuestion = question.category === 'luckydraw';
+    // 클라이언트에서 보낸 is_lucky_draw 플래그를 사용 (동적으로 결정되는 럭키드로우 문제)
+    const isLuckyDrawQuestion = is_lucky_draw === true;
+    
+    console.log(`[LuckyDraw 체크] is_lucky_draw: ${is_lucky_draw}, isCorrect: ${isCorrect}, attempt: ${answer.answer_attempt}`);
 
     if (isLuckyDrawQuestion && isCorrect && answer.answer_attempt === 1) {
       console.log(`[LuckyDraw] 사용자 ${req.user.id} - LuckyDraw 문제를 첫 시도에 맞춤! 추첨 시작...`);
 
       try {
-        // 트랜잭션으로 동시성 제어
-        const luckyDrawResult = await db.sequelize.transaction(async (t) => {
-          // 1. 이벤트 정보 가져오기 (락 설정)
+        // 트랜잭션으로 동시성 제어 (SERIALIZABLE 격리 수준)
+        const luckyDrawResult = await db.sequelize.transaction({
+          isolationLevel: db.Sequelize.Transaction.ISOLATION_LEVELS.SERIALIZABLE
+        }, async (t) => {
+          // 1. 이벤트 정보 가져오기 (락 설정) - 먼저 락을 획득하여 동시성 보장
           const event = await db.QuizEvent.findByPk(session.event_id, {
             lock: t.LOCK.UPDATE,
             transaction: t
@@ -297,11 +302,14 @@ const submitAnswer = async (req, res) => {
             throw new Error('이벤트를 찾을 수 없습니다');
           }
 
-          // 2. 현재 당첨자 수 확인
+          // 2. 현재 당첨자 수 확인 (락이 걸린 상태에서 카운트)
+          // SQLite에서는 트랜잭션이 직렬화되므로 안전함
           const currentWinnerCount = await db.LuckyDraw.count({
             where: { event_id: session.event_id },
             transaction: t
           });
+
+          console.log(`[LuckyDraw 동시성] 트랜잭션 ID: ${t.id}, 현재 카운트: ${currentWinnerCount}`);
 
           console.log(`[LuckyDraw] 현재 당첨자: ${currentWinnerCount}명 / 최대: ${event.max_winners}명`);
 
@@ -355,7 +363,14 @@ const submitAnswer = async (req, res) => {
 
       } catch (error) {
         console.error('[LuckyDraw] 추첨 중 에러:', error);
+        
+        // SQLite BUSY 에러인 경우 재시도 안내
+        if (error.name === 'SequelizeDatabaseError' && error.message.includes('SQLITE_BUSY')) {
+          console.warn('[LuckyDraw] 데이터베이스 경합 발생 - 다른 사용자가 동시에 당첨 처리 중');
+        }
+        
         // 에러가 나도 퀴즈는 계속 진행
+        response.luckydraw_result = { won: false, reason: 'error' };
       }
     }
 
