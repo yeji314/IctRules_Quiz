@@ -304,11 +304,11 @@ const createQuestion = async (req, res) => {
       });
     }
 
-    // 문제 타입 검증
-    const validTypes = ['dragdrop', 'typing', 'fillblank', 'ox', 'finderror'];
+    // 문제 타입 검증 (데이터베이스 모델과 일치)
+    const validTypes = ['drag_and_drop', 'typing', 'fill_in_blank', 'ox', 'best_action'];
     if (!validTypes.includes(question_type)) {
       return res.status(400).json({
-        error: '유효하지 않은 문제 타입입니다'
+        error: `유효하지 않은 문제 타입입니다: ${question_type}. 허용된 타입: ${validTypes.join(', ')}`
       });
     }
 
@@ -371,12 +371,12 @@ const updateQuestion = async (req, res) => {
       });
     }
 
-    // 문제 타입 검증
+    // 문제 타입 검증 (데이터베이스 모델과 일치)
     if (question_type) {
-      const validTypes = ['dragdrop', 'typing', 'fillblank', 'ox', 'finderror'];
+      const validTypes = ['drag_and_drop', 'typing', 'fill_in_blank', 'ox', 'best_action'];
       if (!validTypes.includes(question_type)) {
         return res.status(400).json({
-          error: '유효하지 않은 문제 타입입니다'
+          error: `유효하지 않은 문제 타입입니다: ${question_type}. 허용된 타입: ${validTypes.join(', ')}`
         });
       }
     }
@@ -483,7 +483,8 @@ const bulkUploadQuestions = async (req, res) => {
       });
     }
 
-    const validTypes = ['dragdrop', 'typing', 'multiple', 'ox', 'find_wrong'];
+    // 문제 타입 검증 (데이터베이스 모델과 일치)
+    const validTypes = ['drag_and_drop', 'typing', 'fill_in_blank', 'ox', 'best_action'];
     const validCategories = ['normal', 'luckydraw'];
 
     const results = {
