@@ -48,6 +48,9 @@ const cancelDepartmentBtn = $('#cancelDepartmentBtn');
 const adminModal = $('#adminModal');
 const adminForm = $('#adminForm');
 const cancelAdminBtn = $('#cancelAdminBtn');
+const participantsModal = $('#participantsModal');
+const participantsTableBody = $('#participantsTableBody');
+const closeParticipantsBtn = $('#closeParticipantsBtn');
 
 // 상태
 let currentPage = 'dashboard';
@@ -56,6 +59,7 @@ let editingEventId = null;
 let editingQuestionId = null;
 let editingDepartmentId = null;
 let allEvents = [];
+let allQuestions = [];
 
 /**
  * 초기화
@@ -99,6 +103,15 @@ async function init() {
   }
   if (cancelAdminBtn) {
     cancelAdminBtn.addEventListener('click', () => adminModal.close());
+  }
+  if (closeParticipantsBtn) {
+    closeParticipantsBtn.addEventListener('click', () => participantsModal.close());
+  }
+
+  // 문제 유형 필터
+  const questionTypeFilter = $('#questionTypeFilter');
+  if (questionTypeFilter) {
+    questionTypeFilter.addEventListener('change', filterQuestions);
   }
 
   eventForm.addEventListener('submit', handleEventSubmit);
@@ -242,6 +255,7 @@ async function loadDepartmentStats() {
 
       const deptItem = document.createElement('div');
       deptItem.className = 'department-item';
+      deptItem.style.cursor = 'pointer';
       deptItem.innerHTML = `
         <div class="department-header">
           <div class="department-name">${dept.department || '미지정'}</div>
@@ -251,6 +265,12 @@ async function loadDepartmentStats() {
           <div class="gauge-fill ${fillClass}" style="width: ${percentage}%;"></div>
         </div>
       `;
+      
+      // 클릭 이벤트 추가 - 부서원 목록 표시
+      deptItem.addEventListener('click', () => {
+        showParticipants(dept.department, eventId);
+      });
+      
       departmentStats.appendChild(deptItem);
     });
 
@@ -426,12 +446,22 @@ async function loadQuestions(eventId) {
 
     if (!response.questions || response.questions.length === 0) {
       questionsList.innerHTML = '<div class="loading-message"><p>📝 등록된 문제가 없습니다</p></div>';
+      allQuestions = [];
       return;
+    }
+
+    // 전역 변수에 저장 (필터링용)
+    allQuestions = response.questions;
+
+    // 필터 초기화
+    const filterSelect = $('#questionTypeFilter');
+    if (filterSelect) {
+      filterSelect.value = '';
     }
 
     // 문제 카드 렌더링
     questionsList.innerHTML = '';
-    response.questions.forEach((question, index) => {
+    allQuestions.forEach((question, index) => {
       const card = createQuestionCard(question, index + 1);
       questionsList.appendChild(card);
     });
@@ -439,6 +469,7 @@ async function loadQuestions(eventId) {
   } catch (error) {
     console.error('문제 목록 로드 실패:', error);
     questionsList.innerHTML = '<div class="loading-message"><p>❌ 로드 실패</p></div>';
+    allQuestions = [];
   }
 }
 
@@ -594,10 +625,32 @@ function openQuestionModal(question = null) {
 
   editingQuestionId = question ? question.id : null;
 
+  // 서버에서 내려오는 question_type(예: drag_and_drop, fill_in_blank, best_action)을
+  // 셀렉트 박스의 값(dragdrop, fillblank, bestaction)으로 변환
+  const reverseTypeMapping = {
+    'drag_and_drop': 'dragdrop',
+    'typing': 'typing',
+    'fill_in_blank': 'fillblank',
+    'ox': 'ox',
+    'best_action': 'bestaction'
+  };
+
+  const uiQuestionType = question
+    ? (reverseTypeMapping[question.question_type] || question.question_type || '')
+    : '';
+
   $('#questionModalTitle').textContent = question ? '문제 수정' : '문제 추가';
-  $('#questionType').value = question ? question.question_type : '';
+  $('#questionType').value = uiQuestionType;
   $('#questionText').value = question ? question.question_text : '';
   $('#questionExplanation').value = question ? (question.explanation || '') : '';
+
+  // summary와 highlight 로드 (디버깅)
+  console.log('[Admin] Question data:', question);
+  console.log('[Admin] Summary:', question ? question.summary : 'N/A');
+  console.log('[Admin] Highlight:', question ? question.highlight : 'N/A');
+
+  $('#questionSummary').value = question ? (question.summary || '') : '';
+  $('#questionHighlight').value = question ? (question.highlight || '') : '';
 
   // 문제 유형에 따른 동적 필드 렌더링
   renderQuestionDataFields(question);
@@ -651,9 +704,15 @@ function renderQuestionDataFields(question = null) {
     case 'fillblank':
       container.innerHTML = `
         <div class="form-field">
-          <label>선택지 (콤마로 구분, 5개)</label>
-          <input type="text" id="fillOptions" class="text-input" placeholder="예: 옵션1, 옵션2, 옵션3, 옵션4, 옵션5" required value="${questionData?.options?.join(', ') || ''}">
-          <p class="note">5개의 선택지를 콤마로 구분하여 입력하세요</p>
+          <p class="note" style="background: #fff3cd; padding: 12px; border-radius: 8px; border: 2px solid #ffc107; margin-bottom: 16px;">
+            💡 <strong>빈칸 표기 방법:</strong> 문제 내용에서 빈칸을 <strong>[]</strong>로 표기하세요.<br>
+            예시: "휴가는 반드시 []에 등록해야 합니다." → 퀴즈에서 <span style="display: inline-block; min-width: 40px; height: 20px; background: #ffe66d; border: 2px solid #2c2c2c; border-radius: 4px; vertical-align: middle;"></span> 로 표시됩니다.
+          </p>
+        </div>
+        <div class="form-field">
+          <label>선택지 (콤마로 구분, 4개)</label>
+          <input type="text" id="fillOptions" class="text-input" placeholder="예: 옵션1, 옵션2, 옵션3, 옵션4" required value="${questionData?.options?.join(', ') || ''}">
+          <p class="note">4개의 선택지를 콤마로 구분하여 입력하세요</p>
         </div>
         <div class="form-field">
           <label>정답</label>
@@ -805,7 +864,9 @@ async function handleQuestionSubmit(e) {
     category: 'normal', // 기본값으로 설정 (럭키드로우는 동적으로 결정)
     question_text: $('#questionText').value,
     question_data: questionData,
-    explanation: $('#questionExplanation').value
+    explanation: $('#questionExplanation').value,
+    summary: $('#questionSummary').value || null,
+    highlight: $('#questionHighlight').value || null
   };
 
   try {
@@ -1298,6 +1359,72 @@ async function deleteAdminConfirm(id, employeeId) {
     alert('삭제 실패: ' + error.message);
     playSound('wrong');
   }
+}
+
+/**
+ * 부서원 목록 표시
+ */
+async function showParticipants(departmentName, eventId) {
+  try {
+    $('#participantsModalTitle').textContent = `${departmentName} - 부서원 목록`;
+    participantsModal.showModal();
+    participantsTableBody.innerHTML = '<tr><td colspan="3" class="loading-message">⏳ 로딩 중...</td></tr>';
+
+    // API 호출
+    const response = await admin.getDepartmentParticipants(departmentName, eventId || null);
+
+    if (!response.participants || response.participants.length === 0) {
+      participantsTableBody.innerHTML = '<tr><td colspan="3" class="loading-message">👤 부서원 정보가 없습니다</td></tr>';
+      return;
+    }
+
+    // 부서원 테이블 렌더링
+    participantsTableBody.innerHTML = '';
+    response.participants.forEach(participant => {
+      const row = document.createElement('tr');
+      const participated = participant.participated ? '참여 ✓' : '미참여';
+      const completedCount = participant.completed_questions || 0;
+      
+      row.innerHTML = `
+        <td>${participant.name || '-'}</td>
+        <td style="color: ${participant.participated ? '#4aa52e' : '#999'};">${participated}</td>
+        <td>${completedCount}문제</td>
+      `;
+      participantsTableBody.appendChild(row);
+    });
+
+  } catch (error) {
+    console.error('부서원 목록 로드 실패:', error);
+    participantsTableBody.innerHTML = '<tr><td colspan="3" class="loading-message">❌ 로드 실패</td></tr>';
+  }
+}
+
+/**
+ * 문제 유형별 필터링
+ */
+function filterQuestions() {
+  const filterValue = $('#questionTypeFilter').value;
+  const questionsList = $('#questionsList');
+  
+  if (!allQuestions || allQuestions.length === 0) {
+    return;
+  }
+
+  questionsList.innerHTML = '';
+  
+  const filteredQuestions = filterValue 
+    ? allQuestions.filter(q => q.question_type === filterValue)
+    : allQuestions;
+
+  if (filteredQuestions.length === 0) {
+    questionsList.innerHTML = '<div class="loading-message"><p>📝 해당 유형의 문제가 없습니다</p></div>';
+    return;
+  }
+
+  filteredQuestions.forEach((question, index) => {
+    const card = createQuestionCard(question, index + 1);
+    questionsList.appendChild(card);
+  });
 }
 
 /**

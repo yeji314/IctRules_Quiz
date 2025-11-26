@@ -9,76 +9,30 @@ body {
   font-family: var(--font-galmuri);
 }
 
-/* 우측 상단: 로그아웃 버튼 */
+/* 우측 상단: 사용자 섹션 (quiz-list와 동일) */
 .user-section {
   position: fixed;
   top: 30px;
   right: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   z-index: 100;
 }
 
-/* 로그아웃 아이콘 - 노란 판자 + 빨간 화살표 */
-.logout-icon {
-  position: relative;
-  width: 90px;
-  height: 120px;
-  background: #f8a61a; /* 노란판자 */
-  border: 8px solid #000; /* 두꺼운 검정 라인 */
-  border-radius: 22px;
-  box-sizing: border-box;
-  cursor: pointer;
-}
-
-/* 왼쪽 아래 작은 점 2개 (하나의 원과 그림자 활용) */
-.logout-icon::before {
-  content: "";
-  position: absolute;
-  left: -4px;
-  bottom: 6px;
-  width: 10px;
-  height: 10px;
-  background: #000;
-  border-radius: 50%;
-  box-shadow: 0 -16px 0 #000; /* 위쪽 점 하나 더 */
-}
-
-/* 오른쪽 빨간 화살표 */
-.logout-icon::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: -38px;
-  transform: translateY(-50%);
-  width: 50px;
-  height: 36px;
-  background: #e84133;
-  clip-path: polygon(
-    0% 0%,
-    65% 0%,
-    100% 50%,
-    65% 100%,
-    0% 100%,
-    30% 50%
-  );
-  border: 8px solid #000;
-  border-left: none;
-  border-radius: 6px;
-}
-
-.logout-icon:hover {
-  filter: brightness(1.05);
-  transform: translateY(-2px);
-}
-
-.logout-icon:active {
-  transform: translateY(0);
+.user-name-display {
+  font-family: var(--font-galmuri);
+  font-size: 16px;
+  font-weight: bold;
+  color: #000000;
+  text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.8);
 }
 
 /* 왼쪽 하단 영역: 캐릭터 섹션 - 잔디 라인 바로 위 */
 .character-section {
   position: fixed;
-  bottom: 120px; /* 잔디 라인 바로 위 (80px 흙 + 40px 잔디) */
-  left: 40px;
+  bottom: 11.11vh; /* 120px / 1080px = 11.11vh - 잔디 라인 바로 위 (80px 흙 + 40px 잔디) */
+  left: 2.08%; /* 40px / 1920px */
   display: flex;
   align-items: flex-end;
   gap: 20px;
@@ -90,10 +44,10 @@ body {
   z-index: 51;
 }
 
-/* 캐릭터 이미지 - quiz-list와 동일한 크기 (4배) */
+/* 캐릭터 이미지 - 고정 크기 10% */
 .character-img {
   height: auto;
-  width: 110px;
+  width: 10%;
   display: block;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
@@ -101,6 +55,11 @@ body {
   transform: scale(4);
   transform-origin: bottom center;
   transition: transform 0.3s ease;
+}
+
+/* fighting2.png (thinking) 상태일 때만 20% */
+.character-img[src*="fighting2.png"] {
+  width: 20%;
 }
 
 /* 캐릭터 감정 애니메이션 */
@@ -119,27 +78,25 @@ body {
   }
 }
 
-/* 나무와 우체통 - static 위치 */
-.character-section .tree,
-.character-section .mailbox {
-  position: static;
-}
-
-/* 말풍선 - 캐릭터 머리 바로 위에 배치 (X축 정렬) */
+/* 말풍선 - 캐릭터 앵커 기준 위치 (불변 조건 A: 근접 고정) */
 .speech-bubble {
   position: fixed;
-  bottom: 55%;
-  left: 15%;
-  transform: translateX(-50%);
+  /* JS에서 CSS 변수로 캐릭터 앵커 좌표 + ideal-gap(8px) 주입 */
+  /* 꼬리 끝점(pointer tip)을 고정 앵커로 사용 - 높이 변화 시 위로만 성장 */
+  bottom: var(--anchor-bottom, 55vh);
+  left: var(--anchor-left, 15%);
+  transform: translateX(-50%); /* 중앙 정렬만, Y축 이동 제거 */
+  transform-origin: bottom center; /* 꼬리 끝을 기준점으로 설정 */
   image-rendering: pixelated;
   z-index: 200;
   opacity: 1;
   visibility: visible;
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transition: left 0.2s ease-out, bottom 0.2s ease-out; /* position만 transition */
   /* 말풍선 크기를 컨텐츠에 맞게 자동 조정 */
   width: auto;
   min-width: 280px;
   max-width: 400px;
+  pointer-events: none; /* 말풍선이 클릭 이벤트 방해하지 않도록 */
 }
 
 /* 말풍선 항상 표시 - hidden 클래스 무효화 */
@@ -163,14 +120,17 @@ body {
   right: 32px;
   bottom: 15px; /* 18px → 15px로 축소 */
   font-family: var(--font-galmuri);
-  font-size: 12px; /* 기본 크기 12px로 고정 */
+  font-size: 14px; /* 기본 크기 14px로 고정 */
   color: #000000;
+  font-weight: 700; /* 가독성 개선: 굵게 */
   line-height: 1.5; /* 1.7 → 1.5로 축소 */
   overflow-wrap: break-word;
   word-break: break-word;
   overflow: visible; /* 텍스트 측정을 위해 visible로 변경 */
   text-align: left; /* 모든 텍스트 왼쪽 정렬 */
   max-height: none; /* 최대 높이 제한 제거 */
+  -webkit-font-smoothing: none;
+  text-rendering: geometricPrecision;
 }
 
 /* 말풍선 상태별 효과 */
@@ -187,14 +147,17 @@ body {
 }
 
 .speech-bubble.luckydraw-hint .speech-bubble-text {
-  font-size: 12px; /* 12px로 통일 */
-  font-weight: bold;
-  color: #ff8800;
+  font-size: 14px; /* 14px로 통일 */
+  font-weight: bold; /* 럭키드로우 전용: 기존 굵기 유지 */
+  color: #ff8800 !important; /* 럭키드로우 전용: 주황색 유지 */
   text-align: left; /* 왼쪽 정렬 */
+  -webkit-font-smoothing: antialiased; /* 럭키드로우는 부드럽게 */
+  text-rendering: optimizeLegibility;
+  text-shadow: none; /* 럭키드로우는 쉐도우 없음 */
 }
 
 .speech-bubble.ox-hint .speech-bubble-text {
-  font-size: 12px; /* 12px로 통일 */
+  font-size: 14px; /* 14px로 통일 */
   text-align: left; /* 왼쪽 정렬 */
   display: block; /* flex 제거 */
   top: 28px; /* 기본 위치로 복원 */
@@ -202,7 +165,7 @@ body {
 }
 
 .speech-bubble.long .speech-bubble-text {
-  font-size: 12px; /* 12px로 통일 */
+  font-size: 14px; /* 14px로 통일 */
   line-height: 1.6;
   text-align: left; /* 왼쪽 정렬 */
 }
@@ -210,19 +173,19 @@ body {
 .speech-bubble.empty .speech-bubble-text {
   opacity: 0.7;
   color: #666;
-  font-size: 12px; /* 12px로 통일 */
+  font-size: 14px; /* 14px로 통일 */
   text-align: left; /* 왼쪽 정렬 */
 }
 
-/* "느낌 GOOD!" 메시지 크기도 12px로 통일 */
+/* "느낌 GOOD!" 메시지 크기도 14px로 통일 */
 .speech-bubble.correct .speech-bubble-text {
-  font-size: 12px; /* 12px로 통일 */
+  font-size: 14px; /* 14px로 통일 */
   text-align: left; /* 왼쪽 정렬 */
 }
 
-/* "흠..." 메시지 크기도 12px로 통일 */
+/* "흠..." 메시지 크기도 14px로 통일 */
 .speech-bubble.incorrect .speech-bubble-text {
-  font-size: 12px; /* 12px로 통일 */
+  font-size: 14px; /* 14px로 통일 */
   text-align: left; /* 왼쪽 정렬 */
 }
 
@@ -239,55 +202,87 @@ body {
   text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.8);
 }
 
-/* 진행바 래퍼 - 우측 상단 위치 (로그아웃 버튼 아래) */
+/* 진행바 래퍼 - QA 패널 바로 위, 중앙 정렬 */
 .quiz-progress {
-  position: fixed;
-  top: 80px; /* 로그아웃 버튼 아래 배치 */
-  right: 40px; /* 로그아웃 버튼과 같은 right 위치 */
-  z-index: 100;
+  width: 100%; /* 부모(.quiz-content)의 폭을 따라감 = QA 패널과 동일 */
+  margin-bottom: 12px; /* QA 패널과의 간격 */
+  display: block;
 }
 
-/* 픽셀 진행바 - 각진 네모 스타일 */
+/* 픽셀 진행바 - 전체 UI에 맞춘 나무/픽셀 스타일 */
 .quiz-progress .pixel-progress {
-  width: 140px;              /* 필요 시 원하는 폭으로 변경 */
-  height: 16px;
-  padding: 2px;              /* 안쪽 여백 = 테두리와 내용 사이 */
+  position: relative;
+  width: 100%;   /* 부모 폭에 맞춤 (QA 패널과 동일) */
+  max-width: 720px; /* quiz-content의 max-width와 동일 */
+  margin: 0 auto; /* 중앙 정렬 */
+  height: 26px;
+  padding: 3px;
   box-sizing: border-box;
-  background: #ffffff;
-  border: 2px solid #8b5a1a; /* 갈색 테두리 */
-  border-radius: 0;          /* 각진 네모 */
+  border-radius: 0;
+  background: linear-gradient(
+    to bottom,
+    #f5dba5 0%,
+    #e8c68a 20%,
+    #d4a968 40%,
+    #e8c68a 60%,
+    #f5dba5 100%
+  ); /* 나무판자와 동일 톤 */
+  border: 2px solid #f8d878;
   box-shadow:
-    0 0 0 1px #000000;       /* 바깥 검정 픽셀 라인 */
+    0 2px 0 #8b6f47,
+    0 4px 6px rgba(0, 0, 0, 0.35);
   image-rendering: pixelated;
+  overflow: hidden; /* 안쪽 채워지는 영역 클리핑 */
 }
 
-.quiz-progress .pixel-progress__fill {
-  --progress: 0.0;           /* 기본값: 0 (0~1 사이 값) */
-  width: calc(var(--progress) * 100%);
-  max-width: 100%;
-  height: 100%;
-  border-radius: 0;          /* 각진 네모 */
-  overflow: hidden;
-  position: relative;
-  background:
+/* 안쪽 홈 + 5칸 분할 라인 */
+.quiz-progress .pixel-progress::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 0;
+  background-color: #3b1f26; /* 어두운 홈 색 */
+  box-shadow:
+    inset 0 0 0 2px #150b0d;
+
+  /* 5칸으로 정확히 나뉜 세로 라인 (픽셀 스타일) */
+  background-image:
     repeating-linear-gradient(
       to right,
-      #ffd94a 0,                         /* 노란색 세그먼트 시작 */
-      #ffd94a calc(25% - 2px),           /* 세그먼트 끝(간격 전) */
-      transparent calc(25% - 2px),       /* 세그먼트와 간격 */
-      transparent 25%                    /* 간격 끝 → 4등분 */
+      transparent 0,
+      transparent calc(20% - 1px),
+      #000000 calc(20% - 1px),
+      #000000 20%
     );
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.7), /* 위쪽 밝은 라인 */
-    inset 0 -1px 0 rgba(0,0,0,0.25);     /* 아래쪽 어두운 라인 */
 }
 
-/* 퀴즈 컨텐츠 영역 - 질문 / 답변 / 버튼을 세로로 배치 */
+/* 노란색 진행바 (왼쪽부터 채워지는 픽셀 바) */
+.quiz-progress .pixel-progress__fill {
+  --progress: 0.0; /* 0~1 사이 값 (updateStarGauge가 설정) */
+
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  height: calc(100% - 8px);
+  /* 안쪽 홈(inset 4px 기준) 폭을 정확히 5등분하도록 계산 */
+  width: calc(var(--progress) * (100% - 8px));
+  max-width: calc(100% - 8px);
+  border-radius: 0;
+  background:
+    linear-gradient(180deg, #fff7b0 0%, #ffd94a 45%, #f6b800 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+    0 2px 0 rgba(0, 0, 0, 0.4);
+  transition: width 0.3s ease-out;
+}
+
+/* 퀴즈 컨텐츠 영역 - 질문 / 답변 / 버튼을 세로로 배치 (불변 조건 2) */
 .quiz-content {
   position: fixed;
-  top: 30px;
+  top: 40%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%); /* 완벽한 중앙 정렬 */
   width: 90%;
   max-width: 720px;
   z-index: 80;
@@ -295,39 +290,65 @@ body {
   flex-direction: column;
   gap: 24px;
   pointer-events: auto;
+  /* 내부 스크롤 제거 – 콘텐츠가 늘어나도 quiz-content 안에서만 배치 */
+  max-height: none;
+  overflow: visible;
 }
 
-/* Duolingo 스타일 흔들림 애니메이션 */
+/* 질문 + 답변을 하나의 무테 크림 패널로 묶는 래퍼 */
+.qa-panel {
+  width: 100%;
+  box-sizing: border-box;
+  background: #FFF6DC; /* Style2 크림 단색 */
+  border: none;        /* 테두리 금지 */
+  border-radius: 4px;  /* 아주 약한 라운드(테두리 아님) */
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15); /* 약한 종이 그림자 */
+
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* 문제와 답변이 패널 안에서 자연스럽게 이어지도록 간격만 설정 */
+}
+
+/* Duolingo 스타일 흔들림 애니메이션 - 중앙 정렬 유지 */
 .duolingo-shake {
   animation: duolingo-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
 @keyframes duolingo-shake {
   0%, 100% {
-    transform: translateX(-50%) translateX(0);
+    transform: translate(-50%, -50%) translateX(0);
   }
   10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-50%) translateX(-8px);
+    transform: translate(-50%, -50%) translateX(-8px);
   }
   20%, 40%, 60%, 80% {
-    transform: translateX(-50%) translateX(8px);
+    transform: translate(-50%, -50%) translateX(8px);
   }
 }
 
-/* 질문 영역 - Duolingo 스타일: 왼쪽 정렬, 큰 폰트 */
+/* 질문 영역 - Style 2: Muted Version (연한 종이 패치 + 스티치 + 약한 그림자) */
 .question {
   margin-bottom: 0;
-  padding: 0;
+  padding: 0; /* 패널 안 텍스트만 보이도록 여백은 패널에 위임 */
   font-family: var(--font-galmuri);
   font-size: 26px;
   font-weight: 700;
   line-height: 1.6;
   color: #000000;
   text-align: left;
-  background: none;
+  background: transparent; /* 패널 배경만 보이도록 제거 */
   border: none;
-  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.6);
-  pointer-events: auto; /* 질문은 클릭 가능 */
+  border-radius: 0;
+  box-shadow: none;        /* 질문 자체의 박스/그림자 제거 */
+  text-shadow: none;       /* 텍스트 그림자 제거 */
+  pointer-events: auto;    /* 질문은 클릭 가능 */
+  position: static;        /* 패널 안 텍스트 요소로만 동작 */
+}
+
+/* 질문 박스의 점선/스티치 효과 제거 */
+.question::before {
+  content: none;
 }
 
 /* 질문 등장 애니메이션 */
@@ -349,9 +370,11 @@ body {
   }
 }
 
-/* BLANK 칩 스타일 */
+/* 빈칸 네모 박스 스타일 (관리자가 []로 표기) */
 .blank-chip {
   display: inline-block;
+  min-width: 60px;
+  height: 28px;
   padding: 4px 12px;
   margin: 0 4px;
   background: #ffe66d;
@@ -375,48 +398,75 @@ body {
 /* === 유형 1: Drag & Drop === */
 .dragdrop-container {
   display: flex;
-  gap: 30px;
+  gap: 32px;
   align-items: stretch;
   justify-content: center;
-  min-height: 300px;
+  min-height: 260px;
+  padding: 12px 0;
 }
 
 .dragdrop-target {
   flex-shrink: 0;
-  width: 220px;
+  width: 260px;
   height: auto;
   align-self: stretch; /* 컨테이너 높이 가득 채우기 */
-  background: #ffffff;
-  border: 4px dashed #8b8b8b;
+  background: linear-gradient(
+    to bottom,
+    #f5dba5 0%,
+    #e8c68a 20%,
+    #d4a968 40%,
+    #e8c68a 60%,
+    #f5dba5 100%
+  ); /* 나무판자와 동일한 베이스 */
+  border-radius: 6px;
   box-shadow:
-    inset 0 0 0 4px #ffffff,
-    inset 0 0 0 8px #d4d4d4,
-    4px 4px 0 0 rgba(0, 0, 0, 0.15);
+    0 4px 0 #8b6f47,
+    0 8px 14px rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  padding: 18px 20px;
+  image-rendering: pixelated;
+}
+
+.dragdrop-target .target-text {
+  position: relative;
+  z-index: 2;
   font-family: var(--font-galmuri);
-  font-size: 14px;
-  color: #555555;
+  font-size: 13px;
+  color: #000000;
+  font-weight: 700;
   text-align: center;
-  padding: 20px;
+}
+
+/* 드롭 타겟 안쪽 슬롯 영역 - 문장을 떨어뜨릴 박스 */
+.dragdrop-target::before {
+  content: '';
+  position: absolute;
+  inset: 10px 12px;
+  border-radius: 4px;
+  background: #fff9e6;
+  border: 3px dashed #b58b4a;
+  box-shadow:
+    inset 0 0 0 2px #ffffff88,
+    inset 0 3px 0 rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .dragdrop-target.drag-over {
-  background: #fff9e6;
-  border-color: #ffca3a;
+  filter: brightness(1.03);
   box-shadow:
-    inset 0 0 0 4px #fff9e6,
-    inset 0 0 0 8px #ffe66d,
-    4px 4px 0 0 rgba(0, 0, 0, 0.2);
+    0 3px 0 #8b6f47,
+    0 7px 16px rgba(0, 0, 0, 0.4);
 }
 
 .dragdrop-items {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 /* dragdrop-item을 quiz-list의 wood-board 스타일로 변경 */
@@ -494,7 +544,7 @@ body {
 }
 
 .dragdrop-item:hover {
-  transform: translateY(-3px);
+  animation: gentle-sway 0.6s ease-in-out infinite;
   box-shadow:
     0 3px 0 #8b6f47,
     0 7px 13px rgba(0, 0, 0, 0.4);
@@ -515,69 +565,19 @@ body {
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
-/* 정답 아이템 드래그 시 힌트 효과 */
-.dragdrop-item.correct-hint {
-  animation: subtle-glow 0.8s ease-in-out infinite alternate;
-}
-
-@keyframes subtle-glow {
-  from {
-    box-shadow:
-      0 0 5px rgba(255, 215, 0, 0.4),
-      0 0 10px rgba(255, 215, 0, 0.2),
-      0 1px 0 #8b6f47,
-      0 3px 7px rgba(0, 0, 0, 0.3);
-  }
-  to {
-    box-shadow:
-      0 0 10px rgba(255, 215, 0, 0.6),
-      0 0 20px rgba(255, 215, 0, 0.3),
-      0 1px 0 #8b6f47,
-      0 3px 7px rgba(0, 0, 0, 0.3);
-  }
-}
-
-/* 자석 효과: 타겟 영역이 정답을 끌어당기는 듯한 시각 효과 */
-.dragdrop-target.magnetic-pull {
-  background: linear-gradient(135deg, #fff9e6 0%, #fffaeb 50%, #ffe66d 100%);
-  border-color: #ffd700;
-  border-style: solid;
-  box-shadow:
-    inset 0 0 0 4px #fff9e6,
-    inset 0 0 0 8px #ffe66d,
-    0 0 20px rgba(255, 215, 0, 0.5),
-    0 0 40px rgba(255, 215, 0, 0.3),
-    4px 4px 0 0 rgba(0, 0, 0, 0.2);
-  animation: magnetic-pulse 0.6s ease-in-out infinite alternate;
-}
-
-@keyframes magnetic-pulse {
-  from {
-    transform: scale(1);
-  }
-  to {
-    transform: scale(1.02);
-  }
-}
-
-/* 🔥 마우스가 정답 패널에 가까워질 때 흔들림 효과 */
-.dragdrop-item.hover-shake {
-  animation: shake-panel 0.3s ease-in-out infinite !important;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.8) !important;
-  border-color: #FFD700 !important;
-  z-index: 1000 !important;
-  transform-origin: center center;
-}
-
-@keyframes shake-panel {
+/* 살랑살랑 흔들리는 애니메이션 */
+@keyframes gentle-sway {
   0%, 100% {
-    transform: translateX(0) rotate(0deg);
+    transform: translateY(-3px) translateX(0) rotate(0deg);
   }
-  10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-4px) rotate(-2deg);
+  25% {
+    transform: translateY(-3px) translateX(-2px) rotate(-0.5deg);
   }
-  20%, 40%, 60%, 80% {
-    transform: translateX(4px) rotate(2deg);
+  50% {
+    transform: translateY(-3px) translateX(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-3px) translateX(2px) rotate(0.5deg);
   }
 }
 
@@ -784,13 +784,13 @@ body {
   height: 32px;
   border-radius: 50%;
   background: #f0f0f0;
-  border: 2px solid #d0d0d0;
+  border: 2px solid #000000;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   font-weight: bold;
-  color: #666;
+  color: #000000;
 }
 
 .multiple-choice-option .option-text {
@@ -876,8 +876,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  /* 질문 영역 + 여백 빼고 중앙정렬용 높이 */
-  min-height: calc(100vh - 260px);
+  /* 질문 바로 아래에서만 수평 중앙 정렬 - 세로 높이 강제 제거 */
+  min-height: 0;
 }
 
 /* O / VS / X 묶음 */
@@ -1311,17 +1311,18 @@ body {
     0 8px 0 #ea2b2b !important;
 }
 
-/* 장식 요소들 위치 오버라이드 - quiz-list와 동일 */
+/* 장식 요소들 위치 오버라이드 - quiz-list와 동일
+   (퀴즈 화면에서는 애니메이션 없이 위치만 조정) */
 .balloon-orange {
-  bottom: 320px !important;
-  left: auto !important;
-  right: 65% !important;
+  animation: none !important;      /* 공통 애니메이션 제거 */
 }
 
 .balloon-blue {
-  bottom: 280px !important;
+  bottom: 25.93vh !important; /* 280px / 1080px = 25.93vh */
   left: auto !important;
   right: 8% !important;
+  animation: none !important;      /* 공통 애니메이션 제거 */
+  transform: scale(2) !important;  /* 스케일 2배만 유지 */
 }
 
 
@@ -1344,6 +1345,11 @@ body {
     right: 20px;
   }
 
+  .user-name-display {
+    font-size: 10px;
+    padding: 6px 12px;
+  }
+
   .user-title {
     top: 20px;
     right: 60px;
@@ -1351,26 +1357,23 @@ body {
   }
 
   .character-section {
-    bottom: 120px;
-    left: 20px;
+    bottom: 11.11vh; /* 120px / 1080px = 11.11vh */
+    left: 1.04%; /* 20px / 1920px */
     gap: 15px;
-    transform: scale(0.8);
-    transform-origin: left bottom;
   }
 
   .character-img {
-    width: 90px;
+    width: 10%;
   }
 
   .speech-bubble {
-    bottom: 428px; /* 캐릭터(90px * 4 * 0.8 = 288px) + 잔디(120px) + 여백(20px) */
-    left: 164px; /* character-section left(20px) + 캐릭터 중앙(144px) */
+    /* JS가 자동으로 앵커 위치 계산 - scale만 적용 */
     transform: translateX(-50%) scale(0.8);
     transform-origin: bottom center;
   }
 
   .quiz-content {
-    top: 80px;
+    /* 중앙 정렬 유지 - top/left 변경 금지 */
     width: 95%;
     max-width: 600px;
     gap: 24px;
@@ -1386,8 +1389,8 @@ body {
   }
 
   .quiz-progress {
-    top: 90px; /* 로그아웃 버튼 아래 */
-    right: 20px;
+    top: 8.33%; /* 90px / 1080px - 로그아웃 버튼 아래 */
+    right: 1.04%; /* 20px / 1920px */
   }
 
   .dragdrop-container {
@@ -1433,27 +1436,22 @@ body {
     right: 50px;
   }
 
-  .character-section {
-    transform: scale(0.6);
-  }
-
   .character-img {
-    width: 70px;
+    width: 10%;
   }
 
   .speech-bubble {
-    bottom: 308px; /* 캐릭터(70px * 4 * 0.6 = 168px) + 잔디(120px) + 여백(20px) */
-    left: 94px; /* character-section left(10px) + 캐릭터 중앙(84px) */
+    /* JS가 자동으로 앵커 위치 계산 - scale만 적용 */
     transform: translateX(-50%) scale(0.6);
   }
 
   .quiz-progress {
-    top: 90px; /* 로그아웃 버튼 아래 */
-    right: 15px;
+    top: 8.33%; /* 90px / 1080px - 로그아웃 버튼 아래 */
+    right: 0.78%; /* 15px / 1920px */
   }
 
   .quiz-content {
-    top: 70px;
+    /* 중앙 정렬 유지 - top 변경 금지 */
     gap: 20px;
   }
 
@@ -1523,5 +1521,190 @@ body {
   .next-question-btn {
     font-size: 15px;
     padding: 16px 24px;
+  }
+}
+
+/* ===========================
+   색연필 애니메이션 오버레이
+   =========================== */
+.crayon-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+}
+
+/* 파란색 동그라미 (정답) */
+.crayon-overlay.show-circle {
+  opacity: 1;
+  animation: fadeInOut 1.5s ease-in-out;
+}
+
+.crayon-overlay.show-circle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  border: 0 solid rgba(59, 130, 246, 0.8); /* 파란색 */
+  border-radius: 50%;
+  animation: drawCircle 1s ease-out forwards;
+  box-shadow:
+    0 0 20px rgba(59, 130, 246, 0.5),
+    inset 0 0 20px rgba(59, 130, 246, 0.3);
+  filter: url('#crayon-filter');
+}
+
+/* 빨간색 X (오답) */
+.crayon-overlay.show-x {
+  opacity: 1;
+  animation: fadeInOut 1.2s ease-in-out;
+}
+
+.crayon-overlay.show-x::before,
+.crayon-overlay.show-x::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(239, 68, 68, 0.9),
+    rgba(220, 38, 38, 0.9),
+    rgba(239, 68, 68, 0.9)
+  );
+  border-radius: 4px;
+  box-shadow:
+    0 0 15px rgba(239, 68, 68, 0.6),
+    2px 2px 0 rgba(0, 0, 0, 0.1);
+  filter: url('#crayon-filter');
+}
+
+.crayon-overlay.show-x::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+  animation: drawXLine1 0.6s ease-out forwards;
+}
+
+.crayon-overlay.show-x::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+  animation: drawXLine2 0.6s 0.3s ease-out forwards;
+}
+
+/* 동그라미 그리기 애니메이션 */
+@keyframes drawCircle {
+  0% {
+    width: 0;
+    height: 0;
+    border-width: 0;
+  }
+  50% {
+    width: 500px;
+    height: 500px;
+    border-width: 12px;
+  }
+  100% {
+    width: 500px;
+    height: 500px;
+    border-width: 12px;
+  }
+}
+
+/* X 첫 번째 선 그리기 */
+@keyframes drawXLine1 {
+  0% {
+    height: 0;
+  }
+  100% {
+    height: 450px;
+  }
+}
+
+/* X 두 번째 선 그리기 */
+@keyframes drawXLine2 {
+  0% {
+    height: 0;
+  }
+  100% {
+    height: 450px;
+  }
+}
+
+/* 페이드 인/아웃 */
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 반응형 - 작은 화면에서 크기 조정 */
+@media (max-width: 768px) {
+  .crayon-overlay.show-circle::before {
+    animation: drawCircleSmall 1s ease-out forwards;
+  }
+
+  .crayon-overlay.show-x::before,
+  .crayon-overlay.show-x::after {
+    width: 6px;
+  }
+
+  @keyframes drawCircleSmall {
+    0% {
+      width: 0;
+      height: 0;
+      border-width: 0;
+    }
+    50% {
+      width: 300px;
+      height: 300px;
+      border-width: 10px;
+    }
+    100% {
+      width: 300px;
+      height: 300px;
+      border-width: 10px;
+    }
+  }
+
+  .crayon-overlay.show-x::before {
+    animation: drawXLine1Small 0.6s ease-out forwards;
+  }
+
+  .crayon-overlay.show-x::after {
+    animation: drawXLine2Small 0.6s 0.3s ease-out forwards;
+  }
+
+  @keyframes drawXLine1Small {
+    0% {
+      height: 0;
+    }
+    100% {
+      height: 280px;
+    }
+  }
+
+  @keyframes drawXLine2Small {
+    0% {
+      height: 0;
+    }
+    100% {
+      height: 280px;
+    }
   }
 }

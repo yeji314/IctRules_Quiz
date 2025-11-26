@@ -250,55 +250,27 @@
           </div>
         </div>
 
+        <!-- 유형 필터 -->
+        <div class="filter-section" style="margin-bottom: 20px;">
+          <label for="questionTypeFilter" style="margin-right: 10px; font-weight: bold;">문제 유형:</label>
+          <div class="select-wrapper" style="display: inline-block; width: 200px;">
+            <select id="questionTypeFilter">
+              <option value="">전체</option>
+              <option value="drag_and_drop">드래그앤드롭</option>
+              <option value="typing">타이핑</option>
+              <option value="fill_in_blank">빈칸맞추기</option>
+              <option value="ox">OX퀴즈</option>
+              <option value="best_action">상황형4지선다</option>
+            </select>
+          </div>
+        </div>
+
         <div class="questions-list" id="questionsList">
           <!-- 문제 목록이 여기에 렌더링됨 -->
         </div>
       </div>
     </section>
   </main>
-
-  <!-- 지면 -->
-  <div class="ground">
-    <div class="grass-layer">
-      <div class="grass-pixels"></div>
-    </div>
-    <div class="dirt-layer">
-      <div class="dirt-pixels"></div>
-    </div>
-  </div>
-
-  <!-- 픽셀 캐릭터 -->
-  <div class="character">
-    <div class="pixel-char hair"></div>
-  </div>
-
-  <!-- 장식 요소들 -->
-  <div class="balloon-orange">
-    <div class="balloon-o-pixel"></div>
-  </div>
-  <div class="balloon-blue">
-    <div class="balloon-b-pixel"></div>
-  </div>
-  <div class="tree">
-    <div class="tree-leaves"></div>
-  </div>
-  <div class="bush bush1"></div>
-  <div class="sunflower">
-    <div class="sunflower-flower"></div>
-  </div>
-  <div class="bush bush2"></div>
-  <div class="clover"></div>
-  <div class="small-plant"></div>
-  <div class="tnt">
-    <div class="tnt-box"></div>
-    <div class="tnt-label">TNT</div>
-  </div>
-  <div class="mailbox">
-    <div class="mailbox-top"></div>
-  </div>
-  <div class="cursor">
-    <div class="cursor-pixel"></div>
-  </div>
 
   <!-- 이벤트 생성/수정 모달 -->
   <dialog class="pixel-dialog" id="eventModal">
@@ -367,6 +339,7 @@
       <div class="form-field">
         <label for="questionText">문제 내용</label>
         <textarea id="questionText" class="text-area" rows="3" required></textarea>
+        <p class="note">💡 빈칸 맞추기 문제의 경우, 빈칸을 <strong>[]</strong>로 표기하세요. (예: "휴가는 []에 등록해야 합니다.")</p>
         <p class="note">💡 모든 문제가 LuckyDraw 추첨 기회를 제공할 수 있습니다. (첫 시도 정답 3개 달성 시)</p>
       </div>
 
@@ -376,6 +349,18 @@
       <div class="form-field">
         <label for="questionExplanation">해설 (오답 시 표시)</label>
         <textarea id="questionExplanation" class="text-area" rows="3"></textarea>
+      </div>
+
+      <div class="form-field">
+        <label for="questionSummary">결과 요약 (Result 페이지에 표시)</label>
+        <textarea id="questionSummary" class="text-area" rows="2" placeholder="예: 휴가는 반드시 Swing에 등록해야 합니다."></textarea>
+        <p class="note">💡 퀴즈 완료 후 결과 페이지에 이 요약이 표시됩니다.</p>
+      </div>
+
+      <div class="form-field">
+        <label for="questionHighlight">하이라이트 키워드 (선택사항)</label>
+        <input type="text" id="questionHighlight" class="form-input" placeholder="예: Swing에 등록">
+        <p class="note">💡 요약 텍스트에서 형광펜 효과로 강조할 키워드를 입력하세요.</p>
       </div>
 
       <menu class="dialog-menu">
@@ -398,7 +383,7 @@
       <div class="form-field">
         <p class="note">
           ℹ️ 엑셀 파일 형식:<br>
-          열: question_type | category | question_text | question_data (JSON) | explanation
+          열: question_type | category | question_text | question_data (JSON) | explanation | summary | highlight
         </p>
       </div>
 
@@ -462,11 +447,33 @@
     </form>
   </dialog>
 
-  <!-- 픽셀 지형 (quiz.html과 동일) -->
-  <div class="pixel-ground">
-    <div class="grass-layer"></div>
-    <div class="dirt-layer"></div>
-  </div>
+  <!-- 부서원 목록 모달 -->
+  <dialog class="pixel-dialog" id="participantsModal" style="max-width: 600px;">
+    <div>
+      <p class="modal-title" id="participantsModalTitle">부서원 목록</p>
+      
+      <div class="participants-container" style="max-height: 400px; overflow-y: auto;">
+        <table class="pixel-table" id="participantsTable">
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>참여 여부</th>
+              <th>완료 문제 수</th>
+            </tr>
+          </thead>
+          <tbody id="participantsTableBody">
+            <tr>
+              <td colspan="3" class="loading-message">⏳ 로딩 중...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <menu class="dialog-menu">
+        <button class="btn btn-primary" type="button" id="closeParticipantsBtn">닫기</button>
+      </menu>
+    </div>
+  </dialog>
 
   <!-- JavaScript -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>

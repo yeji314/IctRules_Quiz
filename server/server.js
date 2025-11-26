@@ -25,7 +25,7 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다`);
       console.log(`   환경: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`   API: http://localhost:${PORT}/api`);
+      console.log(`   API: https://localhost:${PORT}/api`);
     });
 
   } catch (error) {

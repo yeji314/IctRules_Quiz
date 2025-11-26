@@ -95,8 +95,8 @@ class QuizService {
     // 1. 현재 세션에서 3문제 이상 맞춤
     // 2. 현재 세션에서 당첨된 적 없음 (중요!)
     // 3. 전체 이벤트에서 당첨된 적 없음
-    // 4. 최대 당첨자 수 미달
-    const canShowLuckyDraw = firstCorrectCount >= 3 && !hasWonPrizeInSession && !hasWonPrizeInEvent && !maxWinnersReached;
+    // 4. 최대 당첨자 수와 무관하게 문제는 출제됨 (당첨 여부만 제한)
+    const canShowLuckyDraw = firstCorrectCount >= 3 && !hasWonPrizeInSession && !hasWonPrizeInEvent;
 
     // 1단계: 5가지 유형별로 1개씩 선택
     const selectedQuestions = [];
@@ -219,13 +219,16 @@ class QuizService {
 
     console.log(`[getNextQuestion] 현재 세션에서 한 번에 맞춘 문제 수: ${correctCount}`);
 
-    // 이미 푼 문제 ID 목록 (전체 이벤트 기준)
-    const previousAnswers = await db.QuizAnswer.findAll({
+    // 이미 푼 문제 ID 목록 (이벤트 기준, "완료된 세션"만 포함)
+    // - 규칙: 1~5회차 세션을 끝까지 완료한 문제만 "푼 문제"로 간주
+    // - 도중에 끝난(in_progress) 세션에서 푼 문제는 다시 출제 가능해야 함
+    const completedAnswers = await db.QuizAnswer.findAll({
       include: [{
         model: db.QuizSession,
         where: {
           user_id: currentSession.user_id,
-          event_id: eventId
+          event_id: eventId,
+          status: 'completed'
         },
         attributes: []
       }],
@@ -234,8 +237,19 @@ class QuizService {
       raw: true
     });
 
-    const excludeQuestionIds = previousAnswers.map(a => a.question_id);
-    console.log(`[getNextQuestion] 이미 푼 문제 ID (전체): [${excludeQuestionIds.join(', ')}]`);
+    const completedQuestionIds = completedAnswers.map(a => a.question_id);
+
+    // 현재 세션에서 이미 풀고 있는 문제들은 어떤 경우에도 다시 나오면 안 되므로 별도로 제외
+    const currentSessionQuestionIds = answeredQuestions.map(a => a.question_id);
+
+    const excludeQuestionIds = Array.from(new Set([
+      ...completedQuestionIds,
+      ...currentSessionQuestionIds
+    ]));
+
+    console.log(`[getNextQuestion] 이미 푼 문제 ID (완료된 세션): [${completedQuestionIds.join(', ')}]`);
+    console.log(`[getNextQuestion] 현재 세션에서 사용 중인 문제 ID: [${currentSessionQuestionIds.join(', ')}]`);
+    console.log(`[getNextQuestion] 최종 제외할 문제 ID: [${excludeQuestionIds.join(', ')}]`);
 
     // 해당 월(이벤트)에서 이미 선물에 당첨되었는지 확인
     const hasWonPrizeThisMonth = await db.LuckyDraw.count({
@@ -359,9 +373,9 @@ class QuizService {
    * 사용자의 퀴즈 목록 조회 (회차 계산 포함)
    */
   async getQuizListForUser(userId) {
-    // 모든 퀴즈 이벤트 가져오기
+    // 모든 퀴즈 이벤트 가져오기 (날짜 순서: 1월 → 12월)
     const events = await db.QuizEvent.findAll({
-      order: [['year_month', 'DESC']]
+      order: [['year_month', 'ASC']]
     });
 
     const quizList = await Promise.all(events.map(async (event) => {
@@ -421,7 +435,7 @@ class QuizService {
 
       console.log(`[QuizList] 사용자 ${userId}, 이벤트 ${event.id}: LuckyDraw 맞춘 개수 = ${luckyDrawCount}개`);
 
-      // 남은 문제 수 = 15 - (완료된 세션 × 5)
+      // 남은 문제 수 계산: 전체 15문제 - 이미 푼 문제 수
       const remainingQuestions = 15 - totalAnswered;
 
       // 완료한 문제 수 (패널용)
@@ -431,28 +445,34 @@ class QuizService {
       let buttonText, buttonEnabled;
       let status;
       const now = new Date();
-      
+
       // 종료일 비교: end_date의 마지막 시간(23:59:59)까지 유효
       const endDate = new Date(event.end_date);
       endDate.setHours(23, 59, 59, 999); // 해당 날짜의 끝으로 설정
       const isExpired = now > endDate;
 
+      // 상태 우선순위:
+      // 1. 만료된 이벤트
+      // 2. 남은 문제가 5개 미만 (세션 시작 불가)
+      // 3. 정상 상태 (START / CONTINUE)
       if (isExpired) {
         status = 'completed';
         buttonText = '만료됨 🔒';
+        buttonEnabled = false;
+      } else if (remainingQuestions < 5) {
+        // 남은 문제가 5개 미만이면 더 이상 세션 시작 불가
+        status = 'completed';
+        buttonText = '완료 ✓';
         buttonEnabled = false;
       } else if (completed_questions === 0) {
         status = 'start';
         buttonText = '시작하기 →';
         buttonEnabled = true;
-      } else if (completed_questions < 15) {
+      } else {
+        // completed_questions > 0 && remainingQuestions >= 5
         status = 'continue';
         buttonText = '계속하기 →';
         buttonEnabled = true;
-      } else {
-        status = 'completed';
-        buttonText = '완료 ✓';
-        buttonEnabled = false;
       }
 
       // 퀴즈명 생성 (월 텍스트: "1월" 형태)
@@ -468,6 +488,7 @@ class QuizService {
         currentRound,
         totalAnswered,
         completed_questions,
+        remainingQuestions,  // 남은 문제 수 추가
         status,
         correctCount,  // 첫 시도에 맞춘 문제 수
         totalQuestions: 15,

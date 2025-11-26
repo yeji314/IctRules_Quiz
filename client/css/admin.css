@@ -40,7 +40,7 @@ body::after {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 250px;
+  width: 13.02vw; /* 250px / 1920px = 13.02vw */
   background: rgba(255, 255, 255, 0.95);
   border-right: 4px solid #000000;
   padding: 30px 20px;
@@ -112,10 +112,10 @@ body::after {
 
 /* 메인 컨텐츠 영역 */
 .admin-main {
-  margin-left: 250px;
+  margin-left: 13.02vw; /* 250px / 1920px = 13.02vw */
   padding: 40px;
   min-height: calc(100vh - 150px);
-  padding-bottom: 200px;
+  padding-bottom: 18.52vh; /* 200px / 1080px = 18.52vh */
 }
 
 .admin-page {
@@ -551,17 +551,17 @@ body::after {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 120px;
+  height: 11.11vh; /* 120px / 1080px = 11.11vh */
   z-index: 1;
   pointer-events: none;
 }
 
 .grass-layer {
   position: absolute;
-  bottom: 50px;
+  bottom: 4.63vh; /* 50px / 1080px = 4.63vh */
   left: 0;
   right: 0;
-  height: 20px;
+  height: 1.85vh; /* 20px / 1080px = 1.85vh */
   background: repeating-linear-gradient(
     90deg,
     #92cc41 0px,
@@ -577,7 +577,7 @@ body::after {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 50px;
+  height: 4.63vh; /* 50px / 1080px = 4.63vh */
   background: repeating-linear-gradient(
     90deg,
     #8b7355 0px,
@@ -590,11 +590,11 @@ body::after {
 /* 반응형 */
 @media (max-width: 1024px) {
   .admin-sidebar {
-    width: 220px;
+    width: 11.46vw; /* 220px / 1920px = 11.46vw */
   }
 
   .admin-main {
-    margin-left: 220px;
+    margin-left: 11.46vw; /* 220px / 1920px = 11.46vw */
   }
 
   .stats-section {
@@ -609,11 +609,11 @@ body::after {
 
 @media (max-width: 768px) {
   .admin-sidebar {
-    width: 200px;
+    width: 10.42vw; /* 200px / 1920px = 10.42vw */
   }
 
   .admin-main {
-    margin-left: 200px;
+    margin-left: 10.42vw; /* 200px / 1920px = 10.42vw */
     padding: 20px;
   }
 
@@ -663,8 +663,8 @@ body::after {
     position: fixed;
     left: 0;
     top: 0;
-    height: 100vh;
-    width: 250px;
+    height: 100%;
+    width: 13.02vw; /* 250px / 1920px = 13.02vw */
     z-index: 1000;
     transform: translateX(-100%);
     transition: transform 0.3s ease;

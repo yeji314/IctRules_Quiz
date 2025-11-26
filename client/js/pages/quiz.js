@@ -5,6 +5,7 @@
 import { quiz as quizApi } from '../modules/api.js';
 import { requireAuth, getUser, logout } from '../modules/auth.js';
 import { $, show, hide, animate, playSound } from '../modules/utils.js';
+import { showPixelAlert, showPixelConfirm } from '../modules/pixel-dialog.js';
 
 // 인증 확인
 requireAuth();
@@ -17,7 +18,6 @@ const answersArea = $('#answersArea');
 const explanationBubble = $('#explanationBubble');
 const explanationText = $('#explanationText');
 const fireworksContainer = $('#fireworksContainer');
-const nextQuestionBtn = $('#nextQuestionBtn');
 const characterImg = document.querySelector('.character-img');
 
 // 상태
@@ -30,18 +30,18 @@ let firstAttemptCorrectCount = 0;
 let totalQuestions = 0;
 
 /**
- * 질문 헤더 포맷터 - [BLANK] 토큰을 칩 스타일로 치환
+ * 질문 헤더 포맷터 - [] 토큰을 빈칸 박스로 치환
  */
 function formatQuestionHeaderText(rawText) {
   if (!rawText) return '';
-  // [BLANK] 토큰을 시각적 칩으로 변환
-  return rawText.replace(/\[BLANK\]/g, '<span class="blank-chip">BLANK</span>');
+  // [] 토큰을 빈칸 네모 박스로 변환
+  return rawText.replace(/\[\]/g, '<span class="blank-chip"></span>');
 }
 
 /**
  * 초기화
  */
-function init() {
+async function init() {
   // 브라우저 뒤로가기 방지
   history.pushState(null, null, location.href);
   window.addEventListener('popstate', () => {
@@ -62,8 +62,9 @@ function init() {
   }
 
   // 로그아웃 이벤트
-  logoutBtn.addEventListener('click', () => {
-    if (confirm('로그아웃 하시겠습니까?')) {
+  logoutBtn.addEventListener('click', async () => {
+    const confirmed = await showPixelConfirm('로그아웃 하시겠습니까?', { title: '로그아웃' });
+    if (confirmed) {
       logout();
       window.location.href = '/pages/index.html';
     }
@@ -72,7 +73,7 @@ function init() {
   // 세션 정보 로드
   const sessionData = sessionStorage.getItem('currentSession');
   if (!sessionData) {
-    alert('세션 정보가 없습니다');
+    await showPixelAlert('세션 정보가 없습니다', { title: '오류' });
     window.location.href = '/pages/quiz-list.html';
     return;
   }
@@ -88,22 +89,10 @@ function init() {
   console.log('[Quiz Init] 전체 문제 수:', totalQuestions);
 
   if (!currentSession.question) {
-    alert('문제 정보가 없습니다');
+    await showPixelAlert('문제 정보가 없습니다', { title: '오류' });
     window.location.href = '/pages/quiz-list.html';
     return;
   }
-
-  // NEXT 버튼 이벤트 (제출 또는 다음 문제)
-  nextQuestionBtn.addEventListener('click', () => {
-    playSound('click');
-
-    // 버튼 텍스트가 "제출"이면 handleSubmit, "다음 문제"면 handleNext
-    if (nextQuestionBtn.textContent === '제출') {
-      handleSubmit();
-    } else {
-      handleNext();
-    }
-  });
 
   // ESC 키로 종료
   document.addEventListener('keydown', (e) => {
@@ -117,6 +106,74 @@ function init() {
 
   // 타이머 시작
   startTimer();
+
+  // 말풍선 앵커 업데이트 (불변 조건 1)
+  updateSpeechBubbleAnchor();
+
+  // 리사이즈/스크롤 시 앵커 재계산
+  window.addEventListener('resize', updateSpeechBubbleAnchor);
+  window.addEventListener('scroll', updateSpeechBubbleAnchor);
+
+  // 애니메이션/전환 후에도 앵커 재계산
+  const observer = new MutationObserver(updateSpeechBubbleAnchor);
+  const characterSection = document.querySelector('.character-section');
+  if (characterSection) {
+    observer.observe(characterSection, {
+      attributes: true,
+      childList: true,
+      subtree: true
+    });
+  }
+}
+
+/**
+ * 말풍선 앵커 업데이트 (불변 조건 A: 근접 고정)
+ * 캐릭터 top-center 좌표를 계산하여 CSS 변수로 주입
+ *
+ * Gap 제약:
+ * - ideal-gap: 8px (목표 간격)
+ * - min-gap: 4px (겹침 방지)
+ * - max-gap: 14px (멀어짐 방지)
+ */
+function updateSpeechBubbleAnchor() {
+  const characterImg = document.querySelector('.character-img');
+  const speechBubble = document.querySelector('.speech-bubble');
+
+  if (!characterImg || !speechBubble) return;
+
+  // Gap 제약 상수 (불변 조건 A)
+  const IDEAL_GAP = 8;
+  const MIN_GAP = 4;
+  const MAX_GAP = 14;
+
+  // 말풍선 SVG에서 꼬리 끝점의 상대 위치 (SVG 최하단으로부터의 거리)
+  // adjustSpeechBubbleSize()에서 꼬리는 항상 하단 12px 영역에 위치 (3단 계단형: 12px, 8px, 4px)
+  const TAIL_TIP_OFFSET = 12; // 꼬리 끝점이 SVG 하단에서 얼마나 올라와 있는지
+
+  // Get character's bounding rect (includes transforms)
+  const rect = characterImg.getBoundingClientRect();
+
+  // 캐릭터 top-center 좌표
+  const characterTopCenterX = rect.left + (rect.width / 2);
+  const characterTopY = rect.top;
+
+  // 꼬리 tip의 실제 Y 좌표 (캐릭터 top 위 IDEAL_GAP 떨어진 위치)
+  const tailTipTargetY = characterTopY - IDEAL_GAP;
+
+  // 말풍선 SVG bottom 위치 계산
+  // SVG의 bottom이 tailTipTargetY - TAIL_TIP_OFFSET에 위치해야 함
+  // (꼬리 tip은 SVG bottom으로부터 TAIL_TIP_OFFSET만큼 위에 있음)
+  const anchorBottom = window.innerHeight - (tailTipTargetY - TAIL_TIP_OFFSET);
+
+  // Gap 제약 검증 (실제 gap = 캐릭터 top과 꼬리 tip 사이 거리)
+  const actualGap = characterTopY - tailTipTargetY;
+  if (actualGap < MIN_GAP || actualGap > MAX_GAP) {
+    console.warn(`[Anchor] Gap constraint violated: ${actualGap.toFixed(1)}px (allowed: ${MIN_GAP}~${MAX_GAP}px)`);
+  }
+
+  // Inject CSS variables
+  speechBubble.style.setProperty('--anchor-left', `${characterTopCenterX}px`);
+  speechBubble.style.setProperty('--anchor-bottom', `${anchorBottom}px`);
 }
 
 /**
@@ -173,9 +230,6 @@ function loadQuestion() {
 
   // 말풍선 크기 즉시 조정 (새 문제 로드 시)
   adjustSpeechBubbleSize();
-
-  // NEXT 버튼 초기화 (숨김 상태로 시작)
-  nextQuestionBtn.classList.add('hidden');
 
   // 문제 타입에 따라 렌더링
   renderQuestion(question);
@@ -247,11 +301,8 @@ function renderDragDrop(question) {
   // 드롭 타겟 (상단)
   const targetEl = document.createElement('div');
   targetEl.className = 'dragdrop-target';
-  targetEl.textContent = target_label || '여기에 드래그하세요';
+  targetEl.innerHTML = `<span class="target-text">${target_label || '여기에 드래그하세요'}</span>`;
 
-  // 자석 효과를 위한 변수
-  let magnetThreshold = 100; // 자석 효과가 시작되는 거리 (픽셀)
-  let hoverThreshold = 80; // 🔥 마우스 근접 시 흔들림 효과 거리 (픽셀)
   let currentDraggingItem = null;
   let currentDraggingElement = null;
 
@@ -264,30 +315,16 @@ function renderDragDrop(question) {
       const rect = targetEl.getBoundingClientRect();
       const x = e.clientX;
       const y = e.clientY;
-
-      // 타겟 영역과의 거리 계산
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-
-      // 거리에 따라 자석 효과 강도 조절
-      if (distance < magnetThreshold) {
-        targetEl.classList.add('magnetic-pull');
-      } else {
-        targetEl.classList.remove('magnetic-pull');
-      }
     }
   });
 
   targetEl.addEventListener('dragleave', () => {
     targetEl.classList.remove('drag-over');
-    targetEl.classList.remove('magnetic-pull');
   });
 
   targetEl.addEventListener('drop', (e) => {
     e.preventDefault();
     targetEl.classList.remove('drag-over');
-    targetEl.classList.remove('magnetic-pull');
 
     const value = e.dataTransfer.getData('text/plain');
     currentAnswer = value;
@@ -315,60 +352,21 @@ function renderDragDrop(question) {
     itemEl.draggable = true;
     itemEl.dataset.value = item;
 
-    // 🔥 정답 패널에만 마우스 근접 감지 추가
-    if (item === correct_answer) {
-      console.log('[DragDrop] 정답 패널 설정:', item);
-      
-      // 마우스 움직임 감지 (전역)
-      const handleMouseMove = (e) => {
-        const rect = itemEl.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        
-        const distance = Math.sqrt(
-          Math.pow(e.clientX - centerX, 2) + 
-          Math.pow(e.clientY - centerY, 2)
-        );
-        
-        // 🔥 마우스가 가까우면 흔들림 효과
-        if (distance < hoverThreshold) {
-          itemEl.classList.add('hover-shake');
-          // console.log('[DragDrop] 마우스 근접 - 거리:', Math.round(distance));
-        } else {
-          itemEl.classList.remove('hover-shake');
-        }
-      };
-      
-      // 컨테이너에 마우스 이벤트 추가
-      container.addEventListener('mousemove', handleMouseMove);
-      
-      // 정리 함수 저장 (나중에 제거용)
-      itemEl._mouseMoveHandler = handleMouseMove;
-    }
-
     // 드래그 이벤트
     itemEl.addEventListener('dragstart', (e) => {
       itemEl.classList.add('dragging');
-      itemEl.classList.remove('hover-shake'); // 🔥 드래그 시작 시 hover 효과 제거
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', item);
       currentDraggingItem = item;
       currentDraggingElement = itemEl;
-
-      // 정답 아이템이면 힌트 효과
-      if (item === correct_answer) {
-        itemEl.classList.add('correct-hint');
-        console.log('[DragDrop] 정답 패널 드래그 시작:', item);
-      }
+      
+      console.log('[DragDrop] 드래그 시작:', item);
     });
 
     itemEl.addEventListener('dragend', () => {
       itemEl.classList.remove('dragging');
-      itemEl.classList.remove('correct-hint');
-      itemEl.classList.remove('hover-shake'); // 🔥 드래그 종료 시 hover 효과 제거
       currentDraggingItem = null;
       currentDraggingElement = null;
-      targetEl.classList.remove('magnetic-pull');
       
       console.log('[DragDrop] 드래그 종료');
     });
@@ -496,17 +494,10 @@ function renderTyping(question) {
       return;
     }
 
-    // 입력 중이면 제출 버튼 표시
-    if (currentAnswer.trim().length > 0) {
-      nextQuestionBtn.textContent = '제출';
-      nextQuestionBtn.classList.remove('hidden');
-    } else {
-      nextQuestionBtn.classList.add('hidden');
-    }
-
-    // 100% 완료시 효과음
+    // 100% 완료시 효과음 및 자동 제출
     if (currentAnswer === correct_answer) {
       playSound('correct');
+      setTimeout(() => handleSubmit(), 300);
     }
   });
 
@@ -790,7 +781,7 @@ async function handleSubmit() {
     }
   } catch (error) {
     console.error('답변 제출 실패:', error);
-    alert('답변 제출에 실패했습니다');
+    await showPixelAlert('답변 제출에 실패했습니다', { title: '오류' });
     answersArea.dataset.submitting = 'false';
   }
 }
@@ -798,7 +789,7 @@ async function handleSubmit() {
 /**
  * 피드백 표시
  */
-function showFeedback(result, question, response) {
+async function showFeedback(result, question, response) {
   if (result.is_correct) {
     // 정답: 초록색 표시 + 다음 문제 버튼으로 변경
     playSound('correct');
@@ -829,7 +820,7 @@ function showFeedback(result, question, response) {
     const positiveMsg = question.question_type === 'ox'
       ? '느낌 GOOD! 👍'
       : '정답입니다! 👏';
-    typeWriterEffect(explanationText, positiveMsg, 30);
+    await typeWriterEffect(explanationText, positiveMsg, 30);
 
     // 첫 시도에 맞춘 경우
     if (result.attempt === 1) {
@@ -840,27 +831,52 @@ function showFeedback(result, question, response) {
 
       // LuckyDraw 추첨 결과 확인
       if (response.luckydraw_result) {
-        // 우편 봉투 애니메이션 표시 (1초 후)
-        setTimeout(() => {
-          showLuckyDrawAnimation(response.luckydraw_result, currentQuestionIndex - 1);
+        // 우편 봉투 애니메이션 표시 (1초 후) - Promise 기반 완료 대기
+        setTimeout(async () => {
+          console.log('[LuckyDraw] 애니메이션 시작 대기 중...');
+
+          // 애니메이션이 완전히 끝날 때까지 대기
+          await showLuckyDrawAnimation(response.luckydraw_result, currentQuestionIndex - 1);
+
+          console.log('[LuckyDraw] 애니메이션 완료 - 이동 로직 시작');
+
+          // 현재 문제 번호(N)에 따라 이동
+          if (currentQuestionIndex === 5) {
+            // N=5: 마지막 문제 → 결과 페이지로 이동
+            console.log('[LuckyDraw] N=5: 결과 페이지로 이동');
+            handleNextQuestion();
+          } else {
+            // N=1~4: 다음 문제로 이동
+            console.log(`[LuckyDraw] N=${currentQuestionIndex}: 다음 문제로 이동`);
+            handleNextQuestion();
+          }
         }, 1000);
       } else {
         // 일반 문제 - 한 번에 맞춤 (노란색 칠하기)
         setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'correct-first'), 500);
+
+        // 일반 문제는 기존처럼 2초 후 자동 이동
+        setTimeout(() => {
+          console.log('[showFeedback] 일반 문제 - 다음 문제로 이동 시도:', {
+            session_complete: response.session_complete,
+            nextQuestion: currentSession.nextQuestion
+          });
+          handleNextQuestion();
+        }, 2000);
       }
     } else {
       // 첫 시도에 못 맞춘 경우 (회색 칠하기)
       setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'correct-retry'), 500);
-    }
 
-    // NEXT 버튼 표시
-    if (response.session_complete) {
-      nextQuestionBtn.textContent = '결과 보기';
-    } else {
-      nextQuestionBtn.textContent = '다음 문제';
+      // 2초 후 자동 이동
+      setTimeout(() => {
+        console.log('[showFeedback] 재시도 정답 - 다음 문제로 이동 시도:', {
+          session_complete: response.session_complete,
+          nextQuestion: currentSession.nextQuestion
+        });
+        handleNextQuestion();
+      }, 2000);
     }
-    nextQuestionBtn.classList.remove('hidden');
-    animate(nextQuestionBtn, 'bounce');
 
   } else {
     // 오답: 빨간색 표시 + 해설 말풍선 표시
@@ -899,20 +915,19 @@ function showFeedback(result, question, response) {
 
     // OX 문제는 "흠..." 표시
     if (question.question_type === 'ox') {
-      typeWriterEffect(explanationText, '흠... 🤔', 40);
-      setTimeout(() => {
-        if (result.explanation || question.explanation) {
-          const text = result.explanation || question.explanation;
-          explanationBubble.classList.add('long');
-          typeWriterEffect(explanationText, text, 20);
-        }
-      }, 800);
+      await typeWriterEffect(explanationText, '흠... 🤔', 40);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      if (result.explanation || question.explanation) {
+        const text = result.explanation || question.explanation;
+        explanationBubble.classList.add('long');
+        await typeWriterEffect(explanationText, text, 20);
+      }
     } else {
       // 다른 문제 타입은 바로 해설 표시
       if (result.explanation || question.explanation) {
         const text = result.explanation || question.explanation;
         explanationBubble.classList.add('long');
-        typeWriterEffect(explanationText, text, 20);
+        await typeWriterEffect(explanationText, text, 20);
       }
     }
 
@@ -924,13 +939,10 @@ function showFeedback(result, question, response) {
       el.classList.remove('selected', 'incorrect');
     });
 
-    // 오답 시 NEXT 버튼은 항상 숨김 (정답을 선택해야만 다음으로 넘어갈 수 있음)
-    nextQuestionBtn.classList.add('hidden');
-
     // 사용자에게 다시 시도하라는 메시지 추가
     setTimeout(() => {
       if (explanationText.textContent.indexOf('다시') === -1) {
-        explanationText.textContent += '\n\n정답을 선택해야 다음 문제로 넘어갈 수 있습니다.';
+        explanationText.textContent += '\n\n 다음 문제로 넘어갈 수 있습니다.';
       }
     }, 500);
   }
@@ -1010,8 +1022,7 @@ function highlightIncorrectAnswer() {
         target.style.borderColor = '#d41010';
         target.style.background = 'rgba(252, 40, 71, 0.3)';
         // 드롭된 항목 제거 (다시 선택 가능하도록)
-        target.innerHTML = '';
-        target.textContent = '여기에 드래그하세요';
+        target.innerHTML = '<span class="target-text">여기에 드래그하세요</span>';
       }
       break;
 
@@ -1050,7 +1061,7 @@ function highlightIncorrectAnswer() {
 /**
  * 다음 문제
  */
-function handleNext() {
+async function handleNextQuestion() {
   // 세션 완료 확인
   if (currentSession.session_complete) {
     completeQuiz();
@@ -1059,7 +1070,7 @@ function handleNext() {
 
   // 다음 문제가 있는지 확인
   if (!currentSession.nextQuestion) {
-    alert('다음 문제를 불러올 수 없습니다');
+    await showPixelAlert('다음 문제를 불러올 수 없습니다', { title: '안내' });
     return;
   }
 
@@ -1096,7 +1107,7 @@ async function completeQuiz() {
     }
   } catch (error) {
     console.error('퀴즈 완료 처리 실패:', error);
-    alert('퀴즈 완료 처리에 실패했습니다');
+    await showPixelAlert('퀴즈 완료 처리에 실패했습니다', { title: '오류' });
   }
 }
 
@@ -1111,7 +1122,8 @@ function startTimer() {
  * 종료
  */
 async function handleQuit() {
-  if (confirm('퀴즈를 종료하시겠습니까?\n진행 상황은 저장되지 않습니다.')) {
+  const confirmed = await showPixelConfirm('퀴즈를 종료하시겠습니까?\n진행 상황은 저장되지 않습니다.', { title: '퀴즈 종료' });
+  if (confirmed) {
     try {
       // 서버에 세션 취소 요청 (세션 및 답변 삭제)
       if (currentSession && currentSession.sessionId) {
@@ -1138,10 +1150,10 @@ function setCharacterEmotion(emotion) {
   const emotionMap = {
     'neutral': '../images/hi.png',
     'happy': '../images/ohyes2.png',
-    'good': '../images/luckydraw.png',
-    'oops': '../images/oops2.png',
+    'good': '../images/Molisuccess.png',
+    'oops': '../images/Molifail.png',
     'thinking': '../images/fighting2.png',
-    'excellent': '../images/ohyes2.png'
+    'excellent': '../images/Molisuccess.png'
 
   };
 
@@ -1152,46 +1164,51 @@ function setCharacterEmotion(emotion) {
     void characterImg.offsetWidth; // Trigger reflow
     characterImg.src = newSrc;
     characterImg.classList.add('character-fade');
+
+    // 불변 조건 A: 캐릭터 이미지 변경 후 앵커 재계산
+    // 이미지 로드 완료 후 크기가 확정되면 앵커 업데이트
+    characterImg.addEventListener('load', () => {
+      updateSpeechBubbleAnchor();
+    }, { once: true });
   }
 }
 
+// 타이핑 세션 토큰 (레이스 컨디션 방지)
+let currentTypingToken = null;
+
 /**
- * 타이핑 효과 (Duolingo 스타일 - 커서 깜빡임 포함)
+ * 타이핑 효과 (Promise 기반, 커서 제거, 순차 실행 보장)
  */
 function typeWriterEffect(element, text, speed = 50) {
-  element.textContent = '';
-  let i = 0;
+  return new Promise((resolve) => {
+    // 새 타이핑 세션 토큰 생성
+    const sessionToken = Symbol('typing-session');
+    currentTypingToken = sessionToken;
 
-  // 커서 추가
-  const cursor = document.createElement('span');
-  cursor.className = 'typing-cursor';
-  cursor.textContent = '▮';
-  cursor.style.display = 'inline-block';
-  cursor.style.marginLeft = '2px';
+    // 이전 내용 초기화
+    element.textContent = '';
+    let i = 0;
 
-  function type() {
-    if (i < text.length) {
-      // 커서 제거 후 텍스트 추가 후 다시 커서 추가
-      if (element.contains(cursor)) {
-        element.removeChild(cursor);
+    function type() {
+      // 토큰 불일치 시 즉시 중단 (다른 타이핑이 시작됨)
+      if (currentTypingToken !== sessionToken) {
+        resolve();
+        return;
       }
-      element.textContent += text.charAt(i);
-      element.appendChild(cursor);
-      i++;
-      setTimeout(type, speed);
-    } else {
-      // 타이핑 완료 후 0.5초 뒤 커서 제거
-      setTimeout(() => {
-        if (element.contains(cursor)) {
-          element.removeChild(cursor);
-        }
-        // 타이핑 완료 후 말풍선 크기 조정
-        adjustSpeechBubbleSize();
-      }, 500);
-    }
-  }
 
-  type();
+      if (i < text.length) {
+        element.textContent += text.charAt(i);
+        i++;
+        setTimeout(type, speed);
+      } else {
+        // 타이핑 완료
+        adjustSpeechBubbleSize();
+        resolve();
+      }
+    }
+
+    type();
+  });
 }
 
 /**
@@ -1235,8 +1252,9 @@ function adjustSpeechBubbleSize() {
     // 메인 사각형 높이 = 텍스트 높이 + 최소 여백
     const contentHeight = actualTextHeight + topPadding + bottomPadding;
     
-    // 전체 SVG 높이 = 상단(10) + 컨텐츠 + 하단(10) + 꼬리(24)
-    const svgHeight = 10 + contentHeight + 10 + 24;
+    // 전체 SVG 높이 = 상단(10) + 컨텐츠 + 하단(10) + 꼬리(12)
+    // 꼬리 규격: 얄쌍한 3단 계단형 (12px, 8px, 4px) × 4px 높이 = 총 12px
+    const svgHeight = 10 + contentHeight + 10 + 12;
     const svgWidth = 320;
     
     console.log('[adjustSpeechBubbleSize] 계산된 svgHeight:', svgHeight, '(contentHeight:', contentHeight, ')');
@@ -1272,43 +1290,56 @@ function adjustSpeechBubbleSize() {
     addRect(svgElement, 16, leftBottomY - 4, 4, 4, '#000');
     addRect(svgElement, 20, leftBottomY, 4, 4, '#000');
     
-    // 하단 테두리 (꼬리 왼쪽 부분)
+    // 불변 조건 A: 꼬리 중앙 고정을 위한 centerX 기준 계산
+    const centerX = svgWidth / 2; // 320 / 2 = 160
+
+    // 얄쌍한 3단 계단형 꼬리 규격 (quiz-list.html과 동일)
+    const tailTopWidth = 12;    // 꼬리 상단 폭
+    const tailMidWidth = 8;     // 꼬리 중단 폭
+    const tailTipWidth = 4;     // 꼬리 끝 폭
+    const stepHeight = 4;       // 각 단의 높이
+
+    // 하단 테두리 (꼬리 왼쪽 부분 - 중앙까지)
     const bottomY = leftBottomY + 4;
-    addRect(svgElement, 24, bottomY, 96, 4, '#000');
-    
+    const leftBorderWidth = centerX - 24 - (tailTopWidth / 2); // centerX까지의 거리 - 꼬리 절반 폭
+    addRect(svgElement, 24, bottomY, leftBorderWidth, 4, '#000');
+
     // 픽셀 테두리 - 우측 상단 모서리
     addRect(svgElement, 296, 10, 4, 4, '#000');
     addRect(svgElement, 300, 14, 4, 4, '#000');
     addRect(svgElement, 304, 18, 4, contentHeight - 14, '#000');
-    
+
     // 우측 하단 모서리
     addRect(svgElement, 300, leftBottomY, 4, 4, '#000');
     addRect(svgElement, 304, leftBottomY - 4, 4, 4, '#000');
-    
-    // 하단 테두리 (꼬리 오른쪽 부분)
-    addRect(svgElement, 120, bottomY, 180, 4, '#000');
-    
-    // 꼬리 부분 그리기
+
+    // 하단 테두리 (꼬리 오른쪽 부분 - 중앙부터)
+    const rightBorderStartX = centerX + (tailTopWidth / 2); // 꼬리 절반 폭 이후부터
+    const rightBorderWidth = svgWidth - 24 - rightBorderStartX;
+    addRect(svgElement, rightBorderStartX, bottomY, rightBorderWidth, 4, '#000');
+
+    // 꼬리 부분 그리기 (불변 조건 A: 얄쌍한 3단 계단형, centerX 기반 좌우 대칭)
     const tailY = bottomY;
-    
-    // 꼬리 - 레벨 1 (최상단)
-    addRect(svgElement, 24, tailY, 24, 4, '#FFF'); // 흰색 배경
-    addRect(svgElement, 20, tailY + 4, 4, 8, '#000');
-    addRect(svgElement, 24, tailY + 4, 16, 8, '#FFF');
-    addRect(svgElement, 40, tailY + 4, 4, 4, '#000');
-    
-    // 꼬리 - 레벨 2
-    addRect(svgElement, 16, tailY + 12, 4, 4, '#000');
-    addRect(svgElement, 20, tailY + 12, 12, 4, '#FFF');
-    addRect(svgElement, 32, tailY + 12, 4, 4, '#000');
-    
-    // 꼬리 - 레벨 3
-    addRect(svgElement, 12, tailY + 16, 4, 4, '#000');
-    addRect(svgElement, 16, tailY + 16, 8, 4, '#FFF');
-    addRect(svgElement, 24, tailY + 16, 4, 4, '#000');
-    
-    // 꼬리 - 레벨 4 (최하단)
-    addRect(svgElement, 8, tailY + 20, 16, 4, '#000');
+
+    // 꼬리 레벨 1 (최상단, 폭 12px)
+    // 중앙 기준: centerX ± 6 (12px / 2 = 6)
+    addRect(svgElement, centerX - (tailTopWidth / 2), tailY, tailTopWidth, stepHeight, '#FFF'); // 흰색 배경
+    addRect(svgElement, centerX - (tailTopWidth / 2) - 4, tailY, 4, stepHeight, '#000'); // 좌측 테두리
+    addRect(svgElement, centerX + (tailTopWidth / 2), tailY, 4, stepHeight, '#000'); // 우측 테두리
+
+    // 꼬리 레벨 2 (중단, 폭 8px)
+    // 중앙 기준: centerX ± 4 (8px / 2 = 4)
+    addRect(svgElement, centerX - (tailMidWidth / 2), tailY + stepHeight, tailMidWidth, stepHeight, '#FFF'); // 흰색 배경
+    addRect(svgElement, centerX - (tailMidWidth / 2) - 4, tailY + stepHeight, 4, stepHeight, '#000'); // 좌측 테두리
+    addRect(svgElement, centerX + (tailMidWidth / 2), tailY + stepHeight, 4, stepHeight, '#000'); // 우측 테두리
+
+    // 꼬리 레벨 3 (최하단 tip, 폭 4px - 검은색)
+    // 중앙 기준: centerX ± 2 (4px / 2 = 2)
+    addRect(svgElement, centerX - (tailTipWidth / 2), tailY + stepHeight * 2, tailTipWidth, stepHeight, '#000');
+
+    // 불변 조건 B: 높이 변화 후에도 꼬리 끝점 위치 유지
+    // SVG 높이가 변경되었으므로 앵커 재계산 (bottom 위치는 고정, top만 위로 이동)
+    updateSpeechBubbleAnchor();
   }, 100); // 100ms 딜레이로 충분한 시간 확보
 }
 
@@ -1392,82 +1423,90 @@ function updateStarGauge(questionIndex, status) {
  * LuckyDraw 우편 봉투 애니메이션
  * @param {Object} result - LuckyDraw 결과
  * @param {number} questionIndex - 현재 문제 인덱스 (0-4)
+ * @returns {Promise<void>} - 애니메이션이 완전히 끝나고 사용자가 확인 버튼을 클릭하면 resolve
  */
 function showLuckyDrawAnimation(result, questionIndex) {
   console.log('[LuckyDraw] 애니메이션 시작:', result);
 
-  // 오버레이 생성
-  const overlay = document.createElement('div');
-  overlay.className = 'luckydraw-envelope-overlay';
+  return new Promise((resolve) => {
+    // 오버레이 생성
+    const overlay = document.createElement('div');
+    overlay.className = 'luckydraw-envelope-overlay';
 
-  // 편지함 컨테이너 생성
-  const envelopeContainer = document.createElement('div');
-  envelopeContainer.className = 'luckydraw-envelope';
+    // 편지함 컨테이너 생성
+    const envelopeContainer = document.createElement('div');
+    envelopeContainer.className = 'luckydraw-envelope';
 
-  // 우체통 이모지
-  const mailbox = document.createElement('div');
-  mailbox.className = 'luckydraw-mailbox';
-  mailbox.textContent = '📬';
+    // 우체통 이모지
+    const mailbox = document.createElement('div');
+    mailbox.className = 'luckydraw-mailbox';
+    mailbox.textContent = '📬';
 
-  // 편지 이모지
-  const letter = document.createElement('div');
-  letter.className = 'luckydraw-letter';
-  letter.textContent = '✉️';
+    // 편지 이모지
+    const letter = document.createElement('div');
+    letter.className = 'luckydraw-letter';
+    letter.textContent = '✉️';
 
-  envelopeContainer.appendChild(mailbox);
-  envelopeContainer.appendChild(letter);
-  overlay.appendChild(envelopeContainer);
-  document.body.appendChild(overlay);
+    envelopeContainer.appendChild(mailbox);
+    envelopeContainer.appendChild(letter);
+    overlay.appendChild(envelopeContainer);
+    document.body.appendChild(overlay);
 
-  // 1.5초 후 편지함을 결과 카드로 교체
-  setTimeout(() => {
-    envelopeContainer.remove();
+    // 1.5초 후 편지함을 결과 카드로 교체
+    setTimeout(() => {
+      envelopeContainer.remove();
 
-    // 결과 카드 생성
-    const resultCard = document.createElement('div');
-    resultCard.className = 'luckydraw-result-card';
+      // 결과 카드 생성
+      const resultCard = document.createElement('div');
+      resultCard.className = 'luckydraw-result-card';
 
-    // 당첨 여부에 따른 이미지와 메시지
-    let gifSrc, message;
+      // 당첨 여부에 따른 이미지와 메시지
+      let gifSrc, message;
 
-    if (result.won) {
-      // 당첨!
-      gifSrc = '../images/Luckydrawsuccess.gif';
-      message = '축하합니다! 행운의 주인공! 선물을 획득했어요';
-
-      // 당첨 시 폭죽 효과
-      playSound('correct');
-      createConfetti(overlay);
-    } else {
-      // 미당첨
-      gifSrc = '../images/Luckydrawfail.gif';
-      message = '아쉽게도 선물 획득을 못했네요..하지만 문제를 계속 풀면 당첨 확률이 높아진다는 꿀Tip을 드려요';
-      playSound('coin');
-    }
-
-    resultCard.innerHTML = `
-      <div class="luckydraw-result-icon">
-        <img src="${gifSrc}" alt="Lucky Draw Result" />
-      </div>
-      <div class="luckydraw-result-message">${message}</div>
-      <button class="luckydraw-close-btn">확인</button>
-    `;
-
-    overlay.appendChild(resultCard);
-
-    // 확인 버튼 클릭 시 게이지 업데이트 후 닫기
-    const closeBtn = resultCard.querySelector('.luckydraw-close-btn');
-    closeBtn.addEventListener('click', () => {
-      // LuckyDraw 결과에 따라 게이지 업데이트
       if (result.won) {
-        updateStarGauge(questionIndex, 'lucky-win');
-      } else {
-        updateStarGauge(questionIndex, 'lucky-lose');
-      }
-      overlay.remove();
-    });
+        // 당첨!
+        gifSrc = '../images/Luckydrawsuccess.gif';
+        message = '축하합니다! 행운의 주인공! 선물을 획득했어요';
 
-  }, 1500);
+        // 당첨 시 폭죽 효과
+        playSound('correct');
+        createConfetti(overlay);
+      } else {
+        // 미당첨
+        gifSrc = '../images/Luckydrawfail.gif';
+        message = '아쉽게도 선물을 획득하지 못했네요..문제를 많이 풀면 당첨 확률이 높아집니다! 계속 도전해보세요!)';
+        playSound('coin');
+      }
+
+      resultCard.innerHTML = `
+        <div class="luckydraw-result-icon">
+          <img src="${gifSrc}" alt="Lucky Draw Result" />
+        </div>
+        <div class="luckydraw-result-message">${message}</div>
+        <button class="luckydraw-close-btn">확인</button>
+      `;
+
+      overlay.appendChild(resultCard);
+
+      // 확인 버튼 클릭 시 게이지 업데이트 후 닫기 및 Promise resolve
+      const closeBtn = resultCard.querySelector('.luckydraw-close-btn');
+      closeBtn.addEventListener('click', () => {
+        console.log('[LuckyDraw] 확인 버튼 클릭 - 애니메이션 완료');
+
+        // LuckyDraw 결과에 따라 게이지 업데이트
+        if (result.won) {
+          updateStarGauge(questionIndex, 'lucky-win');
+        } else {
+          updateStarGauge(questionIndex, 'lucky-lose');
+        }
+        overlay.remove();
+
+        // 애니메이션 완료를 알림
+        resolve();
+      });
+
+    }, 1500);
+  });
 }
 
 /**

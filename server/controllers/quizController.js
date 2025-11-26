@@ -59,7 +59,7 @@ const startQuizSession = async (req, res) => {
       });
     }
 
-    // 완료한 세션 수 확인
+    // 완료한 세션 수 확인 (회차 계산용)
     const completedCount = await db.QuizSession.count({
       where: {
         user_id: userId,
@@ -68,19 +68,54 @@ const startQuizSession = async (req, res) => {
       }
     });
 
-    // 푼 문제 수 = 완료된 세션 수 × 5
-    const totalAnswered = completedCount * 5;
+    // ✅ "푼 문제" 정의: completed 상태 세션에서 정답을 맞춘 문제만 카운트
+    //    이전 세션에서 풀었던 문제 ID 목록을 가져와서 중복 방지
+    const completedSessions = await db.QuizSession.findAll({
+      where: {
+        user_id: userId,
+        event_id,
+        status: 'completed'
+      },
+      attributes: ['id']
+    });
+
+    const completedSessionIds = completedSessions.map(s => s.id);
+
+    // 완료된 세션들에서 답변한 문제 ID 목록 (중복 제거)
+    const answeredQuestionIds = completedSessionIds.length > 0
+      ? await db.QuizAnswer.findAll({
+          where: {
+            session_id: { [Op.in]: completedSessionIds }
+          },
+          attributes: [[db.sequelize.fn('DISTINCT', db.sequelize.col('question_id')), 'question_id']],
+          raw: true
+        }).then(results => results.map(r => r.question_id))
+      : [];
+
+    const totalAnswered = answeredQuestionIds.length;
 
     console.log(`[퀴즈 시작] 사용자 ${userId}, 이벤트 ${event_id}: 완료된 세션 ${completedCount}개 → 이미 푼 문제 ${totalAnswered}개`);
+    console.log(`[퀴즈 시작] 푼 문제 ID 목록: [${answeredQuestionIds.join(', ')}]`);
 
-    if (totalAnswered >= 15) {
+    // 전체 문제 수 확인
+    const totalQuestionsCount = await db.Question.count({
+      where: { event_id }
+    });
+
+    // 남은 문제 수 계산
+    const remainingQuestions = totalQuestionsCount - totalAnswered;
+
+    console.log(`[퀴즈 시작] 전체 문제: ${totalQuestionsCount}개, 남은 문제: ${remainingQuestions}개`);
+
+    // 남은 문제가 5개 미만이면 세션 시작 불가
+    if (remainingQuestions < 5) {
       return res.status(400).json({
-        error: '이미 모든 문제를 완료했습니다 (15문제)'
+        error: `해당 월의 퀴즈 문제를 모두 풀었습니다!`
       });
     }
 
     // 진행 중인 세션이 있는지 확인
-    let session = await db.QuizSession.findOne({
+    const existingSession = await db.QuizSession.findOne({
       where: {
         user_id: userId,
         event_id,
@@ -88,35 +123,31 @@ const startQuizSession = async (req, res) => {
       }
     });
 
-    // 진행 중인 세션이 있으면 해당 세션 사용, 없으면 새로 생성
-    if (session) {
-      console.log(`[퀴즈 시작] 진행 중인 세션 발견: ${session.id}, 이어서 진행합니다.`);
-    } else {
-      session = await db.QuizSession.create({
-        user_id: userId,
-        event_id,
-        session_number: completedCount + 1,
-        status: 'in_progress'
+    // 진행 중인 세션이 있으면 삭제 (5문제 미완료 세션은 기록하지 않음)
+    if (existingSession) {
+      console.log(`[퀴즈 시작] 이전 진행 중 세션 발견 (ID: ${existingSession.id}) → 삭제 후 새 세션으로 초기화`);
+
+      // 해당 세션의 모든 답변 삭제
+      await db.QuizAnswer.destroy({
+        where: { session_id: existingSession.id }
       });
-      console.log(`[퀴즈 시작] 새 세션 생성: ${session.id}`);
-    }
 
-    // 남은 문제 수 = 15 - (완료된 세션 × 5)
-    const remainingQuestions = 15 - totalAnswered;
-
-    console.log(`[퀴즈 시작] 완료된 세션: ${completedCount}개, 이미 푼 문제: ${totalAnswered}개, 남은 문제: ${remainingQuestions}개`);
-
-    // 남은 문제가 5개 미만이면 완료 처리
-    if (remainingQuestions < 5) {
       // 세션 삭제
-      await session.destroy();
+      await existingSession.destroy();
 
-      return res.status(400).json({
-        error: '남은 문제가 부족합니다. 모든 퀴즈를 완료했습니다!'
-      });
+      console.log(`[퀴즈 시작] 진행 중 세션 및 답변 삭제 완료`);
     }
 
-    // 첫 번째 문제 가져오기 (동적 선택)
+    // 항상 새로운 세션 생성 (1번 문제부터 시작)
+    const session = await db.QuizSession.create({
+      user_id: userId,
+      event_id,
+      session_number: completedCount + 1,
+      status: 'in_progress'
+    });
+    console.log(`[퀴즈 시작] 새 세션 생성: ${session.id} (회차: ${session.session_number})`);
+
+    // 첫 번째 문제 가져오기 (동적 선택, 이미 푼 문제 제외)
     const firstQuestion = await quizService.getNextQuestion(session.id, event_id);
 
     if (!firstQuestion) {
@@ -275,6 +306,15 @@ const submitAnswer = async (req, res) => {
       isSessionComplete = true;
     }
 
+    // 세션 완료 시 상태 업데이트
+    if (isSessionComplete) {
+      await session.update({
+        status: 'completed',
+        completed_at: new Date()
+      });
+      console.log(`[답변 제출] 세션 ${session_id} 상태를 'completed'로 업데이트`);
+    }
+
     const response = {
       success: true,
       result: {
@@ -325,9 +365,9 @@ const submitAnswer = async (req, res) => {
           console.log(`[LuckyDraw] 현재 당첨자: ${currentWinnerCount}명 / 최대: ${event.max_winners}명`);
 
           // 3. 이미 당첨자 수가 최대치에 도달했는지 확인
-          if (currentWinnerCount >= event.max_winners) {
-            console.log(`[LuckyDraw] 당첨자 수 초과 → 꽝`);
-            return { won: false, reason: 'max_winners_reached' };
+          const maxWinnersReached = currentWinnerCount >= event.max_winners;
+          if (maxWinnersReached) {
+            console.log(`[LuckyDraw] 당첨자 수 초과 → 꽝 (문제는 출제됨)`);
           }
 
           // 4. 이미 당첨된 사용자인지 확인 (이벤트 전체 기준)
@@ -344,8 +384,8 @@ const submitAnswer = async (req, res) => {
             return { won: false, reason: 'already_won' };
           }
 
-          // 5. 랜덤 추첨 (50% 확률)
-          const won = Math.random() < 0.5;
+          // 5. 랜덤 추첨 (50% 확률) - 단, 당첨자 수가 초과된 경우 무조건 꽝
+          const won = !maxWinnersReached && Math.random() < 0.5;
 
           if (won) {
             // 당첨!
@@ -364,8 +404,9 @@ const submitAnswer = async (req, res) => {
             console.log(`[LuckyDraw] 🎉 당첨! 사용자 ${req.user.id}`);
             return { won: true, prize: '스타벅스 기프티콘' };
           } else {
-            console.log(`[LuckyDraw] 꽝... 사용자 ${req.user.id}`);
-            return { won: false, reason: 'random' };
+            const reason = maxWinnersReached ? 'max_winners_reached' : 'random';
+            console.log(`[LuckyDraw] 꽝... 사용자 ${req.user.id} (사유: ${reason})`);
+            return { won: false, reason };
           }
         });
 
@@ -459,7 +500,7 @@ const completeSession = async (req, res) => {
       where: { session_id },
       include: [{
         model: db.Question,
-        attributes: ['id', 'question_type', 'category', 'question_text']
+        attributes: ['id', 'question_type', 'category', 'question_text', 'summary', 'highlight']
       }]
     });
 
@@ -527,8 +568,11 @@ const completeSession = async (req, res) => {
         answers: answers.map(a => ({
           question_id: a.question_id,
           question_type: a.Question.question_type,
+          question_text: a.Question.question_text,
           is_correct: a.is_correct,
-          attempt: a.answer_attempt
+          attempt: a.answer_attempt,
+          summary: a.Question.summary || null,
+          highlight: a.Question.highlight || null
         }))
       }
     };

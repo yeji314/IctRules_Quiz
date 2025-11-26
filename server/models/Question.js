@@ -42,6 +42,16 @@ module.exports = (sequelize) => {
       allowNull: true,
       comment: '정답 해설'
     },
+    summary: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Admin이 등록한 문제 요약 (result 페이지에 표시)'
+    },
+    highlight: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      comment: '요약 텍스트에서 하이라이트할 키워드/문장'
+    },
     order: {
       type: DataTypes.INTEGER,
       defaultValue: 0,

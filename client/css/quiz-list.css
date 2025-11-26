@@ -66,12 +66,12 @@ body {
 /* 메인 컨테이너 */
 .main-content {
   position: fixed;
-  top: 230px; /* 타이틀 아래로 이동 */
+  top: 320px; /* 타이틀 아래로 더 여유 있게 배치 */
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: 1000px;
-  height: calc(100vh - 380px);
+  height: calc(100vh - 440px);
   padding: 0 20px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -185,8 +185,8 @@ body {
 /* 왼쪽 하단 영역 (나무 → 캐릭터 → 우체통) */
 .tree-lineup {
   position: fixed;
-  bottom: 120px; /* 잔디 위 (80px 흙 + 40px 잔디) */
-  left: 40px;
+  bottom: 11.11vh; /* 120px / 1080px = 11.11vh - 잔디 위 (80px 흙 + 40px 잔디) */
+  left: 1.5%; /* 40px / 1920px */
   display: flex;
   align-items: flex-end;
   gap: 20px;
@@ -207,7 +207,7 @@ body {
 /* 캐릭터 이미지 - 4배 크기 */
 .character-img {
   height: auto;
-  width: 15%; /* 원하는 크기 지정 */
+  width: 20%; /* 원하는 크기 지정 */
   display: block;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
@@ -219,10 +219,10 @@ body {
 /* 말풍선 - 캐릭터 머리 오른쪽 위 대각선 */
 .speech-bubble {
   position: fixed;
-  bottom: 350px; /* 캐릭터 바로 위 */
+  bottom:40%; /* 350px / 1080px - 캐릭터 바로 위 */
   left: 8%; /* 캐릭터와 같은 left 위치 (중앙 정렬) */
   transform: translateX(-50%);
-  margin-left: 55px; /* 캐릭터 너비(110px)의 절반 */
+  margin-left: 2.86%; /* 55px / 1920px - 캐릭터 너비(110px)의 절반 */
   image-rendering: pixelated;
   z-index: 200;
 }
@@ -237,9 +237,12 @@ body {
   left: 32px;
   right: 32px;
   font-family: var(--font-galmuri);
-  font-size: 12px;
+  font-size: 14px;
   color: #000000;
+  font-weight: 700;
   line-height: 1.7;
+  -webkit-font-smoothing: none;
+  text-rendering: geometricPrecision;
 }
 
 /* 빛나는 텍스트 효과 */
@@ -271,7 +274,7 @@ body {
 /* 나무판자 퀴즈 목록 - 3x4 그리드 */
 .quiz-board-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   padding: 20px 0;
   width: 80%;
@@ -397,7 +400,6 @@ body {
   flex: 0 0 auto;
   margin-right: 4px; /* 버튼과 진행칸 사이 간격은 유지 */
   text-transform: uppercase;
-  letter-spacing: 0.16em;
 }
 
 /* START 버튼 - 파란색 */
@@ -452,6 +454,48 @@ body {
   opacity: 0.7;
 }
 
+/* LOCKED 버튼 - 미래 퀴즈 잠금 상태 */
+.quiz-board-list .wood-board .quiz-action-btn.btn-locked {
+  border-color: #8b7355;
+  cursor: not-allowed;
+  opacity: 0.8;
+  position: relative;
+  color: transparent; /* 텍스트 숨김 */
+  box-shadow: inset 0 -2px #a89576;
+}
+
+.quiz-board-list .wood-board .quiz-action-btn.btn-locked::before {
+  content: "🔒";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 30px;
+  color: #3a2a1a;
+}
+
+/* 잠금 버튼은 호버/액티브 효과 없음 */
+.quiz-board-list .wood-board .quiz-action-btn.btn-locked:hover {
+  transform: none;
+  box-shadow: inset 0 -2px #a89576;
+}
+
+.quiz-board-list .wood-board .quiz-action-btn.btn-locked:active {
+  transform: none;
+  box-shadow: inset 0 -2px #a89576;
+}
+
+/* 잠금 상태 wood-board 오버레이 (미래 월 퀴즈 비활성화 표시) */
+.quiz-board-list .wood-board.is-locked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 5;
+}
+
 /* 기본 PRIMARY 버튼 (호환성 유지) */
 .quiz-board-list .wood-board .quiz-action-btn.btn-primary {
   background: linear-gradient(180deg, #f7c16e, #d9732c);
@@ -479,29 +523,6 @@ body {
   box-shadow: inset 0 -2px #8d6b46;
   cursor: not-allowed;
   opacity: 0.7;
-}
-
-/* 진행률 박스 (□□□) */
-.quiz-board-list .wood-board .quiz-progress {
-  display: flex;
-  gap: 3px; /* 5px * 2/3 */
-  flex-shrink: 0;
-  align-items: center;
-}
-
-.quiz-board-list .wood-board .progress-box {
-  width: 8px; /* 12px * 2/3 */
-  height: 8px; /* 12px * 2/3 */
-  background: #fffdf3;
-  border: 2px solid #8b6f47;
-  image-rendering: pixelated;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
-  border-radius: 2px; /* 3px * 2/3 */
-}
-
-.quiz-board-list .wood-board .progress-box.filled {
-  background: #8b6f47;
-  box-shadow: inset -1px -1px 2px rgba(255, 255, 255, 0.2);
 }
 
 /* 나무판자 못 장식 */
@@ -587,8 +608,8 @@ body {
   }
 
   .main-content {
-    top: 180px;
-    height: calc(100vh - 330px);
+    top: 230px; /* 태블릿에서도 타이틀과 더 여유 있게 분리 */
+    height: calc(100vh - 380px);
   }
 
   .user-name-display {
@@ -597,22 +618,22 @@ body {
   }
 
   .tree-lineup {
-    bottom: 120px;
-    left: 20px;
+    bottom: 11.11vh; /* 120px / 1080px = 11.11vh */
+    left: 1.5%; /* 20px / 1920px */
     gap: 15px;
     transform: scale(0.8);
     transform-origin: left bottom;
   }
 
   .character-img {
-    width: 90px;
+    width: 4.69%; /* 90px / 1920px */
     height: auto;
   }
 
   .speech-bubble {
-    bottom: 220px;
-    left: 20px;
-    margin-left: 180px; /* 태블릿에서 캐릭터 중앙 */
+    bottom: 35%; /* 220px / 1080px */
+    left: 1.04%; /* 20px / 1920px */
+    margin-left: 9.38%; /* 180px / 1920px - 태블릿에서 캐릭터 중앙 */
     transform: translateX(-50%) scale(0.8);
     transform-origin: bottom center;
   }
@@ -639,11 +660,6 @@ body {
     letter-spacing: 0.15em;
   }
 
-  .quiz-board-list .wood-board .progress-box {
-    width: 10px;
-    height: 10px;
-    border-width: 2px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -657,8 +673,8 @@ body {
   }
 
   .main-content {
-    top: 150px;
-    height: calc(100vh - 300px);
+    top: 200px; /* 작은 화면에서도 타이틀과 더 분리 */
+    height: calc(100vh - 350px);
   }
 
   .tree-lineup {
@@ -666,14 +682,14 @@ body {
   }
 
   .character-img {
-    width: 70px;
+    width: 3.65%; /* 70px / 1920px */
     height: auto;
   }
 
   .speech-bubble {
-    bottom: 210px;
-    left: 10px;
-    margin-left: 140px; /* 모바일에서 캐릭터 중앙 */
+    bottom: 35%; /* 210px / 1080px */
+    left: 0.52%; /* 10px / 1920px */
+    margin-left: 7.29%; /* 140px / 1920px - 모바일에서 캐릭터 중앙 */
     transform: translateX(-50%) scale(0.6);
     transform-origin: bottom center;
   }
@@ -692,9 +708,9 @@ body {
 /* SOL2 GIF 루프 움직임 */
 .sol2-parade {
   position: fixed;
-  bottom: 190px;
+  bottom: 17.59vh; /* 190px / 1080px = 17.59vh */
   left: 0;
-  width: 15%;
+  width: 20%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -715,9 +731,12 @@ body {
   font-family: var(--font-galmuri);
   text-transform: uppercase;
   color: #2c1609;
+  font-weight: 700;
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
   white-space: nowrap;
   position: relative;
+  -webkit-font-smoothing: none;
+  text-rendering: geometricPrecision;
 }
 
 .sol2-speech-bubble::after {
@@ -733,7 +752,7 @@ body {
 }
 
 .sol2-gif {
-  width: 15%;
+  width: 20%;
   height: auto;
   display: block;
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.25));
@@ -773,8 +792,8 @@ body > .tree-lineup .speech-bubble {
 
 @media (max-width: 768px) {
   .sol2-parade {
-    bottom: 210px;
-    width: 180px;
+    bottom: 19.44vh; /* 210px / 1080px = 19.44vh */
+    width: 9.38%; /* 180px / 1920px */
   }
 
   .sol2-speech-bubble {
@@ -789,8 +808,8 @@ body > .tree-lineup .speech-bubble {
 
 @media (max-width: 480px) {
   .sol2-parade {
-    bottom: 220px;
-    width: 150px;
+    bottom: 20.37vh; /* 220px / 1080px = 20.37vh */
+    width: 7.81%; /* 150px / 1920px */
   }
 
   .sol2-speech-bubble {

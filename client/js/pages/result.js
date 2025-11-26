@@ -5,6 +5,7 @@
 import { requireAuth } from '../modules/auth.js';
 import { quiz as quizApi } from '../modules/api.js';
 import { $, playSound } from '../modules/utils.js';
+import { showPixelAlert } from '../modules/pixel-dialog.js';
 
 // 인증 확인
 requireAuth();
@@ -12,13 +13,73 @@ requireAuth();
 // DOM 요소
 const confettiContainer = $('#confetti');
 const starEarned = $('#starEarned');
+const summaryList = $('#summaryList');
 const quitButton = $('#quitButton');
 const continueButton = $('#continueButton');
 
 /**
+ * 5문제 요약 렌더링 (admin summary 필드만 사용)
+ */
+function renderSummary(result) {
+  if (!summaryList) return;
+
+  // 서버 응답 형태에 따라 questions/answers 모두 대응
+  let questions = result.questions || [];
+
+  // fallback: answers 배열만 있는 경우
+  if ((!questions || questions.length === 0) && Array.isArray(result.answers)) {
+    questions = result.answers;
+  }
+
+  if (questions.length === 0) {
+    summaryList.innerHTML = '<div class="summary-item">(요약 없음)</div>';
+    return;
+  }
+
+  // 각 문제의 admin summary를 출력 (5줄 고정)
+  const summaryHTML = questions.map((q, index) => {
+    // admin이 등록한 summary 필드만 사용
+    const summary = q.summary || '(요약 없음)';
+    const highlight = q.highlight || ''; // 하이라이트할 키워드/문장
+
+    // 하이라이트 처리
+    let displayText = summary;
+    if (highlight && summary.includes(highlight)) {
+      displayText = summary.replace(
+        highlight,
+        `<span class="summary-highlight" data-line="${index}">${highlight}</span>`
+      );
+    }
+
+    return `<div class="summary-item">${index + 1}. ${displayText}</div>`;
+  }).join('');
+
+  summaryList.innerHTML = summaryHTML;
+
+  // 하이라이트 순차 애니메이션 시작
+  startHighlightAnimation();
+}
+
+/**
+ * 하이라이트 순차 애니메이션
+ */
+function startHighlightAnimation() {
+  const highlights = summaryList.querySelectorAll('.summary-highlight');
+
+  if (highlights.length === 0) return;
+
+  // 각 하이라이트를 순차적으로 애니메이션 (줄 순서대로)
+  highlights.forEach((highlight, index) => {
+    setTimeout(() => {
+      highlight.classList.add('highlight-animate');
+    }, index * 800); // 0.8초 간격으로 순차 실행
+  });
+}
+
+/**
  * 초기화
  */
-function init() {
+async function init() {
   // 브라우저 뒤로가기 방지
   history.pushState(null, null, location.href);
   window.addEventListener('popstate', () => {
@@ -28,7 +89,7 @@ function init() {
   // 결과 데이터 로드
   const resultData = sessionStorage.getItem('quizResult');
   if (!resultData) {
-    alert('결과 정보가 없습니다');
+    await showPixelAlert('결과 정보가 없습니다', { title: '오류' });
     window.location.href = '/pages/quiz-list.html';
     return;
   }
@@ -36,6 +97,9 @@ function init() {
   const result = JSON.parse(resultData);
 
   console.log('[Result] 결과 데이터:', result);
+
+  // 5문제 요약 렌더링
+  renderSummary(result);
 
   // 선물 당첨 여부 확인
   if (result.won_prize === true) {
@@ -146,7 +210,7 @@ async function handleContinue() {
   // 결과 데이터 확인
   const resultData = sessionStorage.getItem('quizResult');
   if (!resultData) {
-    alert('결과 정보가 없습니다');
+    await showPixelAlert('결과 정보가 없습니다', { title: '오류' });
     window.location.href = '/pages/quiz-list.html';
     return;
   }
@@ -154,7 +218,7 @@ async function handleContinue() {
   const result = JSON.parse(resultData);
 
   if (!result.eventId) {
-    alert('이벤트 정보가 없습니다');
+    await showPixelAlert('이벤트 정보가 없습니다', { title: '오류' });
     window.location.href = '/pages/quiz-list.html';
     return;
     }
@@ -188,12 +252,12 @@ async function handleContinue() {
       // 퀴즈 페이지로 이동
       window.location.href = '/pages/quiz.html';
     } else {
-      alert(response.message || '세션 시작에 실패했습니다');
+      await showPixelAlert(response.message || '세션 시작에 실패했습니다', { title: '오류' });
       window.location.href = '/pages/quiz-list.html';
   }
   } catch (error) {
     console.error('세션 시작 실패:', error);
-    alert('세션 시작에 실패했습니다: ' + error.message);
+    await showPixelAlert(error.message, { title: '오류' });
   window.location.href = '/pages/quiz-list.html';
   }
 }

@@ -2,6 +2,8 @@
  * 인증 관리 모듈
  */
 
+import { showPixelAlert } from './pixel-dialog.js';
+
 /**
  * 토큰 저장
  */
@@ -83,13 +85,13 @@ export function requireAuth() {
 /**
  * 관리자 전용 페이지 가드
  */
-export function requireAdmin() {
+export async function requireAdmin() {
   if (!isLoggedIn()) {
     window.location.href = '/pages/index.html';
     return false;
   }
   if (!isAdmin()) {
-    alert('관리자 권한이 필요합니다');
+    await showPixelAlert('관리자 권한이 필요합니다', { title: '권한 오류' });
     window.location.href = '/pages/quiz-list.html';
     return false;
   }

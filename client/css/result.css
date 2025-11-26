@@ -2,17 +2,20 @@
 
 /* 배경 오버라이드 */
 body {
-  background: #ecece5;
-  overflow-x: hidden;
+  background: var(--color-sky);
+  overflow: hidden;
+  min-height: 100vh;
+  position: relative;
+  font-family: var(--font-galmuri);
 }
 
 /* 배경 장식 - 물결 모양 파란 선 */
 .wavy-line {
   position: fixed;
-  top: 80px;
-  left: 60px;
-  width: 150px;
-  height: 80px;
+  top: 7.41vh; /* 80px / 1080px = 7.41vh */
+  left: 3.13vw; /* 60px / 1920px = 3.13vw */
+  width: 7.81vw; /* 150px / 1920px = 7.81vw */
+  height: 7.41vh; /* 80px / 1080px = 7.41vh */
   border: 6px solid #4169e1;
   border-radius: 50%;
   clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
@@ -35,10 +38,10 @@ body {
 /* 배경 장식 - 초록 원 */
 .circle-green {
   position: fixed;
-  top: 50px;
-  right: 80px;
-  width: 200px;
-  height: 200px;
+  top: 4.63vh; /* 50px / 1080px = 4.63vh */
+  right: 4.17vw; /* 80px / 1920px = 4.17vw */
+  width: 10.42vw; /* 200px / 1920px = 10.42vw */
+  height: 18.52vh; /* 200px / 1080px = 18.52vh */
   border: 25px solid #7fff00;
   border-radius: 50%;
   border-left-color: transparent;
@@ -72,10 +75,10 @@ body {
 /* 배경 장식 - 번개 모양 */
 .lightning {
   position: fixed;
-  bottom: 200px;
-  right: 50px;
-  width: 80px;
-  height: 120px;
+  bottom: 18.52vh; /* 200px / 1080px = 18.52vh */
+  right: 2.6vw; /* 50px / 1920px = 2.6vw */
+  width: 4.17vw; /* 80px / 1920px = 4.17vw */
+  height: 11.11vh; /* 120px / 1080px = 11.11vh */
   background: #7fff00;
   clip-path: polygon(40% 0%, 60% 0%, 35% 50%, 55% 50%, 0% 100%, 30% 50%, 10% 50%);
   z-index: 1;
@@ -97,62 +100,125 @@ body {
   z-index: 0;
 }
 
-/* 메인 */
-.result-main {
-  padding: var(--spacing-xl) 0;
-  min-height: 100vh;
+/* 중앙 아이보리 패널 - quiz.html .qa-panel과 동일한 스타일 */
+.result-summary-panel {
+  position: fixed;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  width: min(72vw, 760px);
+  box-sizing: border-box;
+  background: #FFF6DC; /* quiz.html과 동일한 크림 아이보리 */
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15); /* 약한 종이 그림자 */
+  padding: 28px 32px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  z-index: 10;
-  gap: 60px;
+  gap: 20px;
+  z-index: 20;
 }
 
-/* 별 획득 정보 */
+/* 별 획득 정보 - 패널 내부 상단 */
 .star-earned {
   font-family: var(--font-pixel);
-  font-size: 48px;
-  color: #000000;
+  font-size: 32px;
+  color: var(--color-black);
   text-align: center;
   animation: zoomIn 0.5s ease-out, pulse 2s ease-in-out infinite;
   text-shadow:
-    -3px -3px 0 #fff,
-    3px -3px 0 #fff,
-    -3px 3px 0 #fff,
-    3px 3px 0 #fff;
+    -2px -2px 0 var(--color-white),
+    2px -2px 0 var(--color-white),
+    -2px 2px 0 var(--color-white),
+    2px 2px 0 var(--color-white);
+  margin-bottom: 16px;
 }
 
 .star-earned.hidden {
   display: none;
 }
 
-/* 액션 버튼 */
+/* 요약 리스트 */
+.summary-list {
+  font-family: var(--font-galmuri);
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--color-black);
+}
+
+.summary-item {
+  margin-bottom: 12px;
+  padding: 4px 0;
+}
+
+/* 하이라이트 스타일 */
+.summary-highlight {
+  background: linear-gradient(to right, #ffeb3b 0%, #ffeb3b 100%);
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+  background-position: left center;
+  padding: 2px 4px;
+  border-radius: 2px;
+  transition: none;
+}
+
+/* 하이라이트 애니메이션 */
+.highlight-animate {
+  animation: highlightReveal 0.8s ease-out forwards;
+}
+
+@keyframes highlightReveal {
+  from {
+    background-size: 0% 100%;
+  }
+  to {
+    background-size: 100% 100%;
+  }
+}
+
+/* 액션 버튼 - 패널 내부 하단 */
 .result-actions {
   display: flex;
-  gap: 30px;
+  gap: var(--spacing-lg);
   justify-content: center;
   align-items: center;
+  margin-top: 16px;
 }
 
 .result-actions button {
   font-family: var(--font-pixel);
   font-size: 18px;
-  padding: 16px 40px;
+  padding: var(--spacing-md) 40px;
   min-width: 160px;
 }
 
-/* 캐릭터 */
-.result-character {
-  text-align: center;
-  margin-top: var(--spacing-xl);
+/* 왼쪽 하단 영역: 캐릭터 섹션 - quiz.html과 동일 */
+.character-section {
+  position: fixed;
+  bottom: 11.11vh;
+  left: 2.08%;
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  z-index: 50;
 }
 
-.character-sprite {
-  font-size: 100px;
-  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.3));
-  display: inline-block;
+/* 캐릭터 */
+.character {
+  z-index: 51;
+}
+
+/* 캐릭터 이미지 - 고정 크기 10% */
+.character-img {
+  height: auto;
+  width: 10%;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  transform: scale(4);
+  transform-origin: bottom center;
+  transition: transform 0.3s ease;
 }
 
 /* 등급별 스타일 */
@@ -311,7 +377,7 @@ body {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 120px;
+  height: 11.11vh; /* 120px / 1080px = 11.11vh */
   z-index: 1;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
@@ -321,10 +387,10 @@ body {
 /* 잔디 레이어 - 픽셀 아트 스타일 */
 .grass-layer {
   position: absolute;
-  bottom: 80px;
+  bottom: 7.41vh; /* 80px / 1080px = 7.41vh */
   left: 0;
   width: 100%;
-  height: 40px;
+  height: 3.7vh; /* 40px / 1080px = 3.7vh */
   background: #00c000;
   border-bottom: none;
 }
@@ -393,7 +459,7 @@ body {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 80px;
+  height: 7.41vh; /* 80px / 1080px = 7.41vh */
   background: #b85800;
 }
 
@@ -447,12 +513,12 @@ body {
   pointer-events: none;
 }
 
-/* 결과 GIF - 정가운데 하단 (잔디 위) */
+/* 결과 GIF - 좌측 하단 고정 */
 .result-gif {
   position: fixed;
-  bottom: 120px; /* 잔디 레이어(40px) + 흙 레이어(80px) = 120px */
-  left: 50%;
-  transform: translateX(-50%);
+  left: 60px;
+  bottom: 110px;
+  transform: none;
   z-index: 50;
   pointer-events: none;
 }
@@ -460,7 +526,7 @@ body {
 .result-gif img {
   display: block;
   width: auto;
-  height: 200px; /* GIF 크기 조절 */
+  height: 25.52vh; /* 200px / 1080px = 18.52vh - GIF 크기 조절 */
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;

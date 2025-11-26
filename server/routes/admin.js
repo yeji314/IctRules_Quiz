@@ -92,6 +92,12 @@ router.get('/stats/overview', adminController.getOverview);
 router.get('/stats/departments', adminController.getDepartmentStats);
 
 /**
+ * GET /api/admin/stats/departments/:departmentName/participants
+ * 부서원 목록 조회 (참여 여부 포함, event_id 옵션)
+ */
+router.get('/stats/departments/:departmentName/participants', adminController.getDepartmentParticipants);
+
+/**
  * GET /api/admin/stats/questions
  * 문제별 통계 조회 (event_id 필수)
  */

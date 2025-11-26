@@ -251,8 +251,13 @@ const listQuestions = async (req, res) => {
 
       const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
 
+      const questionData = question.toJSON();
+
+      // summary와 highlight 필드 확인 (디버깅)
+      console.log('[Admin listQuestions] Question ID:', question.id, 'Summary:', questionData.summary, 'Highlight:', questionData.highlight);
+
       return {
-        ...question.toJSON(),
+        ...questionData,
         stats: {
           totalAnswers,
           correctAnswers,
@@ -286,7 +291,9 @@ const createQuestion = async (req, res) => {
       category,
       question_text,
       question_data,
-      explanation
+      explanation,
+      summary,
+      highlight
     } = req.body;
 
     // 입력 검증
@@ -333,7 +340,9 @@ const createQuestion = async (req, res) => {
       category,
       question_text,
       question_data,
-      explanation
+      explanation,
+      summary,
+      highlight
     });
 
     res.status(201).json({
@@ -361,7 +370,9 @@ const updateQuestion = async (req, res) => {
       category,
       question_text,
       question_data,
-      explanation
+      explanation,
+      summary,
+      highlight
     } = req.body;
 
     const question = await db.Question.findByPk(id);
@@ -403,7 +414,9 @@ const updateQuestion = async (req, res) => {
       category: category || question.category,
       question_text: question_text || question.question_text,
       question_data: question_data || question.question_data,
-      explanation: explanation !== undefined ? explanation : question.explanation
+      explanation: explanation !== undefined ? explanation : question.explanation,
+      summary: summary !== undefined ? summary : question.summary,
+      highlight: highlight !== undefined ? highlight : question.highlight
     });
 
     res.json({
@@ -732,6 +745,82 @@ const getDepartmentStats = async (req, res) => {
     console.error('부서별 통계 조회 에러:', error);
     res.status(500).json({
       error: '부서별 통계 조회에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * 부서원 목록 조회 (참여 여부 포함)
+ * GET /api/admin/stats/departments/:departmentName/participants?event_id=1
+ */
+const getDepartmentParticipants = async (req, res) => {
+  try {
+    const { departmentName } = req.params;
+    const { event_id } = req.query;
+
+    // 해당 부서의 모든 사용자 조회
+    const users = await db.User.findAll({
+      where: { 
+        department: departmentName,
+        role: 'user'
+      },
+      attributes: ['id', 'name', 'employee_id', 'department'],
+      order: [['name', 'ASC']]
+    });
+
+    // 각 사용자의 참여 정보 조회
+    const participants = await Promise.all(users.map(async (user) => {
+      let whereClause = { user_id: user.id };
+      if (event_id) {
+        whereClause.event_id = event_id;
+      }
+
+      // 참여 여부 확인 (세션이 있으면 참여)
+      const sessionCount = await db.QuizSession.count({
+        where: whereClause
+      });
+
+      // 완료한 문제 수 (정답 맞춘 문제 수)
+      let completedQuestions = 0;
+      if (sessionCount > 0) {
+        completedQuestions = await db.QuizAnswer.count({
+          distinct: true,
+          col: 'question_id',
+          where: { is_correct: true },
+          include: [{
+            model: db.QuizSession,
+            where: whereClause,
+            attributes: []
+          }]
+        });
+      }
+
+      return {
+        id: user.id,
+        name: user.name,
+        employee_id: user.employee_id,
+        participated: sessionCount > 0,
+        completed_questions: completedQuestions
+      };
+    }));
+
+    // 참여한 사용자를 먼저 표시
+    participants.sort((a, b) => {
+      if (a.participated && !b.participated) return -1;
+      if (!a.participated && b.participated) return 1;
+      return b.completed_questions - a.completed_questions;
+    });
+
+    res.json({
+      success: true,
+      department: departmentName,
+      participants
+    });
+
+  } catch (error) {
+    console.error('부서원 목록 조회 에러:', error);
+    res.status(500).json({
+      error: '부서원 목록 조회에 실패했습니다'
     });
   }
 };
@@ -1667,6 +1756,7 @@ module.exports = {
   // 통계
   getOverview,
   getDepartmentStats,
+  getDepartmentParticipants,
   getQuestionStats,
   getUserList,
 

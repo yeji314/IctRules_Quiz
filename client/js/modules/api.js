@@ -253,6 +253,16 @@ export const admin = {
   },
 
   /**
+   * 부서원 목록 조회 (참여 여부 포함)
+   */
+  async getDepartmentParticipants(departmentName, eventId = null) {
+    const url = eventId
+      ? `/admin/stats/departments/${encodeURIComponent(departmentName)}/participants?event_id=${eventId}`
+      : `/admin/stats/departments/${encodeURIComponent(departmentName)}/participants`;
+    return get(url);
+  },
+
+  /**
    * 문제별 통계 조회
    */
   async getQuestionStats(eventId) {

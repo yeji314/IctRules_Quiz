@@ -5,6 +5,7 @@
 import { quiz } from '../modules/api.js';
 import { requireAuth, getUser, logout as authLogout } from '../modules/auth.js';
 import { $, show, hide, animate, playSound, formatDate } from '../modules/utils.js';
+import { showPixelAlert, showPixelConfirm } from '../modules/pixel-dialog.js';
 
 // 인증 확인
 requireAuth();
@@ -73,6 +74,18 @@ async function loadQuizList() {
 }
 
 /**
+ * 미래 퀴즈 판별 함수
+ * @param {Object} quizItem - 퀴즈 아이템 (startDate 필드 포함)
+ * @param {Date} now - 현재 날짜 (기본값: new Date())
+ * @returns {boolean} - 미래 퀴즈면 true, 아니면 false
+ */
+function isFutureQuiz(quizItem, now = new Date()) {
+  if (!quizItem.startDate) return false;
+  const start = new Date(quizItem.startDate);
+  return start > now;
+}
+
+/**
  * 퀴즈 목록 렌더링
  */
 function renderQuizList(quizzes) {
@@ -103,46 +116,51 @@ function createQuizCard(quizItem, index) {
   // 애니메이션 딜레이
   board.style.animation = `fadeIn 0.3s ease-out ${index * 0.15}s both`;
 
-  // 진행률(문제를 푼 횟수) - 서버에서 내려주는 currentRound 기준 (0~3)
-  const rawProgress = typeof quizItem.currentRound === 'number' ? quizItem.currentRound : 0;
-  const progress = Math.max(0, Math.min(rawProgress, 3)); // 0 ~ 3 로 클램프
+  // 남은 문제 수 확인 (서버에서 내려주는 remainingQuestions 기준)
+  const remainingQuestions = typeof quizItem.remainingQuestions === 'number'
+    ? quizItem.remainingQuestions
+    : quizItem.totalQuestions || 0;
 
-  // 버튼 텍스트 / 활성화 여부 / NES 색상 클래스 - 진행률 규칙에 따라 결정
+  // 완료된 문제 수 (이미 푼 문제)
+  const completedQuestions = (quizItem.totalQuestions || 0) - remainingQuestions;
+
+  // 버튼 텍스트 / 활성화 여부 / NES 색상 클래스 - 우선순위별 결정
   let buttonText;
   let buttonDisabled;
   let buttonVariantClass;
+  let isLocked = false; // 잠금 상태 플래그
 
-  if (progress === 0) {
-    // 0회 풀었을 때
-    buttonText = 'START';
-    buttonDisabled = false;
-    buttonVariantClass = 'is-primary'; // index START와 동일 파란색
-  } else if (progress === 1 || progress === 2) {
-    // 1회 또는 2회 풀었을 때
-    buttonText = 'CONTINUE';
-    buttonDisabled = false;
-    buttonVariantClass = 'is-success'; // 진행 중 - 초록색
-  } else {
-    // 3회 풀었을 때 (또는 그 이상) - 완료
-    buttonText = 'COMPLETE';
+  // 최우선 조건: 미래 퀴즈 (아직 시작되지 않은 퀴즈)
+  if (isFutureQuiz(quizItem)) {
+    buttonText = ''; // 텍스트는 CSS로 숨김
     buttonDisabled = true;
-    buttonVariantClass = 'is-warning'; // 완료 - 노랑색
+    buttonVariantClass = 'btn-locked';
+    isLocked = true;
   }
-
-  // 만료된 이벤트는 무조건 COMPLETE + 비활성화
-  if (quizItem.isExpired) {
+  // 두 번째 우선순위: 만료된 이벤트
+  else if (quizItem.isExpired) {
     buttonText = 'COMPLETE';
     buttonDisabled = true;
     buttonVariantClass = 'is-warning';
   }
-
-  const maxSessions = 3;
-
-  // 진행률 박스 생성 (■/□)
-  let progressBoxes = '';
-  for (let i = 0; i < maxSessions; i++) {
-    const filled = i < progress ? 'filled' : '';
-    progressBoxes += `<div class="progress-box ${filled}"></div>`;
+  // 세 번째 우선순위: 남은 문제 수 기반 상태
+  else if (remainingQuestions < 5) {
+    // 남은 문제가 5개 미만이면 세션 시작 불가 -> COMPLETE
+    buttonText = 'COMPLETE';
+    buttonDisabled = true;
+    buttonVariantClass = 'is-warning';
+  }
+  else if (completedQuestions === 0) {
+    // 아직 한 문제도 안 풀었을 때
+    buttonText = 'START';
+    buttonDisabled = false;
+    buttonVariantClass = 'is-primary'; // 파란색
+  }
+  else {
+    // 일부 풀었지만 5개 이상 남았을 때
+    buttonText = 'CONTINUE';
+    buttonDisabled = false;
+    buttonVariantClass = 'is-success'; // 초록색
   }
 
   // 월 표시 (서버에서 내려준 title 우선 사용, 없으면 index 기반)
@@ -155,23 +173,34 @@ function createQuizCard(quizItem, index) {
       <button class="quiz-action-btn nes-btn ${buttonVariantClass}" ${buttonDisabled ? 'disabled' : ''}>
         ${buttonText}
       </button>
-      <div class="quiz-progress">
-        ${progressBoxes}
-      </div>
     </div>
     <div class="wood-nail wood-nail--right"></div>
   `;
 
-  // 버튼 클릭 이벤트
-  const actionBtn = board.querySelector('.quiz-action-btn');
-  if (actionBtn && !buttonDisabled) {
-    actionBtn.addEventListener('mousedown', () => playSound('click'));
-    actionBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      handleStartQuiz(quizItem.eventId);
-    });
+  // 잠금 상태일 때 wood-board에 클래스 추가 (오버레이 효과용)
+  if (isLocked) {
+    board.classList.add('is-locked');
   }
-  
+
+  // 버튼 클릭 이벤트 - 미래 퀴즈는 클릭 방지
+  const actionBtn = board.querySelector('.quiz-action-btn');
+  if (actionBtn) {
+    if (isLocked) {
+      // 미래 퀴즈: 클릭 시 알림 표시
+      actionBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await showPixelAlert('아직 시작되지 않은 퀴즈입니다.', { title: '알림' });
+      });
+    } else if (!buttonDisabled) {
+      // 정상 퀴즈: 세션 시작
+      actionBtn.addEventListener('mousedown', () => playSound('click'));
+      actionBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleStartQuiz(quizItem.eventId);
+      });
+    }
+  }
+
   // 비활성화 상태 스타일
   if (buttonDisabled) {
     board.style.opacity = '0.7';
@@ -214,7 +243,7 @@ async function handleStartQuiz(eventId) {
     }
   } catch (error) {
     console.error('퀴즈 시작 실패:', error);
-    alert('⚠️ ' + (error.message || '퀴즈 시작에 실패했습니다'));
+    await showPixelAlert(error.message || '퀴즈 시작에 실패했습니다', { title: '오류' });
     playSound('wrong');
   }
 }
@@ -222,8 +251,9 @@ async function handleStartQuiz(eventId) {
 /**
  * 로그아웃
  */
-function handleLogout() {
-  if (confirm('로그아웃하시겠습니까?')) {
+async function handleLogout() {
+  const confirmed = await showPixelConfirm('로그아웃하시겠습니까?', { title: '로그아웃' });
+  if (confirmed) {
     playSound('click');
     authLogout();
   }
