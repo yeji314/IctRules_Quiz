@@ -1,0 +1,11 @@
+question_type,category,question_text,question_data,explanation,summary,highlight
+drag_and_drop,normal,다음 중 VPN의 정식 명칭은?,"{""target_label"":""정답을 드래그하세요"",""options"":[""Virtual Private Network"",""Very Public Network"",""Visual Private Node"",""Virtual Public Network""],""correct_answer"":""Virtual Private Network""}",VPN은 가상사설망(Virtual Private Network)의 약자입니다,VPN은 가상사설망으로 안전한 네트워크 연결을 제공합니다,가상사설망
+typing,normal,정보보호 최고책임자의 영문 약어를 입력하세요,"{""correct_answer"":""CISO""}",CISO는 Chief Information Security Officer의 약자입니다,CISO는 기업의 정보보안 총괄 책임자입니다,CISO
+fill_in_blank,normal,개인정보는 수집 목적 달성 후 언제 파기해야 합니까?,"{""options"":[""30일"",""60일"",""90일"",""즉시""],""correct_answer"":""즉시""}",개인정보는 목적 달성 즉시 파기가 원칙입니다,개인정보는 목적 달성 후 즉시 파기해야 합니다,즉시 파기
+ox,normal,사내 메일을 개인 메일로 전달해도 된다,"{""correct_answer"":""X""}",사내 정보는 개인 메일로 전달할 수 없습니다,사내 메일의 외부 전달은 금지되어 있습니다,외부 전달 금지
+best_action,normal,노트북을 분실했을 때 가장 먼저 해야 할 일은?,"{""options"":[""경찰 신고"",""보안팀 신고"",""비밀번호 변경"",""재구매 요청""],""correct_answer"":""보안팀 신고""}",노트북 분실 시 즉시 보안팀에 신고해야 합니다,분실 시 보안팀에 즉시 신고하는 것이 최우선입니다,보안팀 신고
+ox,normal,비밀번호는 최소 8자 이상으로 설정해야 한다,"{""correct_answer"":""O""}",대부분의 보안 정책에서 비밀번호는 8자 이상을 요구합니다,비밀번호는 8자 이상 영문/숫자/특수문자 조합 권장,8자 이상
+drag_and_drop,normal,다음 중 DLP의 정식 명칭은?,"{""target_label"":""정답을 여기로"",""options"":[""Data Loss Prevention"",""Data Link Protocol"",""Digital Light Processing"",""Download Link Provider""],""correct_answer"":""Data Loss Prevention""}",DLP는 데이터유출방지(Data Loss Prevention)의 약자입니다,DLP는 기업의 중요 데이터 유출을 방지하는 솔루션입니다,데이터유출방지
+fill_in_blank,normal,컴퓨터 바이러스를 예방하기 위해 설치해야 하는 프로그램은?,"{""options"":[""게임"",""백신"",""브라우저"",""메신저""],""correct_answer"":""백신""}",바이러스 백신 프로그램을 설치하고 항상 최신 상태로 유지해야 합니다,백신 프로그램 설치 및 최신 업데이트 유지가 필수입니다,백신 프로그램
+best_action,normal,의심스러운 이메일을 받았을 때 가장 적절한 행동은?,"{""options"":[""첨부파일 열기"",""링크 클릭"",""삭제 후 보안팀 신고"",""동료에게 전달""],""correct_answer"":""삭제 후 보안팀 신고""}",의심스러운 이메일은 열지 않고 즉시 보안팀에 신고해야 합니다,의심 메일은 열지 말고 삭제 후 보안팀에 신고하세요,보안팀 신고
+drag_and_drop,normal,다음 중 MFA의 정식 명칭은?,"{""target_label"":""드래그해서 놓으세요"",""options"":[""Multi-Factor Authentication"",""Multiple File Access"",""Main Function Area"",""Media Format Adapter""],""correct_answer"":""Multi-Factor Authentication""}",MFA는 다중인증(Multi-Factor Authentication)의 약자입니다,MFA는 2가지 이상의 인증 방법을 사용하는 보안 기술입니다,다중인증

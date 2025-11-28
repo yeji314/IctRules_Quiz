@@ -67,7 +67,10 @@ app.use((req, res) => {
 
 // 에러 핸들러
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('서버 에러:', err.message);
+  if (process.env.NODE_ENV === 'development') {
+    console.error(err.stack);
+  }
   res.status(err.status || 500).json({
     error: {
       message: err.message || 'Internal Server Error',

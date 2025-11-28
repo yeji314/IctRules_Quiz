@@ -183,64 +183,88 @@ body {
 }
 
 /* 왼쪽 하단 영역 (나무 → 캐릭터 → 우체통) */
-.tree-lineup {
+/* ✅ quiz.html과 동일한 .character-section 패턴 사용 */
+/* ✅ 이 컨테이너만이 --deco-scale을 적용하며, 내부 요소는 static 으로 동작 */
+.character-section {
   position: fixed;
-  bottom: 11.11vh; /* 120px / 1080px = 11.11vh - 잔디 위 (80px 흙 + 40px 잔디) */
-  left: 1.5%; /* 40px / 1920px */
+  bottom: var(--dirt-height);
+  left: 40px; /* 고정 좌측 여백 - 모든 해상도에서 일관성 */
   display: flex;
   align-items: flex-end;
-  gap: 20px;
-  z-index: 50;
+  gap: 70px; /* tree와 character 사이 간격 */
+  z-index: 30; /* 지면(10) 위, UI(100) 아래 */
+
+  /* ✅ 컨테이너 전체를 --deco-scale로 스케일링 (index.html / quiz.html과 동일) */
+  /* ✅ 이 하나의 scale만으로 내부 캐릭터 이미지도 함께 스케일링됨 */
+  transform: scale(var(--deco-scale));
+  transform-origin: bottom left;
 }
 
-/* 래퍼 안 요소들은 static으로 - 위치는 래퍼가 관리 */
-.tree-lineup .tree,
-.tree-lineup .mailbox {
-  position: static;
+/* ✅ character-section 내부에서는 전역 decorations.css transform/position 무효화 */
+/*    - 이 블록이 "캐릭터/나무/우체통" 최종 위치/스케일 규칙의 단일 출처 */
+.character-section .tree,
+.character-section .mailbox,
+.character-section .character {
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important; /* decorations.css 의 scale 중복 적용 방지 */
+  transform-origin: bottom center !important;
 }
 
-/* 캐릭터 래퍼 */
-.character-wrap {
-  position: relative; /* 말풍선 기준점 */
+/* ✅ 캐릭터 이미지: .sol-gif-base + 부모 컨테이너 scale만 사용 */
+.character-section .character-img {
+  transform: none !important; /* 이미지 자체에는 scale 적용 금지 */
 }
 
-/* 캐릭터 이미지 - 4배 크기 */
-.character-img {
-  height: auto;
-  width: 20%; /* 원하는 크기 지정 */
-  display: block;
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
-  transform: scale(4);
-  transform-origin: bottom center;
-}
-
-/* 말풍선 - 캐릭터 머리 오른쪽 위 대각선 */
+/* 말풍선 - 캐릭터 앵커 기준 위치 */
+/* ✅ quiz.css 와 동일한 폭/동작 규칙 (가로 폭 280~400px 자동 확장) */
 .speech-bubble {
   position: fixed;
-  bottom:40%; /* 350px / 1080px - 캐릭터 바로 위 */
-  left: 8%; /* 캐릭터와 같은 left 위치 (중앙 정렬) */
-  transform: translateX(-50%);
-  margin-left: 2.86%; /* 55px / 1920px - 캐릭터 너비(110px)의 절반 */
+  /* JS에서 CSS 변수로 캐릭터 앵커 좌표 + ideal-gap(8px) 주입 */
+  /* 꼬리 끝점(pointer tip)을 고정 앵커로 사용 - 높이 변화 시 위로만 성장 */
+  bottom: var(--anchor-bottom, 55vh);
+  left: var(--anchor-left, 15%);
+  transform: translateX(-50%); /* 중앙 정렬만, Y축 이동 제거 */
+  transform-origin: bottom center; /* 꼬리 끝을 기준점으로 설정 */
   image-rendering: pixelated;
   z-index: 200;
+  opacity: 1;
+  visibility: visible;
+  transition: left 0.2s ease-out, bottom 0.2s ease-out; /* position만 transition */
+
+  /* ✅ quiz 와 동일한 가로 폭 규칙 (현재 값 기준 1.2배 확대: 350→420, 500→600) */
+  width: auto;
+  min-width: 420px; /* 350 * 1.2 */
+  max-width: 600px; /* 500 * 1.2 */
+
+  pointer-events: none; /* 말풍선이 클릭 이벤트 방해하지 않도록 */
 }
 
 .speech-bubble-svg {
   display: block;
+  width: 100%;
+  /* SVG 실제 높이는 JS(adjustSpeechBubbleSize)가 height/viewBox로 동적 제어 */
+  height: var(--bubble-svg-height, auto);
+  min-height: 0; /* JS가 더 줄일 수 있도록 최소값 제거 */
 }
 
 .speech-bubble-text {
   position: absolute;
-  top: 14px;
+  top: 12px;
   left: 32px;
   right: 32px;
+  bottom: 12px;
   font-family: var(--font-galmuri);
-  font-size: 14px;
+  font-size: 16px; /* quiz.css 와 동일 (+2px from base 14px) */
   color: #000000;
   font-weight: 700;
-  line-height: 1.7;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  overflow: visible;
+  text-align: left;
+  max-height: none;
   -webkit-font-smoothing: none;
   text-rendering: geometricPrecision;
 }
@@ -617,26 +641,17 @@ body {
     padding: 6px 12px;
   }
 
-  .tree-lineup {
-    bottom: 11.11vh; /* 120px / 1080px = 11.11vh */
-    left: 1.5%; /* 20px / 1920px */
-    gap: 15px;
-    transform: scale(0.8);
-    transform-origin: left bottom;
+  .character-section {
+    /* 고정 픽셀 유지 - 태블릿에서도 동일한 위치 */
+    bottom: 120px;
+    left: 30px;
+    gap: 50px; /* 간격만 축소 */
+    /* ✅ transform은 기본 --deco-scale 유지 (변경 금지) */
   }
 
-  .character-img {
-    width: 4.69%; /* 90px / 1920px */
-    height: auto;
-  }
+  /* .character-img 크기는 .sol-gif-base에서 통일 관리 */
 
-  .speech-bubble {
-    bottom: 35%; /* 220px / 1080px */
-    left: 1.04%; /* 20px / 1920px */
-    margin-left: 9.38%; /* 180px / 1920px - 태블릿에서 캐릭터 중앙 */
-    transform: translateX(-50%) scale(0.8);
-    transform-origin: bottom center;
-  }
+  /* ✅ quiz 와 동일: 말풍선 자체에는 scale 을 적용하지 않고, 컨테이너/데코 스케일만 사용 */
 
   .quiz-board-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -677,22 +692,17 @@ body {
     height: calc(100vh - 350px);
   }
 
-  .tree-lineup {
-    transform: scale(0.5);
+  .character-section {
+    /* 고정 픽셀 유지 - 모바일에서도 동일한 위치 */
+    bottom: 120px;
+    left: 20px;
+    gap: 30px; /* 간격 더 축소 */
+    /* ✅ transform은 기본 --deco-scale 유지 (변경 금지) */
   }
 
-  .character-img {
-    width: 3.65%; /* 70px / 1920px */
-    height: auto;
-  }
+  /* .character-img 크기는 .sol-gif-base에서 통일 관리 */
 
-  .speech-bubble {
-    bottom: 35%; /* 210px / 1080px */
-    left: 0.52%; /* 10px / 1920px */
-    margin-left: 7.29%; /* 140px / 1920px - 모바일에서 캐릭터 중앙 */
-    transform: translateX(-50%) scale(0.6);
-    transform-origin: bottom center;
-  }
+  /* ✅ quiz 와 동일: 말풍선 자체에는 scale 을 적용하지 않고, 컨테이너/데코 스케일만 사용 */
 
   .quiz-board-list {
     grid-template-columns: 1fr;
@@ -710,7 +720,7 @@ body {
   position: fixed;
   bottom: 17.59vh; /* 190px / 1080px = 17.59vh */
   left: 0;
-  width: 20%;
+  /* width는 .sol2-gif의 .sol-gif-base에서 결정 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -718,7 +728,6 @@ body {
   pointer-events: none;
   z-index: 35;
   animation: sol2-slide 16s linear infinite;
-  transform: translateX(120vw);
 }
 
 .sol2-speech-bubble {
@@ -751,10 +760,8 @@ body {
   border-top: 10px solid #6b4220;
 }
 
+/* .sol2-gif는 .sol-gif-base 사용, 추가 스타일만 정의 */
 .sol2-gif {
-  width: 20%;
-  height: auto;
-  display: block;
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.25));
 }
 
@@ -762,23 +769,24 @@ body {
   border-radius: 12px;
 }
 
+/* sol2 슬라이드 애니메이션 - transform은 translateX만 */
 @keyframes sol2-slide {
   0% {
-    transform: translateX(120vw);
+    left: 120vw;
     opacity: 0;
   }
   8% {
     opacity: 1;
   }
   50% {
-    transform: translateX(-40vw);
+    left: -40vw;
     opacity: 1;
   }
   70% {
     opacity: 0.8;
   }
   100% {
-    transform: translateX(-120vw);
+    left: -120vw;
     opacity: 0;
   }
 }
@@ -793,7 +801,7 @@ body > .tree-lineup .speech-bubble {
 @media (max-width: 768px) {
   .sol2-parade {
     bottom: 19.44vh; /* 210px / 1080px = 19.44vh */
-    width: 9.38%; /* 180px / 1920px */
+    /* width는 .sol-gif-base에서 통일 관리 */
   }
 
   .sol2-speech-bubble {
@@ -801,15 +809,13 @@ body > .tree-lineup .speech-bubble {
     letter-spacing: 0.15em;
   }
 
-  .sol2-gif {
-    width: 15%;
-  }
+  /* .sol2-gif 크기는 .sol-gif-base에서 통일 관리 */
 }
 
 @media (max-width: 480px) {
   .sol2-parade {
     bottom: 20.37vh; /* 220px / 1080px = 20.37vh */
-    width: 7.81%; /* 150px / 1920px */
+    /* width는 .sol-gif-base에서 통일 관리 */
   }
 
   .sol2-speech-bubble {
@@ -817,7 +823,5 @@ body > .tree-lineup .speech-bubble {
     padding: 4px 12px;
   }
 
-  .sol2-gif {
-    width: 15%;
-  }
+  /* .sol2-gif 크기는 .sol-gif-base에서 통일 관리 */
 }

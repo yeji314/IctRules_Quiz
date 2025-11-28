@@ -226,6 +226,13 @@ export const admin = {
   },
 
   /**
+   * 이벤트의 문제 전체 삭제
+   */
+  async deleteAllQuestions(eventId) {
+    return del(`/admin/events/${eventId}/questions`);
+  },
+
+  /**
    * 문제 대량 업로드
    */
   async bulkUploadQuestions(eventId, questions) {

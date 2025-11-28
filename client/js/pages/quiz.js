@@ -6,6 +6,7 @@ import { quiz as quizApi } from '../modules/api.js';
 import { requireAuth, getUser, logout } from '../modules/auth.js';
 import { $, show, hide, animate, playSound } from '../modules/utils.js';
 import { showPixelAlert, showPixelConfirm } from '../modules/pixel-dialog.js';
+import { initSpeechBubbleAnchor, updateSpeechBubbleAnchor, adjustSpeechBubbleSize } from '../utils/speech-bubble-anchor.js';
 
 // 인증 확인
 requireAuth();
@@ -107,80 +108,44 @@ async function init() {
   // 타이머 시작
   startTimer();
 
-  // 말풍선 앵커 업데이트 (불변 조건 1)
-  updateSpeechBubbleAnchor();
-
-  // 리사이즈/스크롤 시 앵커 재계산
-  window.addEventListener('resize', updateSpeechBubbleAnchor);
-  window.addEventListener('scroll', updateSpeechBubbleAnchor);
-
-  // 애니메이션/전환 후에도 앵커 재계산
-  const observer = new MutationObserver(updateSpeechBubbleAnchor);
-  const characterSection = document.querySelector('.character-section');
-  if (characterSection) {
-    observer.observe(characterSection, {
-      attributes: true,
-      childList: true,
-      subtree: true
-    });
-  }
+  // 캐릭터-말풍선 고정 정렬 로직: 앵커 초기화 (resize, scroll, load, DOM 변경 시 자동 재계산)
+  initSpeechBubbleAnchor();
 }
 
 /**
- * 말풍선 앵커 업데이트 (불변 조건 A: 근접 고정)
- * 캐릭터 top-center 좌표를 계산하여 CSS 변수로 주입
- *
- * Gap 제약:
- * - ideal-gap: 8px (목표 간격)
- * - min-gap: 4px (겹침 방지)
- * - max-gap: 14px (멀어짐 방지)
+ * 말풍선을 기본 높이로 강제 초기화 (문제 전환 시)
  */
-function updateSpeechBubbleAnchor() {
-  const characterImg = document.querySelector('.character-img');
-  const speechBubble = document.querySelector('.speech-bubble');
+function resetSpeechBubbleToBase(myQuestionToken) {
+  // 1) 말풍선 텍스트 완전 삭제
+  explanationText.textContent = '';
+  explanationBubble.classList.remove('long','correct','incorrect','ox-hint','luckydraw-hint');
+  explanationBubble.classList.add('empty');
 
-  if (!characterImg || !speechBubble) return;
-
-  // Gap 제약 상수 (불변 조건 A)
-  const IDEAL_GAP = 8;
-  const MIN_GAP = 4;
-  const MAX_GAP = 14;
-
-  // 말풍선 SVG에서 꼬리 끝점의 상대 위치 (SVG 최하단으로부터의 거리)
-  // adjustSpeechBubbleSize()에서 꼬리는 항상 하단 12px 영역에 위치 (3단 계단형: 12px, 8px, 4px)
-  const TAIL_TIP_OFFSET = 12; // 꼬리 끝점이 SVG 하단에서 얼마나 올라와 있는지
-
-  // Get character's bounding rect (includes transforms)
-  const rect = characterImg.getBoundingClientRect();
-
-  // 캐릭터 top-center 좌표
-  const characterTopCenterX = rect.left + (rect.width / 2);
-  const characterTopY = rect.top;
-
-  // 꼬리 tip의 실제 Y 좌표 (캐릭터 top 위 IDEAL_GAP 떨어진 위치)
-  const tailTipTargetY = characterTopY - IDEAL_GAP;
-
-  // 말풍선 SVG bottom 위치 계산
-  // SVG의 bottom이 tailTipTargetY - TAIL_TIP_OFFSET에 위치해야 함
-  // (꼬리 tip은 SVG bottom으로부터 TAIL_TIP_OFFSET만큼 위에 있음)
-  const anchorBottom = window.innerHeight - (tailTipTargetY - TAIL_TIP_OFFSET);
-
-  // Gap 제약 검증 (실제 gap = 캐릭터 top과 꼬리 tip 사이 거리)
-  const actualGap = characterTopY - tailTipTargetY;
-  if (actualGap < MIN_GAP || actualGap > MAX_GAP) {
-    console.warn(`[Anchor] Gap constraint violated: ${actualGap.toFixed(1)}px (allowed: ${MIN_GAP}~${MAX_GAP}px)`);
+  // 2) SVG를 강제 "최소 높이"로 먼저 리셋(기본 height=60)
+  const svgElement = explanationBubble.querySelector('.speech-bubble-svg');
+  if (svgElement) {
+    svgElement.setAttribute('height','60');
+    svgElement.setAttribute('viewBox','0 0 328 60');
+    svgElement.style.setProperty('--bubble-svg-height','60px');
   }
 
-  // Inject CSS variables
-  speechBubble.style.setProperty('--anchor-left', `${characterTopCenterX}px`);
-  speechBubble.style.setProperty('--anchor-bottom', `${anchorBottom}px`);
+  // 3) 토큰 가드 + 기본 문구 높이로 재계산
+  if (myQuestionToken !== questionToken) return;
+  adjustSpeechBubbleSize('explanationText', myQuestionToken, () => questionToken); // 최소 텍스트 기준 높이 재산출
 }
 
 /**
  * 문제 로드
  */
 function loadQuestion() {
-  // 세션 완료 체크는 handleNext나 handleSubmit에서 처리됨
+  // ✅ 새 문제 토큰 발급 - 이전 문제의 모든 비동기 작업 무효화
+  const myQuestionToken = ++questionToken;
+
+  // ✅ 기존 타이핑 즉시 중단
+  cancelTypingSession();
+
+  // ✅ 말풍선 텍스트+높이 강제 초기화
+  resetSpeechBubbleToBase(myQuestionToken);
 
   const question = currentSession.question;
 
@@ -229,7 +194,7 @@ function loadQuestion() {
   }
 
   // 말풍선 크기 즉시 조정 (새 문제 로드 시)
-  adjustSpeechBubbleSize();
+  adjustSpeechBubbleSize('explanationText', myQuestionToken, () => questionToken);
 
   // 문제 타입에 따라 렌더링
   renderQuestion(question);
@@ -304,7 +269,6 @@ function renderDragDrop(question) {
   targetEl.innerHTML = `<span class="target-text">${target_label || '여기에 드래그하세요'}</span>`;
 
   let currentDraggingItem = null;
-  let currentDraggingElement = null;
 
   targetEl.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -329,6 +293,10 @@ function renderDragDrop(question) {
     const value = e.dataTransfer.getData('text/plain');
     currentAnswer = value;
 
+    // 드롭 영역을 '채워진' 상태로 전환 (흰 바탕이 영역을 가득 채우는 효과)
+    targetEl.classList.add('filled');
+
+    // 내부 텍스트를 선택한 패널로 교체
     targetEl.innerHTML = '';
     const droppedItem = document.createElement('div');
     droppedItem.className = 'dragdrop-item';
@@ -358,16 +326,14 @@ function renderDragDrop(question) {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', item);
       currentDraggingItem = item;
-      currentDraggingElement = itemEl;
-      
+
       console.log('[DragDrop] 드래그 시작:', item);
     });
 
     itemEl.addEventListener('dragend', () => {
       itemEl.classList.remove('dragging');
       currentDraggingItem = null;
-      currentDraggingElement = null;
-      
+
       console.log('[DragDrop] 드래그 종료');
     });
 
@@ -610,51 +576,27 @@ function renderOX(question) {
   xButton.textContent = 'X';
   xButton.dataset.value = 'X';
 
-  // 타이핑 효과를 위한 변수
-  let typingInterval = null;
-
-  // 타이핑 효과 함수
-  const typeText = (text, speed = 100) => {
-    explanationText.textContent = '';
-    let index = 0;
-
-    // 기존 타이핑 중단
-    if (typingInterval) {
-      clearInterval(typingInterval);
-    }
-
-    typingInterval = setInterval(() => {
-      if (index < text.length) {
-        explanationText.textContent += text[index];
-        index++;
-      } else {
-        clearInterval(typingInterval);
-        typingInterval = null;
-      }
-    }, speed);
-  };
-
-  // 말풍선에 힌트 표시 함수
+  // ✅ 말풍선에 힌트 표시 함수 - 큐/토큰 시스템 사용
   const showHint = (option) => {
+    // ✅ 이미 정답을 맞춘 뒤라면(피드백 상태) hover 힌트로 말풍선/타이핑을 건드리지 않음
+    if (answersArea.dataset.isCorrect === 'true') return;
+
+    const myQuestionToken = questionToken;
     explanationBubble.classList.add('ox-hint');
     explanationBubble.classList.remove('empty');
 
-    // 타이핑 효과로 텍스트 표시
-    // 정답 선택 시: "정답입니다!"
+    // 정답 선택 시: "좋은 생각이에요"
     // 오답 선택 시: "흠..."
     if (option === correctAnswer) {
-      typeText('좋은 생각이에요', 80);
+      enqueueTyping(explanationText, '좋은 생각이에요', 80, myQuestionToken);
     } else {
-      typeText('흠...', 120);
+      enqueueTyping(explanationText, '흠...', 120, myQuestionToken);
     }
   };
 
   const hideHint = () => {
-    // 타이핑 중단
-    if (typingInterval) {
-      clearInterval(typingInterval);
-      typingInterval = null;
-    }
+    // ✅ 정답 확정 상태에서는 hover out으로 말풍선 내용을 지우지 않음
+    if (answersArea.dataset.isCorrect === 'true') return;
 
     explanationBubble.classList.remove('ox-hint');
     explanationBubble.classList.add('empty');
@@ -790,6 +732,9 @@ async function handleSubmit() {
  * 피드백 표시
  */
 async function showFeedback(result, question, response) {
+  // ✅ 현재 문제 토큰 저장 (비동기 작업 중 문제가 바뀌면 중단)
+  const myQuestionToken = questionToken;
+
   if (result.is_correct) {
     // 정답: 초록색 표시 + 다음 문제 버튼으로 변경
     playSound('correct');
@@ -805,6 +750,8 @@ async function showFeedback(result, question, response) {
     // NES.css 스타일 글로우 효과 추가
     answersArea.classList.add('nes-glow');
     setTimeout(() => {
+      // ✅ 토큰 가드: 다른 문제로 넘어갔으면 실행 안 함
+      if (myQuestionToken !== questionToken) return;
       answersArea.classList.remove('nes-glow');
     }, 2000);
 
@@ -820,7 +767,7 @@ async function showFeedback(result, question, response) {
     const positiveMsg = question.question_type === 'ox'
       ? '느낌 GOOD! 👍'
       : '정답입니다! 👏';
-    await typeWriterEffect(explanationText, positiveMsg, 30);
+    await enqueueTyping(explanationText, positiveMsg, 30, myQuestionToken);
 
     // 첫 시도에 맞춘 경우
     if (result.attempt === 1) {
@@ -833,10 +780,16 @@ async function showFeedback(result, question, response) {
       if (response.luckydraw_result) {
         // 우편 봉투 애니메이션 표시 (1초 후) - Promise 기반 완료 대기
         setTimeout(async () => {
+          // ✅ 토큰 가드
+          if (myQuestionToken !== questionToken) return;
+
           console.log('[LuckyDraw] 애니메이션 시작 대기 중...');
 
           // 애니메이션이 완전히 끝날 때까지 대기
           await showLuckyDrawAnimation(response.luckydraw_result, currentQuestionIndex - 1);
+
+          // ✅ 토큰 가드
+          if (myQuestionToken !== questionToken) return;
 
           console.log('[LuckyDraw] 애니메이션 완료 - 이동 로직 시작');
 
@@ -853,10 +806,17 @@ async function showFeedback(result, question, response) {
         }, 1000);
       } else {
         // 일반 문제 - 한 번에 맞춤 (노란색 칠하기)
-        setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'correct-first'), 500);
+        setTimeout(() => {
+          // ✅ 토큰 가드
+          if (myQuestionToken !== questionToken) return;
+          updateStarGauge(currentQuestionIndex - 1, 'correct-first');
+        }, 500);
 
         // 일반 문제는 기존처럼 2초 후 자동 이동
         setTimeout(() => {
+          // ✅ 토큰 가드
+          if (myQuestionToken !== questionToken) return;
+
           console.log('[showFeedback] 일반 문제 - 다음 문제로 이동 시도:', {
             session_complete: response.session_complete,
             nextQuestion: currentSession.nextQuestion
@@ -866,10 +826,17 @@ async function showFeedback(result, question, response) {
       }
     } else {
       // 첫 시도에 못 맞춘 경우 (회색 칠하기)
-      setTimeout(() => updateStarGauge(currentQuestionIndex - 1, 'correct-retry'), 500);
+      setTimeout(() => {
+        // ✅ 토큰 가드
+        if (myQuestionToken !== questionToken) return;
+        updateStarGauge(currentQuestionIndex - 1, 'correct-retry');
+      }, 500);
 
       // 2초 후 자동 이동
       setTimeout(() => {
+        // ✅ 토큰 가드
+        if (myQuestionToken !== questionToken) return;
+
         console.log('[showFeedback] 재시도 정답 - 다음 문제로 이동 시도:', {
           session_complete: response.session_complete,
           nextQuestion: currentSession.nextQuestion
@@ -897,6 +864,8 @@ async function showFeedback(result, question, response) {
       void quizContent.offsetWidth; // Trigger reflow
       quizContent.classList.add('duolingo-shake');
       setTimeout(() => {
+        // ✅ 토큰 가드
+        if (myQuestionToken !== questionToken) return;
         quizContent.classList.remove('duolingo-shake');
       }, 500);
     }
@@ -906,6 +875,8 @@ async function showFeedback(result, question, response) {
     void explanationBubble.offsetWidth;
     explanationBubble.classList.add('duolingo-shake');
     setTimeout(() => {
+      // ✅ 토큰 가드
+      if (myQuestionToken !== questionToken) return;
       explanationBubble.classList.remove('duolingo-shake');
     }, 500);
 
@@ -915,19 +886,23 @@ async function showFeedback(result, question, response) {
 
     // OX 문제는 "흠..." 표시
     if (question.question_type === 'ox') {
-      await typeWriterEffect(explanationText, '흠... 🤔', 40);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await enqueueTyping(explanationText, '흠... 🤔', 40, myQuestionToken);
+      await new Promise(resolve => setTimeout(() => {
+        // ✅ 토큰 가드
+        if (myQuestionToken !== questionToken) return resolve();
+        resolve();
+      }, 800));
       if (result.explanation || question.explanation) {
         const text = result.explanation || question.explanation;
         explanationBubble.classList.add('long');
-        await typeWriterEffect(explanationText, text, 20);
+        await enqueueTyping(explanationText, text, 20, myQuestionToken);
       }
     } else {
       // 다른 문제 타입은 바로 해설 표시
       if (result.explanation || question.explanation) {
         const text = result.explanation || question.explanation;
         explanationBubble.classList.add('long');
-        await typeWriterEffect(explanationText, text, 20);
+        await enqueueTyping(explanationText, text, 20, myQuestionToken);
       }
     }
 
@@ -939,12 +914,7 @@ async function showFeedback(result, question, response) {
       el.classList.remove('selected', 'incorrect');
     });
 
-    // 사용자에게 다시 시도하라는 메시지 추가
-    setTimeout(() => {
-      if (explanationText.textContent.indexOf('다시') === -1) {
-        explanationText.textContent += '\n\n 다음 문제로 넘어갈 수 있습니다.';
-      }
-    }, 500);
+    // (기존) 사용자에게 \"다음 문제로 넘어갈 수 있습니다\" 안내 문구 추가 로직 제거
   }
 }
 
@@ -1173,13 +1143,36 @@ function setCharacterEmotion(emotion) {
   }
 }
 
+// ✅ 문제 전환 토큰 - 문제가 바뀔 때마다 증가하여 이전 문제의 모든 비동기 작업 무효화
+let questionToken = 0;
+
 // 타이핑 세션 토큰 (레이스 컨디션 방지)
 let currentTypingToken = null;
+
+// 타이핑 큐 - 모든 타이핑을 순서대로 실행하여 절대 겹치지 않게 보장
+let typingQueue = Promise.resolve();
+
+// ✅ 현재 진행 중인 모든 타이핑/말풍선 리사이즈 비동기 작업을 무효화
+function cancelTypingSession() {
+  currentTypingToken = null; // typeWriterEffect 내 sessionToken 비교가 모두 실패하도록 만듦
+}
+
+/**
+ * 타이핑을 큐에 추가하여 순서대로 실행 (절대 겹치지 않음)
+ */
+function enqueueTyping(element, text, speed = 50, myQuestionToken = null) {
+  typingQueue = typingQueue.then(() => {
+    // 새 문제로 넘어갔으면 큐 실행 자체를 중단
+    if (myQuestionToken !== null && myQuestionToken !== questionToken) return;
+    return typeWriterEffect(element, text, speed, myQuestionToken);
+  });
+  return typingQueue;
+}
 
 /**
  * 타이핑 효과 (Promise 기반, 커서 제거, 순차 실행 보장)
  */
-function typeWriterEffect(element, text, speed = 50) {
+function typeWriterEffect(element, text, speed = 50, myQuestionToken = null) {
   return new Promise((resolve) => {
     // 새 타이핑 세션 토큰 생성
     const sessionToken = Symbol('typing-session');
@@ -1196,164 +1189,27 @@ function typeWriterEffect(element, text, speed = 50) {
         return;
       }
 
+      // 문제 토큰 체크 - 새 문제로 넘어갔으면 중단
+      if (myQuestionToken !== null && myQuestionToken !== questionToken) {
+        resolve();
+        return;
+      }
+
       if (i < text.length) {
         element.textContent += text.charAt(i);
         i++;
         setTimeout(type, speed);
       } else {
-        // 타이핑 완료
-        adjustSpeechBubbleSize();
+        // 타이핑 완료 - 최종 토큰 체크 후 크기 조정
+        if (myQuestionToken === null || myQuestionToken === questionToken) {
+          adjustSpeechBubbleSize('explanationText', myQuestionToken, () => questionToken);
+        }
         resolve();
       }
     }
 
     type();
   });
-}
-
-/**
- * 말풍선 크기를 텍스트 내용에 맞게 동적으로 조정
- * 픽셀 아트 테두리를 정확하게 유지
- */
-function adjustSpeechBubbleSize() {
-  const bubble = document.querySelector('.speech-bubble');
-  const textElement = document.getElementById('explanationText');
-  const svgElement = bubble?.querySelector('.speech-bubble-svg');
-  
-  if (!bubble || !textElement || !svgElement) return;
-
-  // 🔥 완전히 초기화: SVG 크기를 최소로 리셋
-  svgElement.setAttribute('height', '60');
-  svgElement.setAttribute('viewBox', '0 0 320 60');
-  
-  // 🔥 텍스트 엘리먼트 초기화
-  textElement.style.height = 'auto';
-  textElement.style.maxHeight = 'none';
-  textElement.style.overflow = 'visible';
-  
-  // 🔥 강제 리플로우로 브라우저에게 레이아웃 재계산 요청
-  void textElement.offsetHeight;
-  
-  // 실제 텍스트 높이 측정 (약간의 딜레이로 정확한 측정)
-  setTimeout(() => {
-    // 현재 텍스트의 실제 높이 측정
-    const textHeight = textElement.scrollHeight;
-    
-    console.log('[adjustSpeechBubbleSize] 측정된 textHeight:', textHeight);
-    
-    // 최소 높이 설정 (기존의 절반)
-    const minTextHeight = 20; // 40px → 20px로 축소
-    const topPadding = 12; // 패딩 더 축소
-    const bottomPadding = 12; // 패딩 더 축소
-    
-    // 실제 필요한 텍스트 영역 높이 (최소값 보장)
-    const actualTextHeight = Math.max(minTextHeight, textHeight);
-    
-    // 메인 사각형 높이 = 텍스트 높이 + 최소 여백
-    const contentHeight = actualTextHeight + topPadding + bottomPadding;
-    
-    // 전체 SVG 높이 = 상단(10) + 컨텐츠 + 하단(10) + 꼬리(12)
-    // 꼬리 규격: 얄쌍한 3단 계단형 (12px, 8px, 4px) × 4px 높이 = 총 12px
-    const svgHeight = 10 + contentHeight + 10 + 12;
-    const svgWidth = 320;
-    
-    console.log('[adjustSpeechBubbleSize] 계산된 svgHeight:', svgHeight, '(contentHeight:', contentHeight, ')');
-    
-    // SVG viewBox와 height 설정
-    svgElement.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
-    svgElement.setAttribute('height', svgHeight);
-    svgElement.setAttribute('width', svgWidth);
-    
-    // 기존 모든 rect 제거하고 새로 그리기
-    svgElement.innerHTML = '';
-    
-    // 메인 사각형 본체
-    const mainRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    mainRect.setAttribute('x', '20');
-    mainRect.setAttribute('y', '10');
-    mainRect.setAttribute('width', '280');
-    mainRect.setAttribute('height', contentHeight);
-    mainRect.setAttribute('fill', '#FFF');
-    mainRect.setAttribute('stroke', 'none');
-    svgElement.appendChild(mainRect);
-    
-    // 픽셀 테두리 - 상단
-    addRect(svgElement, 24, 6, 272, 4, '#000');
-    
-    // 픽셀 테두리 - 좌측 상단 모서리
-    addRect(svgElement, 20, 10, 4, 4, '#000');
-    addRect(svgElement, 16, 14, 4, 4, '#000');
-    addRect(svgElement, 12, 18, 4, contentHeight - 14, '#000');
-    
-    // 좌측 하단 모서리
-    const leftBottomY = 10 + contentHeight;
-    addRect(svgElement, 16, leftBottomY - 4, 4, 4, '#000');
-    addRect(svgElement, 20, leftBottomY, 4, 4, '#000');
-    
-    // 불변 조건 A: 꼬리 중앙 고정을 위한 centerX 기준 계산
-    const centerX = svgWidth / 2; // 320 / 2 = 160
-
-    // 얄쌍한 3단 계단형 꼬리 규격 (quiz-list.html과 동일)
-    const tailTopWidth = 12;    // 꼬리 상단 폭
-    const tailMidWidth = 8;     // 꼬리 중단 폭
-    const tailTipWidth = 4;     // 꼬리 끝 폭
-    const stepHeight = 4;       // 각 단의 높이
-
-    // 하단 테두리 (꼬리 왼쪽 부분 - 중앙까지)
-    const bottomY = leftBottomY + 4;
-    const leftBorderWidth = centerX - 24 - (tailTopWidth / 2); // centerX까지의 거리 - 꼬리 절반 폭
-    addRect(svgElement, 24, bottomY, leftBorderWidth, 4, '#000');
-
-    // 픽셀 테두리 - 우측 상단 모서리
-    addRect(svgElement, 296, 10, 4, 4, '#000');
-    addRect(svgElement, 300, 14, 4, 4, '#000');
-    addRect(svgElement, 304, 18, 4, contentHeight - 14, '#000');
-
-    // 우측 하단 모서리
-    addRect(svgElement, 300, leftBottomY, 4, 4, '#000');
-    addRect(svgElement, 304, leftBottomY - 4, 4, 4, '#000');
-
-    // 하단 테두리 (꼬리 오른쪽 부분 - 중앙부터)
-    const rightBorderStartX = centerX + (tailTopWidth / 2); // 꼬리 절반 폭 이후부터
-    const rightBorderWidth = svgWidth - 24 - rightBorderStartX;
-    addRect(svgElement, rightBorderStartX, bottomY, rightBorderWidth, 4, '#000');
-
-    // 꼬리 부분 그리기 (불변 조건 A: 얄쌍한 3단 계단형, centerX 기반 좌우 대칭)
-    const tailY = bottomY;
-
-    // 꼬리 레벨 1 (최상단, 폭 12px)
-    // 중앙 기준: centerX ± 6 (12px / 2 = 6)
-    addRect(svgElement, centerX - (tailTopWidth / 2), tailY, tailTopWidth, stepHeight, '#FFF'); // 흰색 배경
-    addRect(svgElement, centerX - (tailTopWidth / 2) - 4, tailY, 4, stepHeight, '#000'); // 좌측 테두리
-    addRect(svgElement, centerX + (tailTopWidth / 2), tailY, 4, stepHeight, '#000'); // 우측 테두리
-
-    // 꼬리 레벨 2 (중단, 폭 8px)
-    // 중앙 기준: centerX ± 4 (8px / 2 = 4)
-    addRect(svgElement, centerX - (tailMidWidth / 2), tailY + stepHeight, tailMidWidth, stepHeight, '#FFF'); // 흰색 배경
-    addRect(svgElement, centerX - (tailMidWidth / 2) - 4, tailY + stepHeight, 4, stepHeight, '#000'); // 좌측 테두리
-    addRect(svgElement, centerX + (tailMidWidth / 2), tailY + stepHeight, 4, stepHeight, '#000'); // 우측 테두리
-
-    // 꼬리 레벨 3 (최하단 tip, 폭 4px - 검은색)
-    // 중앙 기준: centerX ± 2 (4px / 2 = 2)
-    addRect(svgElement, centerX - (tailTipWidth / 2), tailY + stepHeight * 2, tailTipWidth, stepHeight, '#000');
-
-    // 불변 조건 B: 높이 변화 후에도 꼬리 끝점 위치 유지
-    // SVG 높이가 변경되었으므로 앵커 재계산 (bottom 위치는 고정, top만 위로 이동)
-    updateSpeechBubbleAnchor();
-  }, 100); // 100ms 딜레이로 충분한 시간 확보
-}
-
-/**
- * SVG rect 요소를 추가하는 헬퍼 함수
- */
-function addRect(svg, x, y, width, height, fill) {
-  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  rect.setAttribute('x', x);
-  rect.setAttribute('y', y);
-  rect.setAttribute('width', width);
-  rect.setAttribute('height', height);
-  rect.setAttribute('fill', fill);
-  svg.appendChild(rect);
 }
 
 /**

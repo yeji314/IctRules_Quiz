@@ -29,40 +29,54 @@ body {
 }
 
 /* 왼쪽 하단 영역: 캐릭터 섹션 - 잔디 라인 바로 위 */
+/* 캐릭터-트리-메일박스 컨테이너 - 고정 픽셀 기반 위치 */
+/* 울트라와이드에서도 절대 화면 밖으로 밀려나지 않도록 고정 좌표 사용 */
+/* ✅ 이 컨테이너가 --deco-scale을 적용하여 내부 모든 요소의 크기 관리 */
 .character-section {
   position: fixed;
-  bottom: 11.11vh; /* 120px / 1080px = 11.11vh - 잔디 라인 바로 위 (80px 흙 + 40px 잔디) */
-  left: 2.08%; /* 40px / 1920px */
+  bottom: var(--dirt-height); 
+  left: 40px; /* 고정 좌측 여백 - 모든 해상도에서 일관성 */
   display: flex;
   align-items: flex-end;
-  gap: 20px;
-  z-index: 50;
+  gap: 70px; /* tree와 character 사이 간격 */
+  z-index: 30; /* 지면(10) 위, 퀴즈 UI(100) 아래 */
+
+  /* ✅ 컨테이너 전체를 --deco-scale로 스케일링 (index.html과 동일) */
+  /* ✅ 이 하나의 scale만으로 내부 캐릭터 이미지도 함께 스케일링됨 */
+  transform: scale(var(--deco-scale));
+  transform-origin: bottom left;
 }
+
+/* character-section 내부 요소는 static이므로 decorations.css의 fixed 무효화 */
+/* ✅ 컨테이너가 --deco-scale 관리하므로 개별 요소의 transform 제거 */
+.character-section .tree,
+.character-section .mailbox,
+.character-section .character {
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important; /* ✅ decorations.css의 scale 중복 적용 방지 */
+  transform-origin: bottom center !important;
+}
+
+/* character-section 내부 캐릭터 이미지도 sol-gif-base의 transform 제거 */
+/* ✅ 중요: .character-section의 scale만 적용되도록 이미지 자체의 transform 제거 */
+.character-section .character-img {
+  transform: none !important; /* ✅ sol-gif-base의 scale 중복 적용 방지 */
+  transition: opacity 0.3s ease; /* transform transition 제거 */
+}
+
+/* ✅ 결과: character-section의 scale(var(--deco-scale)) 하나만 적용됨 */
+/* ✅ index.html의 .sol-character와 동일한 스케일 비율 유지 */
 
 /* 캐릭터 */
 .character {
   z-index: 51;
 }
 
-/* 캐릭터 이미지 - 고정 크기 10% */
-.character-img {
-  height: auto;
-  width: 10%;
-  display: block;
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
-  transform: scale(4);
-  transform-origin: bottom center;
-  transition: transform 0.3s ease;
-}
-
-/* fighting2.png (thinking) 상태일 때만 20% */
-.character-img[src*="fighting2.png"] {
-  width: 20%;
-}
-
 /* 캐릭터 감정 애니메이션 */
+/* ✅ 애니메이션에서 scale 제거 - opacity만 사용 */
+/* ✅ 이유: 컨테이너의 --deco-scale만 사용하여 크기 일관성 유지 */
 .character-img.character-fade {
   animation: character-fade-in 0.3s ease;
 }
@@ -70,11 +84,9 @@ body {
 @keyframes character-fade-in {
   from {
     opacity: 0;
-    transform: scale(3.8);
   }
   to {
     opacity: 1;
-    transform: scale(4);
   }
 }
 
@@ -92,10 +104,10 @@ body {
   opacity: 1;
   visibility: visible;
   transition: left 0.2s ease-out, bottom 0.2s ease-out; /* position만 transition */
-  /* 말풍선 크기를 컨텐츠에 맞게 자동 조정 */
+  /* 말풍선 크기를 컨텐츠에 맞게 자동 조정 (현재 값 기준 1.2배 확대: 350→420, 500→600) */
   width: auto;
-  min-width: 280px;
-  max-width: 400px;
+  min-width: 420px; /* 350 * 1.2 */
+  max-width: 600px; /* 500 * 1.2 */
   pointer-events: none; /* 말풍선이 클릭 이벤트 방해하지 않도록 */
 }
 
@@ -109,18 +121,19 @@ body {
 .speech-bubble-svg {
   display: block;
   width: 100%;
-  height: auto;
-  min-height: 60px; /* 80px → 60px로 축소 */
+  /* SVG 실제 높이는 JS(adjustSpeechBubbleSize)가 height/viewBox로 동적 제어 */
+  height: var(--bubble-svg-height, auto);
+  min-height: 0; /* JS가 더 줄일 수 있도록 최소값 제거 */
 }
 
 .speech-bubble-text {
   position: absolute;
-  top: 15px; /* 18px → 15px로 축소 */
+  top: 12px; /* 18px → 15px → 12px로 한 칸 더 축소 */
   left: 32px;
   right: 32px;
-  bottom: 15px; /* 18px → 15px로 축소 */
+  bottom: 12px; /* 18px → 15px → 12px로 한 칸 더 축소 */
   font-family: var(--font-galmuri);
-  font-size: 14px; /* 기본 크기 14px로 고정 */
+  font-size: 16px; /* 기존(15px)에서 +1px */
   color: #000000;
   font-weight: 700; /* 가독성 개선: 굵게 */
   line-height: 1.5; /* 1.7 → 1.5로 축소 */
@@ -147,7 +160,7 @@ body {
 }
 
 .speech-bubble.luckydraw-hint .speech-bubble-text {
-  font-size: 14px; /* 14px로 통일 */
+  font-size: 16px; /* 기본 대비 +2px (base 14px 기준) */
   font-weight: bold; /* 럭키드로우 전용: 기존 굵기 유지 */
   color: #ff8800 !important; /* 럭키드로우 전용: 주황색 유지 */
   text-align: left; /* 왼쪽 정렬 */
@@ -157,7 +170,7 @@ body {
 }
 
 .speech-bubble.ox-hint .speech-bubble-text {
-  font-size: 14px; /* 14px로 통일 */
+  font-size: 16px; /* 기본 대비 +2px */
   text-align: left; /* 왼쪽 정렬 */
   display: block; /* flex 제거 */
   top: 28px; /* 기본 위치로 복원 */
@@ -165,7 +178,7 @@ body {
 }
 
 .speech-bubble.long .speech-bubble-text {
-  font-size: 14px; /* 14px로 통일 */
+  font-size: 16px; /* 기본 대비 +2px */
   line-height: 1.6;
   text-align: left; /* 왼쪽 정렬 */
 }
@@ -173,19 +186,19 @@ body {
 .speech-bubble.empty .speech-bubble-text {
   opacity: 0.7;
   color: #666;
-  font-size: 14px; /* 14px로 통일 */
+  font-size: 16px; /* 기본 대비 +2px */
   text-align: left; /* 왼쪽 정렬 */
 }
 
 /* "느낌 GOOD!" 메시지 크기도 14px로 통일 */
 .speech-bubble.correct .speech-bubble-text {
-  font-size: 14px; /* 14px로 통일 */
+  font-size: 16px; /* 기본 대비 +2px */
   text-align: left; /* 왼쪽 정렬 */
 }
 
 /* "흠..." 메시지 크기도 14px로 통일 */
 .speech-bubble.incorrect .speech-bubble-text {
-  font-size: 14px; /* 14px로 통일 */
+  font-size: 16px; /* 기본 대비 +2px */
   text-align: left; /* 왼쪽 정렬 */
 }
 
@@ -212,10 +225,11 @@ body {
 /* 픽셀 진행바 - 전체 UI에 맞춘 나무/픽셀 스타일 */
 .quiz-progress .pixel-progress {
   position: relative;
-  width: 100%;   /* 부모 폭에 맞춤 (QA 패널과 동일) */
-  max-width: 720px; /* quiz-content의 max-width와 동일 */
+  /* ✅ QA 패널(.quiz-content / .qa-panel) 폭과 항상 동일하도록 100%로만 제어 */
+  width: 100%;        /* 부모(.quiz-progress)의 폭 = QA 패널 폭 */
+  max-width: 100%;    /* 고정 720px 제거 → 반응형에서도 QA와 동일 폭 */
   margin: 0 auto; /* 중앙 정렬 */
-  height: 26px;
+  height: 30px;  /* 기존 26px에서 한 칸(4px) 높이 증가 */
   padding: 3px;
   box-sizing: border-box;
   border-radius: 0;
@@ -395,6 +409,56 @@ body {
   min-height: auto;
 }
 
+/* =========================================
+   와이드 모니터 전용 스케일 업 (QA 영역)
+   - 일반 모니터(≤1920px)에서는 기존 크기 유지
+   - 1921px 이상에서만 폭/폰트 1.1~1.15배 확대
+   ========================================= */
+@media (min-width: 1921px) {
+  .quiz-content {
+    /* 중앙 정렬(top/left/transform)은 유지, 폭만 1.15배 확대 */
+    max-width: calc(720px * 1.15); /* ≒ 828px */
+  }
+
+  .answers {
+    /* 질문 패널 폭과 동일 비율로 확대 */
+    max-width: calc(720px * 1.15);
+  }
+
+  .question {
+    /* 26px 기준 약 1.12배 확대 */
+    font-size: 29px; /* 26 * 1.12 ≒ 29.1 */
+  }
+
+  /* Drag & Drop / Typing 타겟 텍스트 확대 */
+  .dragdrop-item {
+    font-size: 20px; /* 18 * 1.11 ≒ 20 */
+  }
+
+  .typing-target {
+    font-size: 20px; /* 18 * 1.11 ≒ 20 */
+  }
+
+  /* 4지선다 옵션 텍스트 확대 */
+  .multiple-choice-option {
+    font-size: 18px; /* 16 * 1.125 */
+  }
+
+  .multiple-choice-option .option-label {
+    font-size: 16px; /* 14 * 1.14 ≒ 16 */
+  }
+
+  /* OX 버튼 글자 크기 확대 */
+  .ox-button {
+    font-size: 154px; /* 140 * 1.1 ≒ 154 */
+  }
+
+  /* Find Error 컨텐츠 글자 크기 확대 */
+  .finderror-container {
+    font-size: 19px; /* 17 * 1.12 ≒ 19 */
+  }
+}
+
 /* === 유형 1: Drag & Drop === */
 .dragdrop-container {
   display: flex;
@@ -453,6 +517,26 @@ body {
     inset 0 3px 0 rgba(0, 0, 0, 0.12);
   pointer-events: none;
   z-index: 0;
+  transition: all 0.18s ease-out; /* 드래그 완료 시 채워지는 애니메이션 */
+}
+
+/* ✅ 드래그로 올라가 있을 때 + 드롭해서 채웠을 때: 우드 패널이 슬롯을 가득 채우는 효과 */
+.dragdrop-target.filled::before,
+.dragdrop-target.drag-over::before {
+  inset: 4px 6px;              /* 안쪽 박스를 키워서 거의 꽉 차 보이도록 */
+  /* 나무 패널과 동일한 그라디언트로 영역을 가득 채우기 */
+  background: linear-gradient(
+    to bottom,
+    #f5dba5 0%,
+    #e8c68a 20%,
+    #d4a968 40%,
+    #e8c68a 60%,
+    #f5dba5 100%
+  );
+  border-style: solid;         /* 점선 → 실선으로 변경 (테두리는 유지) */
+  box-shadow:
+    inset 0 0 0 2px #ffffffcc,
+    inset 0 3px 0 rgba(0, 0, 0, 0.18);
 }
 
 .dragdrop-target.drag-over {
@@ -460,6 +544,12 @@ body {
   box-shadow:
     0 3px 0 #8b6f47,
     0 7px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* 드래그 중에는 기본 안내 텍스트는 자연스럽게 사라지도록 */
+.dragdrop-target.drag-over .target-text {
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
 }
 
 .dragdrop-items {
@@ -562,7 +652,6 @@ body {
   opacity: 0.8;
   cursor: grabbing;
   transform: translate(2px, 2px) scale(1.05) rotate(-2deg);
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
 /* 살랑살랑 흔들리는 애니메이션 */
@@ -1357,14 +1446,15 @@ body {
   }
 
   .character-section {
-    bottom: 11.11vh; /* 120px / 1080px = 11.11vh */
-    left: 1.04%; /* 20px / 1920px */
-    gap: 15px;
+    /* 고정 픽셀 유지 - 태블릿에서도 동일한 위치 */
+    bottom: 120px;
+    left: 30px;
+    gap: 50px; /* 간격만 축소 */
+    /* ✅ transform은 변경하지 않음 - --deco-scale 자동 적용 */
   }
 
-  .character-img {
-    width: 10%;
-  }
+  /* ✅ .character-img는 .sol-gif-base 사용 + 컨테이너 스케일만 적용 */
+  /* ✅ 크기 변경 없음 - index.html과 동일한 스케일 유지 */
 
   .speech-bubble {
     /* JS가 자동으로 앵커 위치 계산 - scale만 적용 */
@@ -1436,9 +1526,7 @@ body {
     right: 50px;
   }
 
-  .character-img {
-    width: 10%;
-  }
+  /* .character-img는 .sol-gif-base 사용 */
 
   .speech-bubble {
     /* JS가 자동으로 앵커 위치 계산 - scale만 적용 */

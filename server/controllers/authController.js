@@ -6,6 +6,14 @@ const bcrypt = require('bcryptjs');
 // 기본 관리자 행번 (DB 조회 실패 시 fallback)
 const DEFAULT_ADMIN_EMPLOYEE_IDS = ['19200617'];
 
+const isDev = process.env.NODE_ENV === 'development';
+const log = {
+  info: (...args) => console.log(...args),
+  warn: (...args) => console.warn(...args),
+  error: (...args) => console.error(...args),
+  debug: (...args) => { if (isDev) console.log('[DEBUG]', ...args); }
+};
+
 /**
  * DB에서 관리자 행번 목록 조회
  */
@@ -19,7 +27,7 @@ async function getAdminEmployeeIds() {
     }
     return DEFAULT_ADMIN_EMPLOYEE_IDS;
   } catch (error) {
-    console.error('관리자 목록 조회 실패:', error.message);
+    log.error('관리자 목록 조회 실패:', error.message);
     return DEFAULT_ADMIN_EMPLOYEE_IDS;
   }
 }
@@ -143,7 +151,7 @@ const login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('로그인 에러:', error);
+    log.error('로그인 에러:', error.message);
     res.status(401).json({
       error: error.message || '로그인에 실패했습니다'
     });
@@ -165,7 +173,7 @@ const logout = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('로그아웃 에러:', error);
+    log.error('로그아웃 에러:', error.message);
     res.status(500).json({
       error: '로그아웃에 실패했습니다'
     });
@@ -195,7 +203,7 @@ const getCurrentUser = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('사용자 정보 조회 에러:', error);
+    log.error('사용자 정보 조회 에러:', error.message);
     res.status(500).json({
       error: '사용자 정보 조회에 실패했습니다'
     });
@@ -223,13 +231,7 @@ const swingSsoTokenLogin = async (req, res) => {
       ssoToken: sso_token
     });
 
-    console.log('[Swing SSO] 인증 성공:', {
-      employeeNo: swingUser.employeeNo,
-      name: swingUser.employeeName,
-      department: swingUser.departmentName
-    });
-
-    console.log('[Swing SSO] 권한 확인 통과');
+    log.debug(`Swing SSO 인증 성공: ${swingUser.employeeNo} (${swingUser.employeeName})`);
 
     // 로컬 DB에서 사용자 조회 또는 생성
     let user = await db.User.findOne({
@@ -240,12 +242,6 @@ const swingSsoTokenLogin = async (req, res) => {
     const adminEmployeeIds = await getAdminEmployeeIds();
     const isAdminUser = adminEmployeeIds.includes(swingUser.employeeNo);
     const userRole = isAdminUser ? 'admin' : 'user';
-
-    console.log('[Swing SSO] 관리자 여부 확인:', { 
-      employeeNo: swingUser.employeeNo, 
-      isAdmin: isAdminUser, 
-      role: userRole 
-    });
 
     if (!user) {
       // 사용자 자동 생성
@@ -258,7 +254,7 @@ const swingSsoTokenLogin = async (req, res) => {
         role: userRole,
         login_method: 'swing_sso'
       });
-      console.log('[Swing SSO] 신규 사용자 생성:', user.employee_id);
+      log.info(`신규 사용자 생성: ${user.employee_id} (${userRole})`);
     } else {
       // 기존 사용자의 정보 업데이트 (Swing에서 최신 정보 반영 + role 업데이트)
       await user.update({
@@ -267,7 +263,6 @@ const swingSsoTokenLogin = async (req, res) => {
         email: swingUser.companyEmail || swingUser.emailAddress || user.email,
         role: userRole  // 관리자 권한도 동기화
       });
-      console.log('[Swing SSO] 사용자 정보 업데이트:', user.employee_id);
     }
 
     // JWT 토큰 생성
@@ -293,7 +288,7 @@ const swingSsoTokenLogin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Swing SSO 토큰 인증 에러:', error);
+    log.error('Swing SSO 토큰 인증 에러:', error.message);
     res.status(401).json({
       error: error.message || 'SSO 인증에 실패했습니다'
     });
@@ -376,7 +371,7 @@ const swingIdPasswordLogin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Swing ID/Password 인증 에러:', error);
+    log.error('Swing ID/Password 인증 에러:', error.message);
     res.status(401).json({
       error: error.message || 'ID/Password 인증에 실패했습니다'
     });

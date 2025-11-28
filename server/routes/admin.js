@@ -68,6 +68,12 @@ router.put('/questions/:id', adminController.updateQuestion);
 router.delete('/questions/:id', adminController.deleteQuestion);
 
 /**
+ * DELETE /api/admin/events/:eventId/questions
+ * 이벤트의 문제 전체 삭제
+ */
+router.delete('/events/:eventId/questions', adminController.deleteAllQuestions);
+
+/**
  * POST /api/admin/questions/bulk-upload
  * 문제 대량 업로드
  */

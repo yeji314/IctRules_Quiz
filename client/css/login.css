@@ -1,5 +1,31 @@
 /* 로그인 페이지 - 픽셀 게임 스타일 */
 
+/* ===== 지면: 모든 화면에서 동일 높이/위치로 고정 ===== */
+:root {
+  --dirt-height: 80px;
+  --grass-height: 40px;
+  --grass-bottom: var(--dirt-height);   /* 잔디는 흙 위에 = 80px */
+  --grass-top: calc(var(--dirt-height) + var(--grass-height)); /* 초록 잔디 최상단 경계 = 120px */
+
+  /* ✅ 반응형 스케일 변수 - 1920px = 0.5배 고정 */
+  /* 기본: 1920에서 0.5, 그보다 작으면 자연 축소 */
+  --deco-scale: clamp(0.3, calc(100vw / 3840), 0.5);
+}
+
+/* ✅ 2560px 이상에서는 2배 고정 (ultrawide) */
+@media (min-width: 2560px) {
+  :root {
+    --deco-scale: 2;
+  }
+}
+
+/* ✅ 1921px ~ 2559px 구간: 0.5 ~ 2 사이 선형 */
+@media (min-width: 1921px) and (max-width: 2559px) {
+  :root {
+    --deco-scale: clamp(0.5, calc((100vw - 1920px) / (2560 - 1920) * 1.5 + 0.5), 2);
+  }
+}
+
 /* 바디 배경 */
 body {
   background: #ecece5;
@@ -297,10 +323,10 @@ body {
 /* 잔디 레이어 - 픽셀 아트 스타일 */
 .grass-layer {
   position: absolute;
-  bottom: 7.41vh; /* 80px / 1080px = 7.41vh */
+  bottom: var(--grass-bottom);  /* 80px */
   left: 0;
   width: 100%;
-  height: 3.7vh; /* 40px / 1080px = 3.7vh */
+  height: var(--grass-height);  /* 40px */
   background: #00c000;
   border-bottom: none;
 }
@@ -373,7 +399,7 @@ body {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 7.41vh; /* 80px / 1080px = 7.41vh */
+  height: var(--dirt-height);   /* 80px */
   background: #b85800;
 }
 
@@ -430,11 +456,11 @@ body {
   pointer-events: none;
 }
 
-/* SOL 캐릭터 - 잔디 위에서 좌우로 움직임 */
+/* SOL 캐릭터 - 잔디 위에서 좌우로 움직임 (320px의 1/3 추가 확대 = 427px) */
 .sol-character {
   position: fixed;
-  bottom: 11.11vh; /* 120px / 1080px = 11.11vh */
-  width: 20%;
+  bottom: var(--grass-top);  /* 초록 잔디 최상단(120px) 위에 발이 닿음 */
+  width: 427px;  /* 320px × 1.333 = 427px (기본 크기) */
   height: auto;
   z-index: 20;
   image-rendering: pixelated;
@@ -442,29 +468,30 @@ body {
   image-rendering: crisp-edges;
   animation: solWalk 149s linear infinite;
   pointer-events: none;
+  transform-origin: bottom left;
 }
 
 @keyframes solWalk {
   /* 시작을 오른쪽에서 왼쪽으로 이동하도록 변경 */
   0% {
     left: 75%;
-    transform: scaleX(1);
+    transform: scale(var(--deco-scale)) scaleX(1);
   }
   48% {
     left: -100px;
-    transform: scaleX(1);
+    transform: scale(var(--deco-scale)) scaleX(1);
   }
   50% {
     left: -100px;
-    transform: scaleX(-1);
+    transform: scale(var(--deco-scale)) scaleX(-1);
   }
   98% {
     left: 75%;
-    transform: scaleX(-1);
+    transform: scale(var(--deco-scale)) scaleX(-1);
   }
   100% {
     left: 75%;
-    transform: scaleX(1);
+    transform: scale(var(--deco-scale)) scaleX(1);
   }
 }
 
@@ -474,57 +501,6 @@ body {
     padding: 40px 20px 180px;
   }
 
-  .sol-character {
-    width: 20%;
-  }
-
-  .balloon {
-    font-size: 26px;
-  }
-
-  .character {
-    font-size: 38px;
-  }
-
-  .tree {
-    font-size: 36px;
-  }
-
-  .castle {
-    font-size: 44px;
-  }
-
-  .sunflower {
-    font-size: 30px;
-  }
-
-  .plant {
-    font-size: 28px;
-  }
-
-  .tnt {
-    font-size: 34px;
-  }
-
-  .flag {
-    font-size: 16px;
-  }
-
-  .cloud-item {
-    font-size: 22px;
-  }
-
-  .pipe {
-    width: 36px;
-    height: 64px;
-  }
-
-  .pipe::before {
-    width: 48px;
-    height: 20px;
-    top: -9px;
-    left: -6px;
-  }
 }
 
 /* 반응형 - 모바일 */
@@ -552,76 +528,6 @@ body {
     font-size: 36px;
   }
 
-  .pixel-ground {
-    height: 100px;
-  }
-
-  .grass-layer {
-    bottom: 6.02vh; /* 65px / 1080px = 6.02vh */
-    height: 3.24vh; /* 35px / 1080px = 3.24vh */
-  }
-
-  .dirt-layer {
-    height: 6.02vh; /* 65px / 1080px = 6.02vh */
-  }
-
-  .sol-character {
-    width: 9.38%; /* 180px / 1920px */
-    bottom: 9.26vh; /* 100px / 1080px = 9.26vh */
-  }
-
-  /* 모바일에서 장식 요소 축소 */
-  .balloon {
-    font-size: 20px;
-  }
-
-  .character {
-    font-size: 30px;
-  }
-
-  .tree {
-    font-size: 28px;
-  }
-
-  .castle {
-    font-size: 34px;
-  }
-
-  .sunflower {
-    font-size: 24px;
-  }
-
-  .plant {
-    font-size: 22px;
-  }
-
-  .tnt {
-    font-size: 26px;
-  }
-
-  .flag {
-    font-size: 14px;
-  }
-
-  .cloud-item {
-    font-size: 18px;
-  }
-
-  .pipe {
-    width: 26px;
-    height: 48px;
-  }
-
-  .pipe::before {
-    width: 36px;
-    height: 16px;
-    top: -8px;
-    left: -5px;
-  }
-
-  .hand-cursor {
-    font-size: 32px;
-  }
 }
 
 /* 반응형 - 작은 모바일 */
@@ -641,21 +547,4 @@ body {
     padding: 8px;
   }
 
-  .hand-cursor {
-    font-size: 28px;
-  }
-
-  .sol-character {
-    width: 7.81%; /* 150px / 1920px */
-    bottom: 9.26vh; /* 100px / 1080px = 9.26vh */
-  }
-
-  /* 작은 화면에서 일부 장식 숨기기 */
-  .deco-left .tree,
-  .deco-left .balloon:nth-child(5),
-  .deco-right .flag,
-  .deco-right .cloud-item,
-  .deco-right .plant {
-    display: none;
-  }
 }

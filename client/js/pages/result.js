@@ -2,10 +2,10 @@
  * 결과 페이지
  */
 
-import { requireAuth } from '../modules/auth.js';
+import { requireAuth, getUser, logout } from '../modules/auth.js';
 import { quiz as quizApi } from '../modules/api.js';
 import { $, playSound } from '../modules/utils.js';
-import { showPixelAlert } from '../modules/pixel-dialog.js';
+import { showPixelAlert, showPixelConfirm } from '../modules/pixel-dialog.js';
 
 // 인증 확인
 requireAuth();
@@ -16,6 +16,8 @@ const starEarned = $('#starEarned');
 const summaryList = $('#summaryList');
 const quitButton = $('#quitButton');
 const continueButton = $('#continueButton');
+const userNameDisplay = $('#userNameDisplay');
+const logoutBtn = $('#logoutBtn');
 
 /**
  * 5문제 요약 렌더링 (admin summary 필드만 사용)
@@ -85,6 +87,23 @@ async function init() {
   window.addEventListener('popstate', () => {
     history.pushState(null, null, location.href);
   });
+
+  // 사용자 정보 로드
+  const user = getUser();
+  if (user && userNameDisplay) {
+    userNameDisplay.textContent = `${user.name}님`;
+  }
+
+  // 로그아웃 이벤트
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      const confirmed = await showPixelConfirm('로그아웃 하시겠습니까?', { title: '로그아웃' });
+      if (confirmed) {
+        logout();
+        window.location.href = '/pages/index.html';
+      }
+    });
+  }
 
   // 결과 데이터 로드
   const resultData = sessionStorage.getItem('quizResult');

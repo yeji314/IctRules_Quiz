@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/animations.css">
   <link rel="stylesheet" href="../css/decorations.css">
+  <link rel="stylesheet" href="../css/sol-gif-base.css">
   <link rel="stylesheet" href="../css/pixel-dialog.css">
   <link rel="stylesheet" href="../css/quiz.css">
 </head>
@@ -22,30 +23,26 @@
     </div>
 
   <!-- 왼쪽 하단 영역: 나무 → 캐릭터 → 우체통 (quiz-list와 동일) -->
+  <!-- ✅ 캐릭터/나무/우체통을 하나의 컨테이너(.character-section)가 관리 -->
+  <!-- ✅ 이 컨테이너만이 --deco-scale을 적용하며, 내부 요소는 static 으로 동작 -->
   <div class="character-section">
-    <!-- 캐릭터 -->
+
+    <!-- 캐릭터 (JS 의존: .character-img 는 페이지당 1개) -->
     <div class="character">
-      <img src="../images/character_no_bg.png" class="character-img" alt="character">
+      <img src="../images/character_no_bg.png" class="character-img sol-gif-base" alt="character">
     </div>
 
-    <!-- 나무 -->
-    <div class="tree">
-      <div class="tree-leaves"></div>
-    </div>
-
-    <!-- 우체통 -->
-    <div class="mailbox">
-      <div class="mailbox-top"></div>
-    </div>
-
+  </div>
+  
     <!-- 말풍선 (캐릭터 위에 항상 표시) -->
     <div class="speech-bubble" id="explanationBubble">
-      <svg class="speech-bubble-svg" width="336" height="154" viewBox="0 0 336 154">
+      <!-- SVG 높이는 JS(adjustSpeechBubbleSize)가 동적으로 제어 (viewBox/height 연동) -->
+      <svg class="speech-bubble-svg" width="344" viewBox="0 0 344 154" preserveAspectRatio="none">
         <!-- 메인 사각형 본체 -->
-        <rect x="20" y="10" width="296" height="114" fill="#FFF" stroke="none" />
+        <rect x="20" y="10" width="304" height="114" fill="#FFF" stroke="none" />
 
         <!-- 픽셀 테두리 - 상단 -->
-        <rect x="24" y="6" width="288" height="4" fill="#000" />
+        <rect x="24" y="6" width="296" height="4" fill="#000" />
 
         <!-- 픽셀 테두리 - 좌측 상단 모서리 -->
         <rect x="20" y="10" width="4" height="4" fill="#000" />
@@ -56,55 +53,54 @@
         <rect x="16" y="118" width="4" height="4" fill="#000" />
         <rect x="20" y="122" width="4" height="4" fill="#000" />
 
-        <!-- 픽셀 테두리 - 하단 좌측 (꼬리 왼쪽까지, centerX=168 기준) -->
+        <!-- 픽셀 테두리 - 하단 좌측 (꼬리 왼쪽까지, centerX=172 기준) -->
         <!-- 얄쌍한 6단 계단형: tailTopWidth=12px (절반=6px) -->
-        <rect x="24" y="126" width="138" height="4" fill="#000" />
+        <rect x="24" y="126" width="142" height="4" fill="#000" />
 
         <!-- 픽셀 테두리 - 우측 상단 모서리 -->
-        <rect x="312" y="10" width="4" height="4" fill="#000" />
-        <rect x="316" y="14" width="4" height="4" fill="#000" />
-        <rect x="320" y="18" width="4" height="100" fill="#000" />
+        <rect x="320" y="10" width="4" height="4" fill="#000" />
+        <rect x="324" y="14" width="4" height="4" fill="#000" />
+        <rect x="328" y="18" width="4" height="100" fill="#000" />
 
-        <!-- 꼬리 부분 - 얄쌍한 6단 계단형 (centerX=168 기준, 좌우 대칭) -->
+        <!-- 꼬리 부분 - 얄쌍한 6단 계단형 (centerX=172 기준, 좌우 대칭) -->
         <!-- 꼬리 레벨 1: 폭 12px, centerX ± 6 -->
-        <rect x="162" y="126" width="12" height="4" fill="#FFF" />
-        <rect x="158" y="126" width="4" height="4" fill="#000" />
-        <rect x="174" y="126" width="4" height="4" fill="#000" />
+        <rect x="166" y="126" width="12" height="4" fill="#FFF" />
+        <rect x="162" y="126" width="4" height="4" fill="#000" />
+        <rect x="178" y="126" width="4" height="4" fill="#000" />
 
         <!-- 꼬리 레벨 2: 폭 8px, centerX ± 4 -->
-        <rect x="164" y="130" width="8" height="4" fill="#FFF" />
-        <rect x="160" y="130" width="4" height="4" fill="#000" />
-        <rect x="172" y="130" width="4" height="4" fill="#000" />
+        <rect x="168" y="130" width="8" height="4" fill="#FFF" />
+        <rect x="164" y="130" width="4" height="4" fill="#000" />
+        <rect x="176" y="130" width="4" height="4" fill="#000" />
 
         <!-- 꼬리 레벨 3: 폭 8px, centerX ± 4 -->
-        <rect x="164" y="134" width="8" height="4" fill="#FFF" />
-        <rect x="160" y="134" width="4" height="4" fill="#000" />
-        <rect x="172" y="134" width="4" height="4" fill="#000" />
+        <rect x="168" y="134" width="8" height="4" fill="#FFF" />
+        <rect x="164" y="134" width="4" height="4" fill="#000" />
+        <rect x="176" y="134" width="4" height="4" fill="#000" />
 
         <!-- 꼬리 레벨 4: 폭 4px, centerX ± 2 -->
-        <rect x="166" y="138" width="4" height="4" fill="#FFF" />
-        <rect x="162" y="138" width="4" height="4" fill="#000" />
-        <rect x="170" y="138" width="4" height="4" fill="#000" />
+        <rect x="170" y="138" width="4" height="4" fill="#FFF" />
+        <rect x="166" y="138" width="4" height="4" fill="#000" />
+        <rect x="174" y="138" width="4" height="4" fill="#000" />
 
         <!-- 꼬리 레벨 5: 폭 4px, centerX ± 2 -->
-        <rect x="166" y="142" width="4" height="4" fill="#FFF" />
-        <rect x="162" y="142" width="4" height="4" fill="#000" />
-        <rect x="170" y="142" width="4" height="4" fill="#000" />
+        <rect x="170" y="142" width="4" height="4" fill="#FFF" />
+        <rect x="166" y="142" width="4" height="4" fill="#000" />
+        <rect x="174" y="142" width="4" height="4" fill="#000" />
 
         <!-- 꼬리 레벨 6 (tip): 폭 4px, centerX ± 2 -->
-        <rect x="166" y="146" width="4" height="4" fill="#000" />
+        <rect x="170" y="146" width="4" height="4" fill="#000" />
 
         <!-- 픽셀 테두리 - 우측 하단 (꼬리 오른쪽부터) -->
-        <rect x="174" y="126" width="138" height="4" fill="#000" />
-        <rect x="316" y="122" width="4" height="4" fill="#000" />
-        <rect x="320" y="118" width="4" height="4" fill="#000" />
+        <rect x="178" y="126" width="142" height="4" fill="#000" />
+        <rect x="324" y="122" width="4" height="4" fill="#000" />
+        <rect x="328" y="118" width="4" height="4" fill="#000" />
       </svg>
 
       <div class="speech-bubble-text" id="explanationText">
         <!-- 동적으로 생성 -->
       </div>
     </div>
-  </div>
   <!-- 퀴즈 컨텐츠 영역 -->
   <div class="quiz-content">
     <!-- 진행바 (QA 패널 바로 위) -->
@@ -136,7 +132,15 @@
       <div class="dirt-pixels"></div>
     </div>
   </div>
-
+    <!-- 나무 -->
+    <div class="tree">
+      <div class="tree-leaves"></div>
+    </div>
+    
+    <!-- 우체통 -->
+    <div class="mailbox">
+      <div class="mailbox-top"></div>
+    </div>
   <!-- 장식 요소들 (오른쪽) - quiz-list와 동일 -->
   <div class="balloon-orange">
     <div class="balloon-o-pixel"></div>

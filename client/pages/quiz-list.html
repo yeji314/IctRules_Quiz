@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/animations.css">
   <link rel="stylesheet" href="../css/decorations.css">
+  <link rel="stylesheet" href="../css/sol-gif-base.css">
+  <link rel="stylesheet" href="../css/quiz-list-decorations.css">
   <link rel="stylesheet" href="../css/pixel-dialog.css">
   <link rel="stylesheet" href="../css/quiz-list.css">
 </head>
@@ -32,16 +34,28 @@
   <!-- 관리자 대시보드 버튼 (우측 하단) -->
   <button class="admin-btn" id="adminGearBtn" style="display: none;">관리자</button>
 
+  <!-- 왼쪽 하단 영역: 나무 → 캐릭터 → 우체통 + 말풍선 (quiz와 동일 컨셉) -->
+  <!-- ✅ 이 컨테이너만이 --deco-scale을 적용하며, 내부 요소는 static 으로 동작 -->
+  <div class="character-section">
+
+    <!-- 캐릭터 (quiz.html과 동일 규칙, JS 비의존 페이지) -->
+    <div class="character">
+      <img src="../images/SOLstudy.gif" alt="캐릭터" class="character-img sol-gif-base">
+    </div>
+
+  </div>
+
   <!-- 좌측 하단 영역 - 말풍선 -->
   <div class="left-section">
     <!-- 픽셀 말풍선 (왼쪽 꼬리) -->
     <div class="speech-bubble">
-      <svg class="speech-bubble-svg" width="384" height="170" viewBox="0 0 384 170">
+      <!-- SVG 높이는 JS(adjustSpeechBubbleSize)가 동적으로 제어 (viewBox/height 연동) -->
+      <svg class="speech-bubble-svg" width="392" viewBox="0 0 392 170" preserveAspectRatio="none">
         <!-- 메인 사각형 본체 -->
-        <rect x="20" y="10" width="344" height="130" fill="#FFF" stroke="none" />
+        <rect x="20" y="10" width="352" height="130" fill="#FFF" stroke="none" />
 
         <!-- 픽셀 테두리 - 상단 -->
-        <rect x="24" y="6" width="336" height="4" fill="#000" />
+        <rect x="24" y="6" width="344" height="4" fill="#000" />
 
         <!-- 픽셀 테두리 - 좌측 상단 모서리 -->
         <rect x="20" y="10" width="4" height="4" fill="#000" />
@@ -56,9 +70,9 @@
         <rect x="24" y="142" width="96" height="4" fill="#000" />
 
         <!-- 픽셀 테두리 - 우측 상단 모서리 -->
-        <rect x="360" y="10" width="4" height="4" fill="#000" />
-        <rect x="364" y="14" width="4" height="4" fill="#000" />
-        <rect x="368" y="18" width="4" height="116" fill="#000" />
+        <rect x="368" y="10" width="4" height="4" fill="#000" />
+        <rect x="372" y="14" width="4" height="4" fill="#000" />
+        <rect x="376" y="18" width="4" height="116" fill="#000" />
 
         <!-- 꼬리 부분 - 중앙 아래 (캐릭터 중앙 위에 오도록) -->
         <rect x="148" y="142" width="24" height="4" fill="#FFF" />
@@ -77,12 +91,12 @@
         <rect x="132" y="162" width="16" height="4" fill="#000" />
 
         <!-- 픽셀 테두리 - 우측 하단 -->
-        <rect x="120" y="142" width="244" height="4" fill="#000" />
-        <rect x="364" y="138" width="4" height="4" fill="#000" />
-        <rect x="368" y="134" width="4" height="4" fill="#000" />
+        <rect x="120" y="142" width="252" height="4" fill="#000" />
+        <rect x="372" y="138" width="4" height="4" fill="#000" />
+        <rect x="376" y="134" width="4" height="4" fill="#000" />
       </svg>
 
-      <div class="speech-bubble-text">
+      <div class="speech-bubble-text" id="explanationText">
         💡 정답을 맞추는 것보다 참여 자체가 중요!<br>
         1. Tech그룹 내규와 기준을 학습<br>
         2. 애매한 상황에서 근거 있는 판단<br>
@@ -121,21 +135,21 @@
       <div class="dirt-pixels"></div>
     </div>
   </div>
-
-  <!-- 캐릭터 이미지 (나무 옆) -->
-  <div class="character">
-    <img src="../images/SOLstudy.gif" alt="캐릭터" class="character-img">
-  </div>
-
+      <!-- 나무 -->
+      <div class="tree">
+        <div class="tree-leaves"></div>
+      </div>
+  
+    <!-- 우체통 -->
+    <div class="mailbox">
+      <div class="mailbox-top"></div>
+    </div>
   <!-- 장식 요소들 -->
   <div class="balloon-orange">
     <div class="balloon-o-pixel"></div>
   </div>
   <div class="balloon-blue">
     <div class="balloon-b-pixel"></div>
-  </div>
-  <div class="tree">
-    <div class="tree-leaves"></div>
   </div>
   <div class="bush bush1"></div>
   <div class="sunflower">
@@ -147,9 +161,6 @@
   <div class="tnt">
     <div class="tnt-box"></div>
     <div class="tnt-label">TNT</div>
-  </div>
-  <div class="mailbox">
-    <div class="mailbox-top"></div>
   </div>
   <div class="cursor">
     <div class="cursor-pixel"></div>

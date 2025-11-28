@@ -6,6 +6,7 @@ import { quiz } from '../modules/api.js';
 import { requireAuth, getUser, logout as authLogout } from '../modules/auth.js';
 import { $, show, hide, animate, playSound, formatDate } from '../modules/utils.js';
 import { showPixelAlert, showPixelConfirm } from '../modules/pixel-dialog.js';
+import { initSpeechBubbleAnchor, adjustSpeechBubbleSize } from '../utils/speech-bubble-anchor.js';
 
 // 인증 확인
 requireAuth();
@@ -43,6 +44,12 @@ async function init() {
 
   // 퀴즈 목록 로드
   await loadQuizList();
+
+  // 캐릭터-말풍선 고정 정렬 로직: 앵커 초기화 (resize, scroll, load, DOM 변경 시 자동 재계산)
+  initSpeechBubbleAnchor();
+
+  // 말풍선 초기 크기 조정
+  adjustSpeechBubbleSize();
 }
 
 /**

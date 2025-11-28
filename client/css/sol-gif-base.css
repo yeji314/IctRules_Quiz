@@ -1,0 +1,40 @@
+/* ===================================================
+   sol-gif-base.css - SOL 캐릭터 GIF 공통 크기 정의
+
+   모든 페이지(index, quiz, quiz-list)에서
+   SOL 관련 GIF가 동일한 크기로 보이도록 통일
+
+   ✅ 중요: 이 클래스는 캐릭터 이미지의 "원본 크기"만 정의
+   ✅ 스케일링은 부모 컨테이너가 담당
+   =================================================== */
+
+/* 공통 SOL GIF 기준 크기 */
+.sol-gif-base {
+  /* 원본 크기: 320px (index.html의 .sol-character 기준) */
+  width: 320px !important;
+  height: auto !important;
+
+  /* ❌ transform은 여기서 적용하지 않음 - 부모 컨테이너가 스케일 관리 */
+  /* transform: scale(var(--deco-scale)) !important; */
+  transform-origin: bottom center !important;
+
+  /* 픽셀 아트 렌더링 */
+  image-rendering: pixelated !important;
+  image-rendering: -moz-crisp-edges !important;
+  image-rendering: crisp-edges !important;
+
+  /* 컨테이너 내부에서 사용될 수 있으므로 position은 제거 */
+  /* position은 각 페이지의 컨테이너가 관리 */
+  pointer-events: none !important;
+
+  display: block !important;
+}
+
+/*
+  해상도별 실제 크기:
+  - 1920px (FHD): 320px × 0.5 = 160px (부모 컨테이너의 scale(0.5) 적용 시)
+  - 2560px+ (ultrawide): 320px × 2 = 640px (부모 컨테이너의 scale(2) 적용 시)
+
+  ✅ 모든 페이지에서 동일한 물리적 크기 보장
+  ✅ 부모 컨테이너가 --deco-scale 변수를 사용하여 스케일링
+*/

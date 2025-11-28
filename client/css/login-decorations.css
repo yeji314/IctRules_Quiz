@@ -1,4 +1,26 @@
-/* 픽셀 장식 요소 - 지형 위 배치 (풍선 제거, 구름 활성화, 크기 3배) */
+/* 픽셀 장식 요소 - 최종 우선순위 규칙 (다른 CSS 덮어쓰기 방지) */
+
+/* ===== 중요: 이 파일은 모든 CSS 파일보다 나중에 로드되어야 함 ===== */
+
+/* ✅ 반응형 스케일 변수 - 1920px = 0.5배 고정 */
+:root {
+  /* 기본: 1920에서 0.5, 그보다 작으면 자연 축소 */
+  --deco-scale: clamp(0.3, calc(100vw / 3840), 0.5);
+}
+
+/* 2560px 이상에서는 2배 고정 (ultrawide) */
+@media (min-width: 2560px) {
+  :root {
+    --deco-scale: 2;
+  }
+}
+
+/* 1921px ~ 2559px 구간: 0.5 ~ 2 사이 선형 */
+@media (min-width: 1921px) and (max-width: 2559px) {
+  :root {
+    --deco-scale: clamp(0.5, calc((100vw - 1920px) / (2560 - 1920) * 1.5 + 0.5), 2);
+  }
+}
 
 /* 풍선만 숨기기 */
 .balloon {
@@ -15,184 +37,91 @@
   z-index: 10 !important;
 }
 
-/* 장식 요소 공통 - 지형 바로 위에 배치 */
-.character,
-.pipe,
-.castle,
-.sunflower,
-.plant,
-.tnt,
+/* ===== 지형 위 모든 장식 요소: 초록 잔디 위에 정확히 올라가도록 최종 고정 ===== */
+/* decorations.css와 동일한 규칙을 최종 우선순위로 재선언 */
+
+/* 각 요소별 실제 픽셀아트 높이 변수 */
+.tree        { --deco-height: 55px; }  /* y max 50 + 5 */
+.bush1       { --deco-height: 15px; }  /* y max 10 + 5 */
+.bush2       { --deco-height: 15px; }  /* y max 10 + 5 */
+.clover      { --deco-height: 30px; }  /* y max 25 + 5 */
+.small-plant { --deco-height: 30px; }  /* y max 25 + 5 */
+.sunflower   { --deco-height: 65px; }  /* y max 60 + 5 */
+.mailbox     { --deco-height: 55px; }  /* y max 50 + 5 */
+.cursor      { --deco-height: 25px; }  /* y max 20 + 5 */
+.character   { --deco-height: 55px; }  /* y max 50 + 5 */
+.tnt         { --deco-height: 40px; }  /* y max 35 + 5 */
+
 .tree,
-.flag {
-  position: absolute !important;
-  filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.3)) !important;
-}
-
-/* 캐릭터 - 3배 크기 (48px x 3 = 144px) */
+.bush,
+.bush1,
+.bush2,
+.sunflower,
+.clover,
+.small-plant,
+.tnt,
+.mailbox,
+.cursor,
 .character {
-  font-size: 144px !important;
-  transform: scaleX(-1) !important;
-  left: 10% !important;
+  --deco-lift: 0px; /* 기본은 추가로 안 올림 */
+  position: fixed !important;
+  bottom: 120px !important; /* 초록 잔디 최상단(120px) */
+  transform-origin: bottom center !important;
+  /* translateY로 box-shadow 오프셋 보정 + lift만큼 추가 올림 + 반응형 스케일 */
+  transform: translateY(calc(-1 * (var(--deco-height) - 5px + var(--deco-lift)))) scale(var(--deco-scale)) !important;
+  z-index: 20 !important;
+
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
 }
 
-/* 나무 - 3배 크기 (46px x 3 = 138px) */
-.tree {
-  font-size: 138px !important;
-  left: 1.5% !important;
+/* 더 올려야 하는 3개만 lift 지정 */
+.tree      { --deco-lift: 16px; }
+.mailbox   { --deco-lift: 16px; }
+.character { --deco-lift: 16px; }
+
+/* 캐릭터만 1.333배 추가 확대 (lift 포함된 동일 계산식) */
+.character {
+  transform: translateY(calc(-1 * (var(--deco-height) - 5px + var(--deco-lift)))) scale(calc(var(--deco-scale) * 1.333)) !important;
 }
 
-/* 깃발 - 3배 크기 (20px x 3 = 60px) */
-.flag {
-  font-size: 60px !important;
-  right: 5% !important;
+/* SOL 캐릭터도 동일하게 초록 잔디 위에 정렬 */
+/* ✅ index.html에서만 사용 (quiz.html은 character-section 컨테이너 사용) */
+.sol-character {
+  position: fixed !important;
+  bottom: 120px !important; /* 초록 잔디 최상단(120px) 위에 발이 닿음 */
+  /* width는 sol-gif-base에서 정의 (320px) */
+  z-index: 20 !important;
+  transform-origin: bottom left !important;
+
+  /* ✅ 반응형 스케일 + 좌우 반전 변수 */
+  --sol-direction: 1; /* 1 = 오른쪽, -1 = 왼쪽 */
+  transform: scale(var(--deco-scale)) scaleX(var(--sol-direction)) !important;
+
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  animation: solWalkPosition 149s linear infinite, solWalkDirection 149s step-end infinite !important;
+  pointer-events: none !important;
 }
 
-/* 파이프 - 3배 크기 */
-.pipe {
-  width: 132px !important;
-  height: 240px !important;
-  background: linear-gradient(to right, #40b040 0%, #50c850 50%, #40b040 100%) !important;
-  border: 6px solid #000000 !important;
-  border-radius: 8px 8px 0 0 !important;
-  left: 25% !important;
+/* 위치만 애니메이션 (transform 건드리지 않음) */
+@keyframes solWalkPosition {
+  0% { left: 75%; }
+  48% { left: -100px; }
+  50% { left: -100px; }
+  98% { left: 75%; }
+  100% { left: 75%; }
 }
 
-.pipe::before {
-  content: '' !important;
-  position: absolute !important;
-  top: -15px !important;
-  left: -10px !important;
-  width: 152px !important;
-  height: 36px !important;
-  background: linear-gradient(to right, #40b040 0%, #50c850 50%, #40b040 100%) !important;
-  border: 6px solid #000000 !important;
-  border-radius: 6px !important;
+/* 방향만 CSS 변수로 애니메이션 */
+@keyframes solWalkDirection {
+  0% { --sol-direction: 1; }
+  48% { --sol-direction: 1; }
+  50% { --sol-direction: -1; }
+  98% { --sol-direction: -1; }
+  100% { --sol-direction: 1; }
 }
 
-/* 성 - 3배 크기 (56px x 3 = 168px) */
-.castle {
-  font-size: 168px !important;
-  right: 15% !important;
-}
-
-/* 해바라기 - 3배 크기 (38px x 3 = 114px) */
-.sunflower {
-  font-size: 114px !important;
-  left: 40% !important;
-}
-
-/* 식물 - 3배 크기 (36px x 3 = 108px) */
-.plant {
-  font-size: 108px !important;
-  right: 30% !important;
-}
-
-/* TNT - 3배 크기 (42px x 3 = 126px) */
-.tnt {
-  font-size: 126px !important;
-  right: 45% !important;
-}
-
-/* 반응형 - 태블릿 */
-@media (max-width: 1024px) {
-  .character,
-  .pipe,
-  .castle,
-  .sunflower,
-  .plant,
-  .tnt,
-  .tree,
-  .flag {
-    bottom: 120px !important;
-  }
-
-  .character {
-    font-size: 108px !important;
-  }
-
-  .tree {
-    font-size: 104px !important;
-  }
-
-  .castle {
-    font-size: 132px !important;
-  }
-
-  .sunflower {
-    font-size: 90px !important;
-  }
-
-  .plant {
-    font-size: 84px !important;
-  }
-
-  .tnt {
-    font-size: 102px !important;
-  }
-
-  .flag {
-    font-size: 48px !important;
-  }
-
-  .pipe {
-    width: 108px !important;
-    height: 192px !important;
-  }
-
-  .pipe::before {
-    width: 144px !important;
-    height: 60px !important;
-  }
-}
-
-/* 반응형 - 모바일 */
-@media (max-width: 768px) {
-  .character,
-  .pipe,
-  .castle,
-  .sunflower,
-  .plant,
-  .tnt,
-  .tree,
-  .flag {
-    bottom: 100px !important;
-  }
-
-  .character {
-    font-size: 90px !important;
-  }
-
-  .tree {
-    font-size: 84px !important;
-  }
-
-  .castle {
-    font-size: 102px !important;
-  }
-
-  .sunflower {
-    font-size: 72px !important;
-  }
-
-  .plant {
-    font-size: 66px !important;
-  }
-
-  .tnt {
-    font-size: 78px !important;
-  }
-
-  .flag {
-    font-size: 42px !important;
-  }
-
-  .pipe {
-    width: 78px !important;
-    height: 144px !important;
-  }
-
-  .pipe::before {
-    width: 108px !important;
-    height: 48px !important;
-  }
-}
+/* 미디어쿼리 없음 - 모든 화면에서 동일한 크기/위치 유지 */

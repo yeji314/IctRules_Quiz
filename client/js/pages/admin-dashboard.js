@@ -31,6 +31,7 @@ const questionsList = $('#questionsList');
 const createEventBtn = $('#createEventBtn');
 const createQuestionBtn = $('#createQuestionBtn');
 const uploadExcelBtn = $('#uploadExcelBtn');
+const deleteAllQuestionsBtn = $('#deleteAllQuestionsBtn');
 
 // 모달 요소
 const eventModal = $('#eventModal');
@@ -51,6 +52,7 @@ const cancelAdminBtn = $('#cancelAdminBtn');
 const participantsModal = $('#participantsModal');
 const participantsTableBody = $('#participantsTableBody');
 const closeParticipantsBtn = $('#closeParticipantsBtn');
+const downloadParticipantsBtn = $('#downloadParticipantsBtn');
 
 // 상태
 let currentPage = 'dashboard';
@@ -60,6 +62,7 @@ let editingQuestionId = null;
 let editingDepartmentId = null;
 let allEvents = [];
 let allQuestions = [];
+let currentParticipantsData = null; // 현재 표시된 참가자 데이터 저장
 
 /**
  * 초기화
@@ -81,6 +84,7 @@ async function init() {
   createEventBtn.addEventListener('click', () => openEventModal());
   createQuestionBtn.addEventListener('click', () => openQuestionModal());
   uploadExcelBtn.addEventListener('click', () => openExcelModal());
+  deleteAllQuestionsBtn.addEventListener('click', () => deleteAllQuestions());
 
   // 부서 관리 버튼
   const createDepartmentBtn = $('#createDepartmentBtn');
@@ -106,6 +110,9 @@ async function init() {
   }
   if (closeParticipantsBtn) {
     closeParticipantsBtn.addEventListener('click', () => participantsModal.close());
+  }
+  if (downloadParticipantsBtn) {
+    downloadParticipantsBtn.addEventListener('click', downloadParticipantsExcel);
   }
 
   // 문제 유형 필터
@@ -911,6 +918,47 @@ async function deleteQuestion(questionId) {
 }
 
 /**
+ * 문제 전체 삭제
+ */
+async function deleteAllQuestions() {
+  if (!selectedEventId) {
+    alert('먼저 이벤트를 선택해주세요');
+    return;
+  }
+
+  // 현재 문제 수 확인
+  const questionCount = allQuestions.length;
+  if (questionCount === 0) {
+    alert('삭제할 문제가 없습니다');
+    return;
+  }
+
+  // 2단계 확인
+  if (!confirm(`⚠️ 정말로 "${$('#selectedEventName').textContent}" 이벤트의 모든 문제(${questionCount}개)를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다!`)) {
+    return;
+  }
+
+  // 최종 확인
+  const confirmText = prompt(`삭제를 확인하려면 "삭제"를 입력하세요:`);
+  if (confirmText !== '삭제') {
+    alert('삭제가 취소되었습니다');
+    return;
+  }
+
+  try {
+    const response = await admin.deleteAllQuestions(selectedEventId);
+    alert(`✅ ${response.deleted_count}개의 문제가 삭제되었습니다`);
+    await loadQuestions(selectedEventId);
+    playSound('correct');
+
+  } catch (error) {
+    console.error('문제 전체 삭제 실패:', error);
+    alert('삭제 실패: ' + error.message);
+    playSound('wrong');
+  }
+}
+
+/**
  * 엑셀 업로드 모달 열기
  */
 function openExcelModal() {
@@ -969,7 +1017,9 @@ async function handleExcelUpload(e) {
       category: row.category || row['카테고리'],
       question_text: row.question_text || row['문제내용'],
       question_data: row.question_data || row['문제데이터'],
-      explanation: row.explanation || row['해설'] || ''
+      explanation: row.explanation || row['해설'] || '',
+      summary: row.summary || row['요약'] || '',
+      highlight: row.highlight || row['하이라이트'] || ''
     }));
 
     console.log(`Parsed ${questions.length} questions from Excel`);
@@ -1369,6 +1419,7 @@ async function showParticipants(departmentName, eventId) {
     $('#participantsModalTitle').textContent = `${departmentName} - 부서원 목록`;
     participantsModal.showModal();
     participantsTableBody.innerHTML = '<tr><td colspan="3" class="loading-message">⏳ 로딩 중...</td></tr>';
+    currentParticipantsData = null; // 초기화
 
     // API 호출
     const response = await admin.getDepartmentParticipants(departmentName, eventId || null);
@@ -1377,6 +1428,12 @@ async function showParticipants(departmentName, eventId) {
       participantsTableBody.innerHTML = '<tr><td colspan="3" class="loading-message">👤 부서원 정보가 없습니다</td></tr>';
       return;
     }
+
+    // 현재 데이터 저장 (엑셀 다운로드용)
+    currentParticipantsData = {
+      department: departmentName,
+      participants: response.participants
+    };
 
     // 부서원 테이블 렌더링
     participantsTableBody.innerHTML = '';
@@ -1396,6 +1453,62 @@ async function showParticipants(departmentName, eventId) {
   } catch (error) {
     console.error('부서원 목록 로드 실패:', error);
     participantsTableBody.innerHTML = '<tr><td colspan="3" class="loading-message">❌ 로드 실패</td></tr>';
+  }
+}
+
+/**
+ * 부서원 목록 엑셀 다운로드
+ */
+function downloadParticipantsExcel() {
+  if (!currentParticipantsData || !currentParticipantsData.participants) {
+    alert('다운로드할 데이터가 없습니다');
+    return;
+  }
+
+  try {
+    // SheetJS 라이브러리 확인
+    if (typeof XLSX === 'undefined') {
+      alert('Excel 처리 라이브러리가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+      return;
+    }
+
+    const { department, participants } = currentParticipantsData;
+
+    // 엑셀 데이터 생성
+    const excelData = participants.map(p => ({
+      '이름': p.name || '-',
+      '사번': p.employee_id || '-',
+      '참여 여부': p.participated ? '참여' : '미참여',
+      '완료 문제 수': p.completed_questions || 0
+    }));
+
+    // 워크시트 생성
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // 컬럼 너비 설정
+    worksheet['!cols'] = [
+      { wch: 15 }, // 이름
+      { wch: 15 }, // 사번
+      { wch: 12 }, // 참여 여부
+      { wch: 15 }  // 완료 문제 수
+    ];
+
+    // 워크북 생성
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '부서원 목록');
+
+    // 파일명 생성 (날짜 포함)
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const filename = `${department}_참가자목록_${today}.xlsx`;
+
+    // 다운로드
+    XLSX.writeFile(workbook, filename);
+    playSound('correct');
+
+  } catch (error) {
+    console.error('엑셀 다운로드 실패:', error);
+    alert('다운로드 실패: ' + error.message);
+    playSound('wrong');
   }
 }
 

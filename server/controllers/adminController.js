@@ -1,6 +1,14 @@
 const db = require('../models');
 const { Op } = require('sequelize');
 
+const isDev = process.env.NODE_ENV === 'development';
+const log = {
+  info: (...args) => console.log(...args),
+  warn: (...args) => console.warn(...args),
+  error: (...args) => console.error(...args),
+  debug: (...args) => { if (isDev) console.log('[DEBUG]', ...args); }
+};
+
 /**
  * ==========================================
  * 이벤트 관리
@@ -54,7 +62,7 @@ const listEvents = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('이벤트 목록 조회 에러:', error);
+    log.error('이벤트 목록 조회 에러:', error);
     res.status(500).json({
       error: '이벤트 목록 조회에 실패했습니다'
     });
@@ -109,7 +117,7 @@ const createEvent = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('이벤트 생성 에러:', error);
+    log.error('이벤트 생성 에러:', error);
     res.status(500).json({
       error: '이벤트 생성에 실패했습니다'
     });
@@ -166,7 +174,7 @@ const updateEvent = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('이벤트 수정 에러:', error);
+    log.error('이벤트 수정 에러:', error);
     res.status(500).json({
       error: '이벤트 수정에 실패했습니다'
     });
@@ -207,7 +215,7 @@ const deleteEvent = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('이벤트 삭제 에러:', error);
+    log.error('이벤트 삭제 에러:', error);
     res.status(500).json({
       error: '이벤트 삭제에 실패했습니다'
     });
@@ -254,7 +262,7 @@ const listQuestions = async (req, res) => {
       const questionData = question.toJSON();
 
       // summary와 highlight 필드 확인 (디버깅)
-      console.log('[Admin listQuestions] Question ID:', question.id, 'Summary:', questionData.summary, 'Highlight:', questionData.highlight);
+      log.debug(`Question ID: ${question.id}, Summary: ${questionData.summary}, Highlight: ${questionData.highlight}`);
 
       return {
         ...questionData,
@@ -272,7 +280,7 @@ const listQuestions = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('문제 목록 조회 에러:', error);
+    log.error('문제 목록 조회 에러:', error);
     res.status(500).json({
       error: '문제 목록 조회에 실패했습니다'
     });
@@ -351,7 +359,7 @@ const createQuestion = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('문제 생성 에러:', error);
+    log.error('문제 생성 에러:', error);
     res.status(500).json({
       error: '문제 생성에 실패했습니다'
     });
@@ -425,7 +433,7 @@ const updateQuestion = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('문제 수정 에러:', error);
+    log.error('문제 수정 에러:', error);
     res.status(500).json({
       error: '문제 수정에 실패했습니다'
     });
@@ -466,9 +474,55 @@ const deleteQuestion = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('문제 삭제 에러:', error);
+    log.error('문제 삭제 에러:', error);
     res.status(500).json({
       error: '문제 삭제에 실패했습니다'
+    });
+  }
+};
+
+/**
+ * 이벤트의 문제 전체 삭제
+ * DELETE /api/admin/events/:eventId/questions
+ */
+const deleteAllQuestions = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // 이벤트 확인
+    const event = await db.QuizEvent.findByPk(eventId);
+    if (!event) {
+      return res.status(404).json({
+        error: '이벤트를 찾을 수 없습니다'
+      });
+    }
+
+    // 해당 이벤트의 문제 수 확인
+    const questionCount = await db.Question.count({
+      where: { event_id: eventId }
+    });
+
+    if (questionCount === 0) {
+      return res.status(400).json({
+        error: '삭제할 문제가 없습니다'
+      });
+    }
+
+    // 전체 문제 삭제
+    await db.Question.destroy({
+      where: { event_id: eventId }
+    });
+
+    res.json({
+      success: true,
+      message: `${questionCount}개의 문제가 삭제되었습니다`,
+      deleted_count: questionCount
+    });
+
+  } catch (error) {
+    log.error('문제 전체 삭제 에러:', error);
+    res.status(500).json({
+      error: '문제 전체 삭제에 실패했습니다'
     });
   }
 };
@@ -573,7 +627,9 @@ const bulkUploadQuestions = async (req, res) => {
           category: q.category,
           question_text: q.question_text,
           question_data: questionData,
-          explanation: q.explanation || null
+          explanation: q.explanation || null,
+          summary: q.summary || null,
+          highlight: q.highlight || null
         });
 
         results.success.push({
@@ -598,7 +654,7 @@ const bulkUploadQuestions = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('문제 대량 업로드 에러:', error);
+    log.error('문제 대량 업로드 에러:', error);
     res.status(500).json({
       error: '문제 대량 업로드에 실패했습니다'
     });
@@ -671,7 +727,7 @@ const getOverview = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('전체 통계 조회 에러:', error);
+    log.error('전체 통계 조회 에러:', error);
     res.status(500).json({
       error: '통계 조회에 실패했습니다'
     });
@@ -742,7 +798,7 @@ const getDepartmentStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('부서별 통계 조회 에러:', error);
+    log.error('부서별 통계 조회 에러:', error);
     res.status(500).json({
       error: '부서별 통계 조회에 실패했습니다'
     });
@@ -818,7 +874,7 @@ const getDepartmentParticipants = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('부서원 목록 조회 에러:', error);
+    log.error('부서원 목록 조회 에러:', error);
     res.status(500).json({
       error: '부서원 목록 조회에 실패했습니다'
     });
@@ -908,7 +964,7 @@ const getQuestionStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('문제별 통계 조회 에러:', error);
+    log.error('문제별 통계 조회 에러:', error);
     res.status(500).json({
       error: '문제별 통계 조회에 실패했습니다'
     });
@@ -996,7 +1052,7 @@ const getUserList = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('사용자 목록 조회 에러:', error);
+    log.error('사용자 목록 조회 에러:', error);
     res.status(500).json({
       error: '사용자 목록 조회에 실패했습니다'
     });
@@ -1117,7 +1173,7 @@ const drawWinners = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('LuckyDraw 추첨 에러:', error);
+    log.error('LuckyDraw 추첨 에러:', error);
     res.status(500).json({
       error: 'LuckyDraw 추첨에 실패했습니다'
     });
@@ -1177,7 +1233,7 @@ const getWinners = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('당첨자 목록 조회 에러:', error);
+    log.error('당첨자 목록 조회 에러:', error);
     res.status(500).json({
       error: '당첨자 목록 조회에 실패했습니다'
     });
@@ -1251,7 +1307,7 @@ const getLuckyDrawStatsByEvent = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('퀴즈별 LuckyDraw 현황 조회 에러:', error);
+    log.error('퀴즈별 LuckyDraw 현황 조회 에러:', error);
     res.status(500).json({
       error: '퀴즈별 LuckyDraw 현황 조회에 실패했습니다'
     });
@@ -1288,7 +1344,7 @@ const claimPrize = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('상품 수령 처리 에러:', error);
+    log.error('상품 수령 처리 에러:', error);
     res.status(500).json({
       error: '상품 수령 처리에 실패했습니다'
     });
@@ -1329,7 +1385,7 @@ const listDepartments = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('부서 목록 조회 에러:', error);
+    log.error('부서 목록 조회 에러:', error);
     res.status(500).json({
       error: '부서 목록 조회에 실패했습니다'
     });
@@ -1373,7 +1429,7 @@ const createDepartment = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('부서 생성 에러:', error);
+    log.error('부서 생성 에러:', error);
     res.status(500).json({
       error: '부서 생성에 실패했습니다'
     });
@@ -1421,7 +1477,7 @@ const updateDepartment = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('부서 수정 에러:', error);
+    log.error('부서 수정 에러:', error);
     res.status(500).json({
       error: '부서 수정에 실패했습니다'
     });
@@ -1462,7 +1518,7 @@ const deleteDepartment = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('부서 삭제 에러:', error);
+    log.error('부서 삭제 에러:', error);
     res.status(500).json({
       error: '부서 삭제에 실패했습니다'
     });
@@ -1504,7 +1560,7 @@ const getSsoSettings = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('SSO 설정 조회 에러:', error);
+    log.error('SSO 설정 조회 에러:', error);
     res.status(500).json({
       error: 'SSO 설정 조회에 실패했습니다'
     });
@@ -1535,7 +1591,7 @@ const getSsoSetting = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('SSO 설정 조회 에러:', error);
+    log.error('SSO 설정 조회 에러:', error);
     res.status(500).json({
       error: 'SSO 설정 조회에 실패했습니다'
     });
@@ -1583,7 +1639,7 @@ const updateSsoSetting = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('SSO 설정 업데이트 에러:', error);
+    log.error('SSO 설정 업데이트 에러:', error);
     res.status(500).json({
       error: 'SSO 설정 업데이트에 실패했습니다'
     });
@@ -1612,7 +1668,7 @@ const listAdminEmployees = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('관리자 목록 조회 에러:', error);
+    log.error('관리자 목록 조회 에러:', error);
     res.status(500).json({
       error: '관리자 목록 조회에 실패했습니다'
     });
@@ -1658,7 +1714,7 @@ const addAdminEmployee = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('관리자 추가 에러:', error);
+    log.error('관리자 추가 에러:', error);
     res.status(500).json({
       error: '관리자 추가에 실패했습니다'
     });
@@ -1695,7 +1751,7 @@ const deleteAdminEmployee = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('관리자 삭제 에러:', error);
+    log.error('관리자 삭제 에러:', error);
     res.status(500).json({
       error: '관리자 삭제에 실패했습니다'
     });
@@ -1732,7 +1788,7 @@ const getSsoStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('SSO 상태 조회 에러:', error);
+    log.error('SSO 상태 조회 에러:', error);
     res.status(500).json({
       error: 'SSO 상태 조회에 실패했습니다'
     });
@@ -1751,6 +1807,7 @@ module.exports = {
   createQuestion,
   updateQuestion,
   deleteQuestion,
+  deleteAllQuestions,
   bulkUploadQuestions,
 
   // 통계

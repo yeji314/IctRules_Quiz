@@ -1,0 +1,38 @@
+/* quiz-list.html 전용 장식 요소 위치 고정 */
+
+/* ===== ultrawide에서도 위치가 변하지 않도록 transform-origin 개별 설정 ===== */
+
+/* tree-lineup 내부 요소는 static이므로 decorations.css의 fixed 무효화 */
+/* 컨테이너가 스케일 관리하므로 개별 요소의 transform 제거 */
+.tree-lineup .tree,
+.tree-lineup .mailbox,
+.tree-lineup .character {
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important; /* decorations.css의 scale 무효화 */
+  transform-origin: bottom center !important;
+}
+
+/* tree-lineup 내부 캐릭터 이미지도 sol-gif-base의 transform 제거 */
+.tree-lineup .character-img {
+  transform: none !important; /* sol-gif-base의 scale 무효화 */
+}
+
+/* 왼쪽 배치 요소 (전역): left 기준 고정 */
+.tree,
+.bush1,
+.mailbox,
+.character {
+  transform-origin: bottom left !important;
+}
+
+/* 오른쪽 배치 요소: right 기준 고정 */
+.sunflower,
+.bush2,
+.clover,
+.small-plant,
+.tnt,
+.cursor {
+  transform-origin: bottom right !important;
+}

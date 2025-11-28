@@ -1,6 +1,14 @@
 const { Op } = require('sequelize');
 const db = require('../models');
 
+const isDev = process.env.NODE_ENV === 'development';
+const log = {
+  info: (...args) => console.log(...args),
+  warn: (...args) => console.warn(...args),
+  error: (...args) => console.error(...args),
+  debug: (...args) => { if (isDev) console.log('[DEBUG]', ...args); }
+};
+
 class QuizService {
   /**
    * 랜덤으로 5개 문제 선택 (5가지 유형 각 1개 + LuckyDraw 조건 포함)
@@ -81,15 +89,7 @@ class QuizService {
       questionsByType[type] = allQuestions.filter(q => q.question_type === type);
     });
 
-    console.log(`[QuizService] 문제 선택 정보:
-      - 제외할 문제 ID: [${excludeQuestionIds.join(', ')}]
-      - 전체 남은 문제: ${allQuestions.length}개
-      - 첫 시도 정답 수: ${firstCorrectCount}
-      - 럭키드로우 본 적 있음: ${hasSeenLuckyDraw}
-      - 현재 세션에서 당첨됨: ${hasWonPrizeInSession}
-      - 이벤트 전체에서 당첨됨: ${hasWonPrizeInEvent}
-      - 이벤트 당첨자 수: ${currentWinnerCount}/${event.max_winners}
-      - 최대 당첨자 도달: ${maxWinnersReached}`);
+    log.debug(`문제 선택: 제외 ${excludeQuestionIds.length}개, 남은 ${allQuestions.length}개, 첫 시도 정답 ${firstCorrectCount}`);
 
     // LuckyDraw 출제 조건 체크
     // 1. 현재 세션에서 3문제 이상 맞춤
@@ -131,7 +131,6 @@ class QuizService {
         // 첫 럭키드로우: 1개만 (중간 위치)
         const luckyPosition = Math.floor(Math.random() * 3) + 1; // 1, 2, 3
         luckyDrawPositions.push(luckyPosition);
-        console.log(`[QuizService] 첫 럭키드로우를 ${luckyPosition + 1}번째 위치에 배치`);
       } else {
         // 이후: 40% 확률로 각 문제에 럭키드로우 플래그 (연속 방지)
         for (let i = 0; i < selectedQuestions.length; i++) {
@@ -146,13 +145,9 @@ class QuizService {
       luckyDrawPositions.forEach(pos => {
         if (selectedQuestions[pos]) {
           selectedQuestions[pos].dataValues.isLuckyDraw = true;
-          console.log(`[QuizService] 문제 ${pos + 1}번 위치에 럭키드로우 플래그 추가`);
         }
       });
     }
-
-    console.log(`[QuizService] 최종 선택된 문제 수: ${selectedQuestions.length}개`);
-    console.log(`[QuizService] 최종 문제 순서:`, selectedQuestions.map(q => `${q.question_type}${q.dataValues.isLuckyDraw ? '(럭키드로우)' : ''}`).join(' -> '));
 
     return selectedQuestions;
   }
@@ -181,11 +176,8 @@ class QuizService {
       where: { session_id: sessionId }
     });
 
-    console.log(`[getNextQuestion] 세션 ${sessionId}: 이미 답변한 문제 수 = ${answeredCount}`);
-
     // 5개 문제를 모두 풀었으면 null 반환
     if (answeredCount >= 5) {
-      console.log(`[getNextQuestion] 세션 완료 (5개 문제 모두 답변)`);
       return null;
     }
 
@@ -202,11 +194,9 @@ class QuizService {
     });
 
     const usedQuestionTypes = answeredQuestions.map(a => a.Question.question_type);
-    console.log(`[getNextQuestion] 이미 나온 유형: [${usedQuestionTypes.join(', ')}]`);
 
     // 아직 나오지 않은 유형 계산
     const remainingTypes = questionTypes.filter(type => !usedQuestionTypes.includes(type));
-    console.log(`[getNextQuestion] 남은 유형: [${remainingTypes.join(', ')}]`);
 
     // 현재 세션에서 한 번에 맞춘 문제 수 (첫 시도 정답만 카운트)
     const correctCount = await db.QuizAnswer.count({
@@ -216,8 +206,6 @@ class QuizService {
         answer_attempt: 1  // 한 번에 맞춘 것만!
       }
     });
-
-    console.log(`[getNextQuestion] 현재 세션에서 한 번에 맞춘 문제 수: ${correctCount}`);
 
     // 이미 푼 문제 ID 목록 (이벤트 기준, "완료된 세션"만 포함)
     // - 규칙: 1~5회차 세션을 끝까지 완료한 문제만 "푼 문제"로 간주
@@ -247,10 +235,6 @@ class QuizService {
       ...currentSessionQuestionIds
     ]));
 
-    console.log(`[getNextQuestion] 이미 푼 문제 ID (완료된 세션): [${completedQuestionIds.join(', ')}]`);
-    console.log(`[getNextQuestion] 현재 세션에서 사용 중인 문제 ID: [${currentSessionQuestionIds.join(', ')}]`);
-    console.log(`[getNextQuestion] 최종 제외할 문제 ID: [${excludeQuestionIds.join(', ')}]`);
-
     // 해당 월(이벤트)에서 이미 선물에 당첨되었는지 확인
     const hasWonPrizeThisMonth = await db.LuckyDraw.count({
       where: {
@@ -258,8 +242,6 @@ class QuizService {
         event_id: eventId
       }
     }) > 0;
-
-    console.log(`[getNextQuestion] 이번 월 선물 당첨 여부: ${hasWonPrizeThisMonth}`);
 
     // 이벤트의 최대 당첨자 수 도달 여부 확인
     const event = await db.QuizEvent.findByPk(eventId);
@@ -272,7 +254,6 @@ class QuizService {
     });
 
     const maxWinnersReached = currentWinnerCount >= event.max_winners;
-    console.log(`[getNextQuestion] 이벤트 당첨자 수: ${currentWinnerCount}/${event.max_winners}, 최대치 도달: ${maxWinnersReached}`);
 
     // 현재 세션에서 직전 문제가 럭키드로우였는지 확인
     const lastAnswer = await db.QuizAnswer.findOne({
@@ -282,7 +263,6 @@ class QuizService {
     });
 
     const lastWasLuckyDraw = lastAnswer && lastAnswer.is_lucky_draw === true;
-    console.log(`[getNextQuestion] 직전 문제가 럭키드로우: ${lastWasLuckyDraw}`);
 
     // 남은 문제 가져오기
     let allQuestions = await db.Question.findAll({
@@ -298,13 +278,8 @@ class QuizService {
       const filteredQuestions = allQuestions.filter(q => remainingTypes.includes(q.question_type));
       if (filteredQuestions.length > 0) {
         allQuestions = filteredQuestions;
-        console.log(`[getNextQuestion] 남은 유형으로 필터링: [${remainingTypes.join(', ')}]`);
-      } else {
-        console.log(`[getNextQuestion] 남은 유형(${remainingTypes.join(', ')})에 해당하는 문제가 없음 - 필터링 스킵`);
       }
     }
-
-    console.log(`[getNextQuestion] 남은 문제: ${allQuestions.length}개`);
 
     // 세션 내에서 이미 출제된 럭키드로우 문제 수 확인
     const luckyDrawCount = await db.QuizAnswer.count({
@@ -313,15 +288,12 @@ class QuizService {
         is_lucky_draw: true
       }
     });
-    
+
     const isFirstLuckyDraw = luckyDrawCount === 0;
-    console.log(`[getNextQuestion] 세션 내 럭키드로우 출제 횟수: ${luckyDrawCount}회 (첫 럭키드로우: ${isFirstLuckyDraw})`);
 
     // 럭키드로우 출현 가능 여부 판단
     // 조건: 정답 3개 이상 + 직전이 럭키드로우 아님 + 이번 월에 당첨 안됨 + 최대 당첨자 수 미도달
     const canShowLuckyDraw = correctCount >= 3 && !lastWasLuckyDraw && !hasWonPrizeThisMonth && !maxWinnersReached && allQuestions.length > 0;
-
-    console.log(`[getNextQuestion] 럭키드로우 출현 가능: ${canShowLuckyDraw} (정답 ${correctCount}개 >= 3, 직전 럭키드로우: ${lastWasLuckyDraw}, 이번 월 당첨: ${hasWonPrizeThisMonth}, 최대 당첨자 도달: ${maxWinnersReached})`);
 
     let selectedQuestion = null;
 
@@ -333,37 +305,26 @@ class QuizService {
       // 럭키드로우 확률 계산
       if (canShowLuckyDraw) {
         let luckyDrawProbability;
-        
+
         if (isFirstLuckyDraw) {
           // 첫 번째 럭키드로우: 무조건 100%
           luckyDrawProbability = 1.0;
-          console.log(`[getNextQuestion] 첫 럭키드로우 → 100% 확률`);
         } else {
           // 두 번째 이후 럭키드로우: 40% + (답변한 문제 수 * 10%)
           const answeredCount = await db.QuizAnswer.count({
             where: { session_id: sessionId }
           });
-          
+
           // 기본 40% + 문제당 10% 증가 (최대 90%)
           luckyDrawProbability = Math.min(0.9, 0.4 + (answeredCount * 0.1));
-          console.log(`[getNextQuestion] 두 번째+ 럭키드로우 → ${(luckyDrawProbability * 100).toFixed(0)}% 확률 (답변 ${answeredCount}개)`);
         }
-        
+
         // 확률에 따라 럭키드로우 문제로 지정
         const random = Math.random();
         if (random < luckyDrawProbability) {
           selectedQuestion.dataValues.isLuckyDraw = true;
-          console.log(`[getNextQuestion] ✨ 럭키드로우 문제로 지정: Q${selectedQuestion.id} (${selectedQuestion.question_type}) [확률: ${(luckyDrawProbability * 100).toFixed(0)}%, 랜덤: ${(random * 100).toFixed(0)}%]`);
-        } else {
-          console.log(`[getNextQuestion] 일반 문제 선택: Q${selectedQuestion.id} (${selectedQuestion.question_type}) [확률: ${(luckyDrawProbability * 100).toFixed(0)}%, 랜덤: ${(random * 100).toFixed(0)}%]`);
         }
-      } else {
-        console.log(`[getNextQuestion] 일반 문제 선택: Q${selectedQuestion.id} (${selectedQuestion.question_type})`);
       }
-    }
-
-    if (!selectedQuestion) {
-      console.log(`[getNextQuestion] 선택 가능한 문제 없음`);
     }
 
     return selectedQuestion;
@@ -391,8 +352,6 @@ class QuizService {
 
       // 푼 문제 수 = 완료된 세션 수 × 5
       const totalAnswered = completedSessions.length * 5;
-
-      console.log(`[QuizList] 사용자 ${userId}, 이벤트 ${event.id}: 완료된 세션 ${completedSessions.length}개 → 푼 문제 수 = ${totalAnswered}개`);
 
       // 첫 시도에 맞춘 문제 수 (일반 + 럭키드로우 포함)
       const correctCount = await db.QuizAnswer.count({
@@ -432,8 +391,6 @@ class QuizService {
           is_lucky_draw: true
         }
       });
-
-      console.log(`[QuizList] 사용자 ${userId}, 이벤트 ${event.id}: LuckyDraw 맞춘 개수 = ${luckyDrawCount}개`);
 
       // 남은 문제 수 계산: 전체 15문제 - 이미 푼 문제 수
       const remainingQuestions = 15 - totalAnswered;
