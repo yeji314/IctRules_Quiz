@@ -1330,7 +1330,7 @@ function showLuckyDrawAnimation(result, questionIndex) {
       } else {
         // 미당첨
         gifSrc = '../images/Luckydrawfail.gif';
-        message = '아쉽게도 선물을 획득하지 못했네요..문제를 많이 풀면 당첨 확률이 높아집니다! 계속 도전해보세요!)';
+        message = '아쉽게도 선물을 획득하지 못했네요..문제를 많이 풀면 당첨 확률이 높아집니다! 계속 도전해보세요!';
         playSound('coin');
       }
 

@@ -836,19 +836,16 @@ const getDepartmentParticipants = async (req, res) => {
         where: whereClause
       });
 
-      // 완료한 문제 수 (정답 맞춘 문제 수)
+      // ✅ 완료한 문제 수 = 완료된 세션 수 × 5 (5개씩 묶음 단위로 계산)
       let completedQuestions = 0;
       if (sessionCount > 0) {
-        completedQuestions = await db.QuizAnswer.count({
-          distinct: true,
-          col: 'question_id',
-          where: { is_correct: true },
-          include: [{
-            model: db.QuizSession,
-            where: whereClause,
-            attributes: []
-          }]
+        const completedSessionCount = await db.QuizSession.count({
+          where: {
+            ...whereClause,
+            status: 'completed'
+          }
         });
+        completedQuestions = completedSessionCount * 5;
       }
 
       return {

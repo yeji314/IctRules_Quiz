@@ -392,8 +392,13 @@ class QuizService {
         }
       });
 
-      // 남은 문제 수 계산: 전체 15문제 - 이미 푼 문제 수
-      const remainingQuestions = 15 - totalAnswered;
+      // ✅ 전체 문제 수 동적 조회 (하드코딩 제거)
+      const totalQuestionsCount = await db.Question.count({
+        where: { event_id: event.id }
+      });
+
+      // 남은 문제 수 계산: 전체 문제 수 - 이미 푼 문제 수
+      const remainingQuestions = totalQuestionsCount - totalAnswered;
 
       // 완료한 문제 수 (패널용)
       const completed_questions = totalAnswered;
@@ -448,8 +453,8 @@ class QuizService {
         remainingQuestions,  // 남은 문제 수 추가
         status,
         correctCount,  // 첫 시도에 맞춘 문제 수
-        totalQuestions: 15,
-        progressPercent: Math.round((correctCount / 15) * 100),  // 맞춘 문제 기준으로 진행률 계산
+        totalQuestions: totalQuestionsCount,  // ✅ 동적 값 사용
+        progressPercent: Math.round((correctCount / totalQuestionsCount) * 100),  // ✅ 동적 값 기준 진행률
         luckyDrawCount,
         luckyDrawTotal: 3,
         startDate: event.start_date,
