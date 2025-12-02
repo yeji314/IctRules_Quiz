@@ -30,6 +30,9 @@ let timerInterval = null;
 let firstAttemptCorrectCount = 0;
 let totalQuestions = 0;
 
+// ✅ 질문 텍스트 타이핑 중 여부 플래그
+let isQuestionTyping = false;
+
 /**
  * 질문 헤더 포맷터 - [] 토큰을 빈칸 박스로 치환
  */
@@ -149,17 +152,13 @@ function loadQuestion() {
 
   const question = currentSession.question;
 
-  // 타이핑 문제는 문제 텍스트를 숨김
-  if (question.question_type === 'typing') {
-    questionText.textContent = '다음 문장을 따라 입력하세요.';
-  } else {
-    questionText.innerHTML = formatQuestionHeaderText(question.question_text);
-  }
+  // 질문 텍스트는 타이핑 효과로 출력할 것이므로 일단 비워둠
+  questionText.innerHTML = '';
 
   // 캐릭터 감정: 문제 로딩 시 생각하는 표정
   setCharacterEmotion('thinking');
 
-  // 문제 등장 애니메이션 (Duolingo 스타일 bounce-in)
+  // 문제 등장 애니메이션 (Duolingo 스타일 bounce-in) - 타이핑 시작과 함께
   questionText.classList.remove('bounce-in');
   void questionText.offsetWidth; // Trigger reflow
   questionText.classList.add('bounce-in');
@@ -196,8 +195,14 @@ function loadQuestion() {
   // 말풍선 크기 즉시 조정 (새 문제 로드 시)
   adjustSpeechBubbleSize('explanationText', myQuestionToken, () => questionToken);
 
-  // 문제 타입에 따라 렌더링
-  renderQuestion(question);
+  // ✅ 질문 텍스트 타이핑 후에만 답변 UI 렌더링
+  playQuestionTyping(question, myQuestionToken)
+    .then(() => {
+      // 문제 토큰이 바뀌었다면(다음 문제로 넘어간 경우) 렌더링 취소
+      if (myQuestionToken !== questionToken) return;
+      isQuestionTyping = false;
+      renderQuestion(question);
+    });
 }
 
 /**
@@ -1044,6 +1049,11 @@ async function handleNextQuestion() {
     return;
   }
 
+  // ✅ 새 문제로 넘어가기 전에, 이전 질문/답변 영역을 먼저 깨끗하게 비우기
+  //    → 사용자 입장에서: 질문 타이핑 종료 → (대기/피드백) → 화면 클리어 → 새 질문 타이핑
+  questionText.textContent = '';
+  answersArea.innerHTML = '';
+
   // 다음 문제로 이동
   currentSession.question = currentSession.nextQuestion;
   currentSession.nextQuestion = null;
@@ -1155,6 +1165,70 @@ let typingQueue = Promise.resolve();
 // ✅ 현재 진행 중인 모든 타이핑/말풍선 리사이즈 비동기 작업을 무효화
 function cancelTypingSession() {
   currentTypingToken = null; // typeWriterEffect 내 sessionToken 비교가 모두 실패하도록 만듦
+}
+
+/**
+ * 질문 영역에 HTML 안전 타이핑 효과 적용
+ * - HTML 태그(<span> 등)는 한 번에 출력하고, 텍스트 문자만 한 글자씩 출력
+ * - 문제 토큰이 바뀌면 자동으로 중단
+ */
+function playQuestionTyping(question, myQuestionToken) {
+  // 이미 다른 문제로 넘어갔으면 아무 것도 하지 않음
+  if (myQuestionToken !== questionToken) return Promise.resolve();
+
+  // 타이핑 중 플래그 설정 (버튼 조기 렌더링 방지용)
+  isQuestionTyping = true;
+
+  const isTypingType = question.question_type === 'typing';
+  const rawHtml = isTypingType
+    ? '다음 문장을 따라 입력하세요.'
+    : formatQuestionHeaderText(question.question_text || '');
+
+  return new Promise((resolve) => {
+    let i = 0;
+    let buffer = '';
+
+    function step() {
+      // 문제 토큰이 바뀌면 중단
+      if (myQuestionToken !== questionToken) {
+        return resolve();
+      }
+
+      if (i >= rawHtml.length) {
+        // 타이핑 완료
+        questionText.innerHTML = buffer;
+        return resolve();
+      }
+
+      const ch = rawHtml[i];
+
+      if (ch === '<') {
+        // 태그는 한 번에 통째로 출력
+        const closeIdx = rawHtml.indexOf('>', i);
+        if (closeIdx === -1) {
+          buffer += rawHtml.slice(i);
+          i = rawHtml.length;
+        } else {
+          buffer += rawHtml.slice(i, closeIdx + 1);
+          i = closeIdx + 1;
+        }
+      } else {
+        // 일반 글자는 한 글자씩
+        buffer += ch;
+        i += 1;
+      }
+
+      questionText.innerHTML = buffer;
+
+      if (i < rawHtml.length) {
+        setTimeout(step, 60); // 질문 타이핑 속도 (기존 대비 2배 느리게)
+      } else {
+        resolve();
+      }
+    }
+
+    step();
+  });
 }
 
 /**
