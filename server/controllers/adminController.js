@@ -565,8 +565,13 @@ const bulkUploadQuestions = async (req, res) => {
       const rowNum = i + 2; // Excel row number (assuming header at row 1)
 
       try {
+        // 디버깅용: 현재 처리 중인 행 로그
+        log.debug('[BulkUpload] 행 처리 시작', { row: rowNum, question_type: q.question_type, category: q.category });
+
         // 필수 필드 검증
         if (!q.question_type || !q.category || !q.question_text || !q.question_data) {
+        
+          log.warn('[BulkUpload] 필수 정보 누락', { row: rowNum, data: q });
           results.errors.push({
             row: rowNum,
             error: '필수 정보가 누락되었습니다',
@@ -577,6 +582,7 @@ const bulkUploadQuestions = async (req, res) => {
 
         // 문제 타입 검증
         if (!validTypes.includes(q.question_type)) {
+          log.warn('[BulkUpload] 유효하지 않은 문제 타입', { row: rowNum, type: q.question_type });
           results.errors.push({
             row: rowNum,
             error: `유효하지 않은 문제 타입: ${q.question_type}`,
@@ -587,6 +593,7 @@ const bulkUploadQuestions = async (req, res) => {
 
         // 카테고리 검증
         if (!validCategories.includes(q.category)) {
+          log.warn('[BulkUpload] 유효하지 않은 카테고리', { row: rowNum, category: q.category });
           results.errors.push({
             row: rowNum,
             error: `유효하지 않은 카테고리: ${q.category}`,
@@ -601,6 +608,7 @@ const bulkUploadQuestions = async (req, res) => {
           try {
             questionData = JSON.parse(questionData);
           } catch (e) {
+            log.warn('[BulkUpload] question_data JSON 파싱 실패', { row: rowNum, raw: q.question_data });
             results.errors.push({
               row: rowNum,
               error: 'question_data JSON 형식이 올바르지 않습니다',
@@ -612,6 +620,7 @@ const bulkUploadQuestions = async (req, res) => {
 
         // correct_answer 검증
         if (!questionData.correct_answer) {
+          log.warn('[BulkUpload] correct_answer 누락', { row: rowNum, data: questionData });
           results.errors.push({
             row: rowNum,
             error: 'question_data에 correct_answer가 필요합니다',
@@ -639,6 +648,8 @@ const bulkUploadQuestions = async (req, res) => {
         });
 
       } catch (error) {
+        // 서버 로그에 상세 에러 기록
+        log.error('[BulkUpload] 개별 문제 처리 중 에러', { row: rowNum, error: error.message, stack: error.stack });
         results.errors.push({
           row: rowNum,
           error: error.message,

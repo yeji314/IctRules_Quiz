@@ -294,9 +294,9 @@ body {
 /* 퀴즈 컨텐츠 영역 - 질문 / 답변 / 버튼을 세로로 배치 (불변 조건 2) */
 .quiz-content {
   position: fixed;
-  top: 40%;
+  top: 15vh; /* 고정된 상단 앵커 - 내용이 길어지면 아래로만 확장 */
   left: 50%;
-  transform: translate(-50%, -50%); /* 완벽한 중앙 정렬 */
+  transform: translateX(-50%); /* X축만 중앙 정렬, Y축 이동 제거 */
   width: 90%;
   max-width: 720px;
   z-index: 80;
@@ -331,13 +331,13 @@ body {
 
 @keyframes duolingo-shake {
   0%, 100% {
-    transform: translate(-50%, -50%) translateX(0);
+    transform: translateX(-50%);
   }
   10%, 30%, 50%, 70%, 90% {
-    transform: translate(-50%, -50%) translateX(-8px);
+    transform: translateX(calc(-50% - 8px));
   }
   20%, 40%, 60%, 80% {
-    transform: translate(-50%, -50%) translateX(8px);
+    transform: translateX(calc(-50% + 8px));
   }
 }
 
@@ -1358,16 +1358,16 @@ body {
 
 @keyframes gentle-shake {
   0%, 100% {
-    transform: translate(-50%, -50%) rotate(0deg);
+    transform: translateX(-50%) rotate(0deg);
   }
   25% {
-    transform: translate(calc(-50% - 4px), -50%) rotate(-1deg);
+    transform: translateX(calc(-50% - 4px)) rotate(-1deg);
   }
   50% {
-    transform: translate(calc(-50% + 4px), -50%) rotate(1deg);
+    transform: translateX(calc(-50% + 4px)) rotate(1deg);
   }
   75% {
-    transform: translate(calc(-50% - 4px), -50%) rotate(-1deg);
+    transform: translateX(calc(-50% - 4px)) rotate(-1deg);
   }
 }
 
@@ -1463,7 +1463,8 @@ body {
   }
 
   .quiz-content {
-    /* 중앙 정렬 유지 - top/left 변경 금지 */
+    /* 중앙 정렬 유지 - top은 고정 앵커 유지 */
+    top: 35vh;
     width: 95%;
     max-width: 600px;
     gap: 24px;
@@ -1539,7 +1540,8 @@ body {
   }
 
   .quiz-content {
-    /* 중앙 정렬 유지 - top 변경 금지 */
+    /* 중앙 정렬 유지 - top은 고정 앵커 유지 */
+    top: 30vh; /* 모바일에서는 약간 높은 위치 */
     gap: 20px;
   }
 

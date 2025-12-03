@@ -1004,6 +1004,7 @@ async function handleExcelUpload(e) {
     // Excel 파일 파싱
     const workbook = XLSX.read(data);
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+    // ⚠️ 시트 전체 범위에 서식만 들어있어도 행으로 잡힐 수 있으므로, 나중에 필터링
     const rows = XLSX.utils.sheet_to_json(firstSheet);
 
     if (rows.length === 0) {
@@ -1012,7 +1013,7 @@ async function handleExcelUpload(e) {
     }
 
     // 데이터 변환 (컬럼명 매핑)
-    const questions = rows.map(row => ({
+    const mapped = rows.map(row => ({
       question_type: row.question_type || row['문제유형'],
       category: row.category || row['카테고리'],
       question_text: row.question_text || row['문제내용'],
@@ -1022,7 +1023,12 @@ async function handleExcelUpload(e) {
       highlight: row.highlight || row['하이라이트'] || ''
     }));
 
-    console.log(`Parsed ${questions.length} questions from Excel`);
+    // ⚙️ 완전히 빈 행(필수 필드가 전부 비어 있는 행)은 서버로 보내지 않도록 필터링
+    const questions = mapped.filter(q =>
+      q.question_type || q.category || q.question_text || q.question_data
+    );
+
+    console.log(`[ExcelUpload] 원본 행 수: ${rows.length}, 업로드 대상 문제 수: ${questions.length}`);
 
     // 백엔드로 전송
     const response = await admin.bulkUploadQuestions(selectedEventId, questions);
