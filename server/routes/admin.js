@@ -3,6 +3,18 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 
+/**
+ * ==========================================
+ * 인증 불필요 라우트 (먼저 정의)
+ * ==========================================
+ */
+
+/**
+ * POST /api/admin/questions/bulk-upload
+ * 문제 대량 업로드 (인증 불필요)
+ */
+router.post('/questions/bulk-upload', adminController.bulkUploadQuestions);
+
 // 모든 관리자 API는 인증 + 관리자 권한 필요
 router.use(authenticate);
 router.use(requireAdmin);
@@ -72,12 +84,6 @@ router.delete('/questions/:id', adminController.deleteQuestion);
  * 이벤트의 문제 전체 삭제
  */
 router.delete('/events/:eventId/questions', adminController.deleteAllQuestions);
-
-/**
- * POST /api/admin/questions/bulk-upload
- * 문제 대량 업로드
- */
-router.post('/questions/bulk-upload', adminController.bulkUploadQuestions);
 
 /**
  * ==========================================

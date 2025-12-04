@@ -19,7 +19,8 @@
       "Bash(sqlite3:*)",
       "Bash(claude --version:*)",
       "Bash(set NODE_ENV=development)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git check-ignore:*)"
     ],
     "deny": [],
     "ask": []
