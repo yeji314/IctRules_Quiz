@@ -292,8 +292,10 @@ class QuizService {
     const isFirstLuckyDraw = luckyDrawCount === 0;
 
     // 럭키드로우 출현 가능 여부 판단
-    // 조건: 정답 3개 이상 + 직전이 럭키드로우 아님 + 이번 월에 당첨 안됨 + 최대 당첨자 수 미도달
-    const canShowLuckyDraw = correctCount >= 3 && !lastWasLuckyDraw && !hasWonPrizeThisMonth && !maxWinnersReached && allQuestions.length > 0;
+    // 조건: 정답 3개 이상 + 직전이 럭키드로우 아님 + 이번 월에 당첨 안됨
+    // ⚠️ 최대 당첨자 수 도달 여부와는 무관하게 "문제"는 계속 출제될 수 있어야 함
+    //    (당첨 여부는 submitAnswer의 LuckyDraw 추첨 로직에서 maxWinnersReached로 제어)
+    const canShowLuckyDraw = correctCount >= 3 && !lastWasLuckyDraw && !hasWonPrizeThisMonth && allQuestions.length > 0;
 
     let selectedQuestion = null;
 
