@@ -3,13 +3,10 @@
  */
 
 import { quiz } from '../modules/api.js';
-import { requireAuth, getUser, logout as authLogout } from '../modules/auth.js';
+import { requireAuth, isLoggedIn, getUser, logout as authLogout } from '../modules/auth.js';
 import { $, show, hide, animate, playSound, formatDate } from '../modules/utils.js';
 import { showPixelAlert, showPixelConfirm } from '../modules/pixel-dialog.js';
 import { initSpeechBubbleAnchor, adjustSpeechBubbleSize } from '../utils/speech-bubble-anchor.js';
-
-// 인증 확인
-requireAuth();
 
 // DOM 요소
 const userNameDisplay = $('#userNameDisplay');
@@ -24,6 +21,24 @@ const adminGearBtn = $('#adminGearBtn');
  * 초기화
  */
 async function init() {
+  // 0. URL에 SSO 토큰이 있고 아직 로그인 전인 경우:
+  //    quiz-list로 바로 돌아오도록 설계했을 때,
+  //    여기서 로그인 페이지로 토큰을 넘겨주고 처리하도록 위임한다.
+  const urlParams = new URLSearchParams(window.location.search);
+  const ssoToken = urlParams.get('gw_sso_auth_code');
+
+  if (!isLoggedIn() && ssoToken) {
+    // 로그인 페이지에서 SSO 토큰 처리 후 quiz-list로 다시 보내도록 함
+    const redirectUrl = `/pages/index.html?gw_sso_auth_code=${encodeURIComponent(ssoToken)}`;
+    window.location.href = redirectUrl;
+    return;
+  }
+
+  // 1. 일반 접근 시에는 기존 인증 가드 유지
+  if (!requireAuth()) {
+    return;
+  }
+
   // 사용자 정보 표시 (ㅇㅇㅇ님 형태)
   const user = getUser();
   if (user) {
